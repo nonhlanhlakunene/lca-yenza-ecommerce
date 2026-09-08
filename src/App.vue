@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import HandymanProfileView from './views/HandymanProfileView.vue'
 
 const categories = ['Plumber', 'Carpenter', 'Electrician', 'Painter', 'Locksmith', 'HVAC Technician', 'Roofer', 'General Handyman']
 const filters = ['Reviews', 'Availability', 'Location', 'Rating']
@@ -8,9 +10,11 @@ const activeCategory = ref('Plumber')
 const activeFilter = ref('All')
 const search = ref('')
 const selectedPro = ref(null)
-const visibleCount = ref(3)
+const currentPage = ref(0)
 const priceFilter = ref('All prices')
 const priceMenuOpen = ref(false)
+const route = useRoute()
+const profileSlug = (pro) => pro.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 const professionals = [
   { name: 'Arthur Pendleton', job: 'Master Plumber & Pipe Specialist', category: 'Plumber', rating: '4.9', reviews: 124, price: 85, tags: ['Emergency Repair', 'Leaky Pipes', 'Commercial'], photo: 'https://i.pravatar.cc/100?img=12' },
   { name: 'Marcus Vance', job: 'Expert Cabinetry & Framing Carpenter', category: 'Carpenter', rating: '4.8', reviews: 96, price: 75, tags: ['Furniture Assembly', 'Custom Decks', 'Drywall'], photo: 'https://i.pravatar.cc/100?img=53' },
@@ -45,15 +49,30 @@ const priceFilteredProfessionals = computed(() => {
   })
   return priceFilter.value === 'All prices' ? matchesPrice : [...matchesPrice].sort((a, b) => a.price - b.price)
 })
-const visibleProfessionals = computed(() => priceFilteredProfessionals.value.slice(0, visibleCount.value))
+const visibleProfessionals = computed(() => {
+  const start = currentPage.value * 3
+  return priceFilteredProfessionals.value.slice(start, start + 3)
+})
 
 watch([activeCategory, search, priceFilter], () => {
-  visibleCount.value = 3
+  currentPage.value = 0
 })
 </script>
 
 <template>
-  <main class="directory-shell">
+  <HandymanProfileView v-if="route.name === 'profile'" />
+  <template v-else>
+  <nav class="home-navbar" aria-label="Main navigation">
+    <ul class="navbar-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="/about">About Us</a></li>
+      <li><a href="#results">Reviews</a></li>
+      <li><a href="#bookings">Bookings</a></li>
+      <li><a href="mailto:hello@yenza.co.za">Contact</a></li>
+    </ul>
+  </nav>
+  <main id="home" class="directory-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-icon">⌕</span><span>YENZA!</span></div>
       <p class="section-label">CATEGORY</p>
@@ -61,7 +80,7 @@ watch([activeCategory, search, priceFilter], () => {
         <button v-for="category in categories" :key="category" class="category" :class="{ active: activeCategory === category }" @click="activeCategory = category">{{ category }} <span>›</span></button>
       </nav>
     </aside>
-    <section class="content">
+    <section id="services" class="content">
       <form class="search-bar" @submit.prevent>
         <span class="search-icon">⌕</span><input v-model="search" type="search" placeholder="Search services..." aria-label="Search services" /><button>Search</button>
       </form>
@@ -77,17 +96,19 @@ watch([activeCategory, search, priceFilter], () => {
         <button v-for="filter in filters" :key="filter" :class="{ selected: activeFilter === filter }" @click="activeFilter = filter">{{ filter }} <span v-if="filter !== 'All'">⌄</span></button>
       </div>
       <div class="results-heading"><h1>Available Handymen ({{ priceFilteredProfessionals.length }} results)</h1><span>Sorted by: <strong>{{ priceFilter === 'All prices' ? 'Best Match' : 'Lowest Price' }}</strong></span></div>
-      <div class="cards">
+      <div id="results" class="cards">
         <article v-for="pro in visibleProfessionals" :key="pro.name" class="professional-card">
           <div class="pro-top"><img :src="pro.photo" :alt="pro.name" /><div class="pro-info"><h2>{{ pro.name }}</h2><p>{{ pro.job }}</p><small><b>★</b> {{ pro.rating }} <span>({{ pro.reviews }} reviews)</span></small></div><strong class="price">R{{ pro.price }}/hr</strong></div>
-          <div class="card-footer"><div class="tags"><span v-for="tag in pro.tags" :key="tag">{{ tag }}</span></div><button class="profile-button" @click="selectedPro = pro.name">View Profile&nbsp; →</button></div>
+          <div class="card-footer"><div class="tags"><span v-for="tag in pro.tags" :key="tag">{{ tag }}</span></div><RouterLink class="profile-button" :to="{ name: 'profile', params: { slug: profileSlug(pro) } }">View Profile&nbsp; →</RouterLink></div>
         </article>
         <p v-if="!priceFilteredProfessionals.length" class="empty">No handymen match your search.</p>
       </div>
-      <div v-if="visibleCount < priceFilteredProfessionals.length" class="view-more-wrap">
-        <button class="view-more" @click="visibleCount += 3">View More</button>
+      <div v-if="priceFilteredProfessionals.length > 3" id="bookings" class="view-more-wrap">
+        <button v-if="currentPage > 0" class="view-more" @click="currentPage -= 1">← Previous</button>
+        <button v-if="(currentPage + 1) * 3 < priceFilteredProfessionals.length" class="view-more" @click="currentPage += 1">View More →</button>
       </div>
     </section>
     <div v-if="selectedPro" class="toast" role="status">Opening {{ selectedPro }}'s profile</div>
   </main>
+  </template>
 </template>
