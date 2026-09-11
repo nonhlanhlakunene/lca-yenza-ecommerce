@@ -54,6 +54,8 @@ const visibleProfessionals = computed(() => {
   return priceFilteredProfessionals.value.slice(start, start + 3)
 })
 
+
+
 watch([activeCategory, search, priceFilter], () => {
   currentPage.value = 0
 })
@@ -74,7 +76,7 @@ watch([activeCategory, search, priceFilter], () => {
   </nav>
   <main id="home" class="directory-shell">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-icon">⌕</span><span>YENZA!</span></div>
+      <div class="brand"><span>YENZA!</span></div>
       <p class="section-label">CATEGORY</p>
       <nav aria-label="Trade categories">
         <button v-for="category in categories" :key="category" class="category" :class="{ active: activeCategory === category }" @click="activeCategory = category">{{ category }} <span>›</span></button>
@@ -88,12 +90,12 @@ watch([activeCategory, search, priceFilter], () => {
       <div class="filters">
         <button :class="{ selected: activeFilter === 'All' }" @click="activeFilter = 'All'">All</button>
         <div class="price-filter">
-          <button class="prices-button" :class="{ selected: priceFilter !== 'All prices' }" @click="priceMenuOpen = !priceMenuOpen">Prices <span>⌄</span></button>
+          <button class="prices-button" :class="{ selected: priceFilter !== 'All prices' }" @click="priceMenuOpen = !priceMenuOpen">Prices <span>▼</span></button>
           <div v-if="priceMenuOpen" class="price-menu">
             <button v-for="option in priceOptions" :key="option" :class="{ active: priceFilter === option }" @click="priceFilter = option; priceMenuOpen = false">{{ option }}</button>
           </div>
         </div>
-        <button v-for="filter in filters" :key="filter" :class="{ selected: activeFilter === filter }" @click="activeFilter = filter">{{ filter }} <span v-if="filter !== 'All'">⌄</span></button>
+        <button v-for="filter in filters" :key="filter" :class="{ selected: activeFilter === filter }" @click="activeFilter = filter">{{ filter }} <span v-if="filter !== 'All'">▼</span></button>
       </div>
       <div class="results-heading"><h1>Available Handymen ({{ priceFilteredProfessionals.length }} results)</h1><span>Sorted by: <strong>{{ priceFilter === 'All prices' ? 'Best Match' : 'Lowest Price' }}</strong></span></div>
       <div id="results" class="cards">
