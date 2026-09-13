@@ -1,19 +1,22 @@
 <template>
   <nav class="home-navbar">
     <ul class="navbar-links">
-      <li v-for="(link, index) in navLinks" v-bind:key="index">
-        <router-link v-bind:to="link.path">{{ link.text }}</router-link>
+      <li v-for="(link, index) in navLinks" :key="index">
+        <router-link :to="link.path">
+          {{ link.text }}
+        </router-link>
       </li>
     </ul>
   </nav>
 </template>
+
 
 <script setup>
 import { ref } from 'vue'
 
 const linkList = [
   { text: 'Home', path: '/' },
-  { text: 'Services', path: '/services' },
+  { text: 'Services', path: '/profiles/:slug' },
   { text: 'About Us', path: '/about' },
   { text: 'Bookings', path: '/bookings' },
   { text: 'Contact', path: '/contact' }
@@ -55,6 +58,7 @@ const navLinks = ref(linkList)
 .navbar-links a.router-link-active {
     font-weight: 700;
     text-decoration: underline;
+    text-underline-offset: 5px;
 }
 
 /* Mobile Layout Adjustment */
