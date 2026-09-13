@@ -1,10 +1,33 @@
-<script setup>import { ref } from 'vue'
-const booking = ref({ service: '', professional: '', date: '', time: '', address: '', notes: '' })
+<script setup>
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { professionals } from '../data/professionals'
+
+const route = useRoute()
+
+const professional = computed(() => {
+    return professionals.find(
+        person => person.slug === route.params.slug
+    )
+})
+
+const booking = ref({
+    date: '',
+    time: '',
+    address: '',
+    notes: ''
+})
+
 const submitBooking = () => {
-    if (!booking.value.service || !booking.value.professional || !booking.value.date || !booking.value.time || !booking.value.address) {
+    if (
+        !booking.value.date ||
+        !booking.value.time ||
+        !booking.value.address
+    ) {
         alert('Please complete all required fields.')
         return
     } alert('Your booking request has been submitted!')
+
     console.log('Booking:', booking.value)
 } 
 </script>
@@ -12,66 +35,75 @@ const submitBooking = () => {
 
 
 <template>
-    <main class="booking-page"> <!-- PAGE HEADER -->
+    <main class="booking-page">
+
+        <!-- PAGE HEADER -->
         <section class="booking-header">
-            <p class="booking-label">YENZA BOOKINGS</p>
             <h1>BOOK A PROFESSIONAL</h1>
-            <p> Tell us what service you need, choose a professional, and select a date and time that works for you.
+            <p> 
+               Select a date and time that works for you and provide the details of the service you need.
             </p>
-        </section> <!-- BOOKING SECTION -->
-        <section class="booking-section"> <!-- BOOKING FORM -->
-            <form class="booking-form" @submit.prevent="submitBooking"> <!-- SERVICE -->
-                <div class="form-group"> <label for="service">Service *</label> <select id="service"
-                        v-model="booking.service">
-                        <option value="" disabled> Select a service </option>
-                        <option value="plumbing"> Plumbing </option>
-                        <option value="electrical"> Electrical </option>
-                        <option value="cleaning"> Cleaning </option>
-                        <option value="gardening"> Gardening </option>
-                        <option value="childcare"> Childcare </option>
-                        <option value="painting"> Painting </option>
-                    </select> </div> <!-- PROFESSIONAL -->
-                <div class="form-group"> <label for="professional"> Professional * </label> <select id="professional"
-                        v-model="booking.professional">
-                        <option value="" disabled> Select a professional </option>
-                        <option value="professional-1"> Select from available professionals </option>
-                    </select> </div> <!-- DATE AND TIME -->
+        </section>
+
+        <!-- BOOKING SECTION -->
+        <section class="booking-section">
+            <!-- BOOKING FORM -->
+            <form class="booking-form" @submit.prevent="submitBooking">
+                
+                <div v-if="professional" class="selected-professional">
+                    <span class="detail-label">BOOKING WITH</span>
+
+                    <h2>{{ professional.name }}</h2>
+
+                    <p>{{ professional.job }}</p>
+
+                    <span class="professional-category">
+                        {{ professional.category }}
+                    </span>
+                </div>
+
+                <!-- DATE AND TIME -->
                 <div class="form-row">
                     <div class="form-group"> <label for="date"> Preferred Date * </label> <input id="date"
                             v-model="booking.date" type="date"> </div>
                     <div class="form-group"> <label for="time"> Preferred Time * </label> <input id="time"
                             v-model="booking.time" type="time"> </div>
-                </div> <!-- ADDRESS -->
+                </div>
+
+                <!-- ADDRESS -->
                 <div class="form-group"> <label for="address"> Service Address * </label> <input id="address"
                         v-model="booking.address" type="text"
                         placeholder="Enter the address where the service is needed"> </div>
+
                 <!-- ADDITIONAL INFORMATION -->
                 <div class="form-group"> <label for="notes"> Additional Information </label> <textarea id="notes"
                         v-model="booking.notes" rows="5"
                         placeholder="Tell the professional anything they should know about the job..."></textarea>
-                </div> <!-- SUBMIT BUTTON --> <button type="submit" class="booking-button"> REQUEST BOOKING </button>
-            </form> <!-- INFORMATION PANEL -->
+                </div>
+
+                <!-- SUBMIT BUTTON -->
+                <button type="submit" class="booking-button"> REQUEST BOOKING </button>
+            </form>
+
+            <!-- INFORMATION PANEL -->
             <aside class="booking-info">
-                <h2>HOW IT WORKS</h2> <!-- STEP 1 -->
+                <h2>HOW IT WORKS</h2>
+                <!-- STEP 1 -->
                 <div class="info-item"> <span>01</span>
-                    <div>
-                        <h3>Choose a service</h3>
-                        <p> Select the type of professional you need. </p>
-                    </div>
-                </div> <!-- STEP 2 -->
-                <div class="info-item"> <span>02</span>
                     <div>
                         <h3>Choose your professional</h3>
                         <p> Select a professional that suits your needs. </p>
                     </div>
-                </div> <!-- STEP 3 -->
-                <div class="info-item"> <span>03</span>
+                </div>
+                <!-- STEP 2 -->
+                <div class="info-item"> <span>02</span>
                     <div>
-                        <h3>Select a date</h3>
-                        <p> Choose a convenient date and time. </p>
+                        <h3>Request a booking</h3>
+                        <p>Choose a date and time that works for you.</p>
                     </div>
-                </div> <!-- STEP 4 -->
-                <div class="info-item"> <span>04</span>
+                </div>
+                <!-- STEP 3 -->
+                <div class="info-item"> <span>03</span>
                     <div>
                         <h3>Confirm your booking</h3>
                         <p> Review your booking details before continuing to payment. </p>
@@ -79,6 +111,8 @@ const submitBooking = () => {
                 </div>
             </aside>
         </section>
+
+
     </main>
 </template>
 
@@ -92,9 +126,11 @@ const submitBooking = () => {
 
 /* PAGE HEADER */
 .booking-header {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 45px 80px 35px;
+    color: var(--color-primary);
+    font-size: var(--font-xl);
+    margin-bottom: var(--spacing-xs);
+    font-weight: bolder;
+    font-size: 50px;
 }
 
 .booking-label {
@@ -106,19 +142,21 @@ const submitBooking = () => {
 }
 
 .booking-header h1 {
-    margin-bottom: 10px;
     color: var(--color-primary);
     font-size: 50px;
-    font-weight: 700;
-    line-height: 1.1;
+    margin-bottom: var(--spacing-xs);
+    font-weight: bolder;
 }
 
 .booking-header p:last-child {
     max-width: 650px;
     color: #666;
     font-size: var(--font-md);
-    font-weight: 300;
+    font-weight: 200;
     line-height: 1.6;
+}
+.selected-professional {
+    margin-bottom: 30px;
 }
 
 /* MAIN BOOKING CONTENT */
@@ -133,7 +171,7 @@ const submitBooking = () => {
 
 /* BOOKING FORM */
 .booking-form {
-    padding: 10px 80px 50px;
+    padding: 40px 80px 50px;
     background: var(--color-page);
 }
 

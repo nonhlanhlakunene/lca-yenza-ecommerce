@@ -11,39 +11,39 @@ import HandymanProfileView from '../views/HandymanProfileView.vue';
 
 const routes = [
   {
-    path: '/login',
-    name: 'Login',
-    component: Login
+    path: "/login",
+    name: "Login",
+    component: Login,
   },
   {
-    path: '/signup',
-    name: 'Signup',
-    component: Signup
+    path: "/signup",
+    name: "Signup",
+    component: Signup,
   },
   {
-    path: '/',
-    name: 'home',
-    component: Home
+    path: "/",
+    name: "home",
+    component: Home,
   },
   {
-    path: '/profiles/:slug',
-    name: 'profile',
+    path: "/profiles/:slug",
+    name: "profile",
     component: HandymanProfileView,
-    },
+  },
   {
     path: "/about",
     name: "about",
     component: AboutView,
   },
   {
-    path: "/bookform",
-    name: "bookform",
-    component: BookFormView,
-  },
-  {
     path: "/bookings",
     name: "bookings",
     component: BookingsView,
+  },
+  {
+    path: "/book/:slug",
+    name: "book",
+    component: BookFormView,
   },
   {
     path: "/checkout",
