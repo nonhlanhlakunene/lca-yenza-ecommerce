@@ -3,7 +3,7 @@
     <!-- Footer Area -->
     <footer class="footer">
       <p class="footer-tagline">Making it easier to find trusted professionals</p>
-      <p class="footer-copyright">&copy; {{ currentYear }} <span class="footer-brand">YENZA!</span> All rights reserved.</p>
+      <p class="footer-copyright">&copy; {{ currentYear }} YENZA! All rights reserved.</p>
     </footer>
   </div>
 </template>
