@@ -249,7 +249,7 @@ const cancelBooking = (bookingId) => {
 }
 
 .section-heading {
-    margin: 10px 55px;
+    margin: 10px 55px 25px;
 }
 
 .section-heading h2 {
@@ -280,6 +280,7 @@ const cancelBooking = (bookingId) => {
 
 /* CURRENT BOOKING */
 .current-booking-card {
+    margin: 0 55px;
     padding: 35px 40px;
     background: #fafafa;
     border: 1px solid #e5e5e5;
@@ -403,6 +404,7 @@ const cancelBooking = (bookingId) => {
 .history-list {
     display: flex;
     flex-direction: column;
+    margin: 0 55px;
 }
 
 .history-card {
@@ -514,6 +516,7 @@ const cancelBooking = (bookingId) => {
     }
 
     .current-booking-card {
+        margin: 0;
         padding: 25px 20px;
     }
 
@@ -535,6 +538,10 @@ const cancelBooking = (bookingId) => {
 
     .history-card {
         padding: 25px 15px;
+    }
+
+    .history-list {
+        margin: 0;
     }
 
     .section-heading h2 {
