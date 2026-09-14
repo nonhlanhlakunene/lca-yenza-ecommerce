@@ -44,6 +44,17 @@
   ========================= */
   /* --page-max-width: 1200px; */
   --page-padding: 2rem;
+
+/* =========================
+   VIEWPORT
+========================= */
+ --min-page-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --min-page-height: 100dvh;
+  }
 }
 
 /* GLOBAL RESET */
@@ -121,7 +132,7 @@ button {
 .sidebar {
    width: 276px;
    flex: 0 0 276px;
-   min-height: 100vh;
+   min-height: var(--min-page-height);
    background: #136e70;
    color: #dceeee;
    padding: 34px 20px;
@@ -486,7 +497,7 @@ button {
 
    .sidebar {
       width: 100%;
-      min-height: auto;
+      min-height: var(--min-page-height);
       padding: 20px;
    }
 
@@ -553,7 +564,7 @@ button {
 
 .profile-page {
    display: flex;
-   min-height: 100vh;
+   min-height: var(--min-page-height);
    background: #edf3f8;
    color: #172033;
 }
@@ -561,7 +572,7 @@ button {
 .profile-sidebar {
    width: 205px;
    flex: 0 0 205px;
-   min-height: 100vh;
+   min-height: var(--min-page-height);
    padding: 19px 16px;
    background: #136163;
    border-right: 1px solid #0d5557;
@@ -900,7 +911,7 @@ button {
 
 .profile-not-found {
    display: grid;
-   min-height: 100vh;
+   min-height: var(--min-page-height);
    place-content: center;
    gap: 15px;
    text-align: center;
@@ -921,7 +932,7 @@ button {
 
    .profile-sidebar {
       width: 100%;
-      min-height: auto;
+      min-height: var(--min-page-height);
    }
 
    .coverage {
@@ -1050,7 +1061,7 @@ button {
 
 
 
-:root { --teal: #126d6d; --ink: #142e38; }
+/* :root { --teal: #126d6d; --ink: #142e38; }
 
 * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif;} 
 body { margin: 0; background: #f5f6f7; color: var(--ink); font-size: 12px; }
@@ -1076,7 +1087,7 @@ button { cursor: pointer; }
 .report-button { width: 100%; height: 32px; margin-top: 8px; border: 0; border-radius: 6px; background: #136163; color: #fff; font-size: 10px; font-weight: 700; }.report-button:hover { background: #0d4f51; }
 .filters > button, .prices-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }.filters > button span, .prices-button span { display: inline-flex; align-items: center; margin-left: 0; line-height: 1; }
 .brand, .profile-brand, .footer-brand { font-family: 'Jeju Hallasan', sans-serif !important; }
-.sidebar, .home-navbar, .filters > button, .prices-button, .search-bar button, .profile-button, .request-button, .report-button, .profile-not-found button { background: #136163; }.category.active, .category:hover { background: #136163; outline: 1px solid #fff; }.filters > button.selected, .prices-button.selected { background: #136163; box-shadow: inset 0 0 0 1px #fff; }.search-icon, .pro-info p, .price, .results-heading strong, .tags span, .view-more, .back-link, .profile-hero h2, .hourly strong, .profile-tags span { color: #136163; }.view-more { border-color: #136163; }.profile-brand span { color: #136163; }.side-link.active, .side-link:hover { background: #136163; color: #fff; outline: 1px solid #fff; }.profile-hero h1 small, .profile-tags span { color: #136163; }.report-button:hover, .request-button:hover, .search-bar button:hover, .profile-button:hover { background: #136163; }
+.sidebar, .home-navbar, .filters > button, .prices-button, .search-bar button, .profile-button, .request-button, .report-button, .profile-not-found button { background: #136163; }.category.active, .category:hover { background: #136163; outline: 1px solid #fff; }.filters > button.selected, .prices-button.selected { background: #136163; box-shadow: inset 0 0 0 1px #fff; }.search-icon, .pro-info p, .price, .results-heading strong, .tags span, .view-more, .back-link, .profile-hero h2, .hourly strong, .profile-tags span { color: #136163; }.view-more { border-color: #136163; }.profile-brand span { color: #136163; }.side-link.active, .side-link:hover { background: #136163; color: #fff; outline: 1px solid #fff; }.profile-hero h1 small, .profile-tags span { color: #136163; }.report-button:hover, .request-button:hover, .search-bar button:hover, .profile-button:hover { background: #136163; } */
 
 
 
