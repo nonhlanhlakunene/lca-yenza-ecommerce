@@ -1,7 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import HandymanProfileView from './views/HandymanProfileView.vue'
+import HandymanProfileView from './components/HandymanProfileView.vue'
+import NavBar from './components/NavBar.vue'
+import Footer from './components/Footer.vue'
 
 const categories = ['Plumber', 'Carpenter', 'Electrician', 'Painter', 'Locksmith', 'HVAC Technician', 'Roofer', 'General Handyman']
 const filters = ['Reviews', 'Availability', 'Location', 'Rating']
@@ -62,9 +64,10 @@ watch([activeCategory, search, priceFilter], () => {
 </script>
 
 <template>
+  <NavBar />
   <HandymanProfileView v-if="route.name === 'profile'" />
   <template v-else>
-  <nav class="home-navbar" aria-label="Main navigation">
+  <!-- <nav class="home-navbar" aria-label="Main navigation">
     <ul class="navbar-links">
       <li><a href="#home">Home</a></li>
       <li><a href="#services">Services</a></li>
@@ -73,7 +76,7 @@ watch([activeCategory, search, priceFilter], () => {
       <li><a href="#bookings">Bookings</a></li>
       <li><a href="mailto:hello@yenza.co.za">Contact</a></li>
     </ul>
-  </nav>
+  </nav> -->
   <main id="home" class="directory-shell">
     <aside class="sidebar">
       <div class="brand"><span>YENZA!</span></div>
@@ -113,4 +116,11 @@ watch([activeCategory, search, priceFilter], () => {
     <div v-if="selectedPro" class="toast" role="status">Opening {{ selectedPro }}'s profile</div>
   </main>
   </template>
+  <Footer />
 </template>
+
+<style>
+.brand{
+  font-family: 'Jeju Hallasan', sans-serif !important;
+}
+</style>

@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jeju+Hallasan&display=swap');
 @import './base.css';
 
 :root { --teal: #126d6d; --ink: #142e38; }
@@ -26,4 +27,70 @@ button { cursor: pointer; }
 @media (max-width: 760px) { .profile-page { display: block; }.profile-sidebar { width: 100%; min-height: auto; }.coverage { display: none; }.profile-content { padding: 20px 16px; }.profile-hero { align-items: flex-start; }.profile-hero h1 { font-size: 18px; }.hourly { position: absolute; right: 28px; margin-top: 66px; }.profile-grid { grid-template-columns: 1fr; } }
 .report-button { width: 100%; height: 32px; margin-top: 8px; border: 0; border-radius: 6px; background: #136163; color: #fff; font-size: 10px; font-weight: 700; }.report-button:hover { background: #0d4f51; }
 .filters > button, .prices-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }.filters > button span, .prices-button span { display: inline-flex; align-items: center; margin-left: 0; line-height: 1; }
+.brand, .profile-brand, .footer-brand { font-family: 'Jeju Hallasan', sans-serif !important; }
 .sidebar, .home-navbar, .filters > button, .prices-button, .search-bar button, .profile-button, .request-button, .report-button, .profile-not-found button { background: #136163; }.category.active, .category:hover { background: #136163; outline: 1px solid #fff; }.filters > button.selected, .prices-button.selected { background: #136163; box-shadow: inset 0 0 0 1px #fff; }.search-icon, .pro-info p, .price, .results-heading strong, .tags span, .view-more, .back-link, .profile-hero h2, .hourly strong, .profile-tags span { color: #136163; }.view-more { border-color: #136163; }.profile-brand span { color: #136163; }.side-link.active, .side-link:hover { background: #136163; color: #fff; outline: 1px solid #fff; }.profile-hero h1 small, .profile-tags span { color: #136163; }.report-button:hover, .request-button:hover, .search-bar button:hover, .profile-button:hover { background: #136163; }
+
+
+
+
+
+
+
+
+
+/* GLOBAL STYLING */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* =========================
+     YENZA COLOUR SYSTEM
+  ========================= */
+  --color-page: #FFFFFF;
+  --color-primary: #136163;
+  --color-primary-dark: #134748;
+  --color-text: #000000;
+
+  /* =========================
+     TYPOGRAPHY
+  ========================= */
+  --font-main: 'Plus Jakarta Sans', sans-serif;
+
+
+  /* =========================
+     FONT SIZES
+  ========================= */
+  --font-xs: 0.7rem;
+  --font-sm: 0.85rem;
+  --font-md: 1rem;
+  --font-lg: 1.5rem;
+  --font-xl: 2rem;
+
+
+  /* =========================
+     SPACING
+  ========================= */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 4rem;
+  --spacing-xl: 6rem;
+
+
+  /* =========================
+     LAYOUT
+  ========================= */
+  /* --page-max-width: 1200px; */
+  --page-padding: 2rem;
+}
+
+/* GLOBAL RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
