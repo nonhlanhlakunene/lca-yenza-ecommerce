@@ -6,7 +6,7 @@ import BookingsView from "../views/BookingsView.vue";
 import CheckoutView from "../views/CheckoutView.vue";
 import Login from '@/components/login.vue';
 import Signup from '@/components/signup.vue';
-import Home from '@/components/home.vue';
+import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 
 const routes = [
