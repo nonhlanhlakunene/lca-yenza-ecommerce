@@ -104,15 +104,14 @@ const cancelBooking = (bookingId) => {
         
         <!-- PAGE HEADER -->
         <section class="bookings-header">
-            <p class="bookings-label">YENZA BOOKINGS</p>
-            <h1>MY BOOKINGS</h1>
+            <h1>My Bookings</h1>
             <p> Manage your active service appointments and view your previous booking history. </p>
         </section> 
         
         <!-- CURRENT BOOKING -->
         <section class="bookings-section">
             <div class="section-heading">
-                <h2>CURRENT BOOKING</h2>
+                <h2>Current Booking</h2>
                 <p>Your upcoming service appointment.</p>
             </div> 
             
@@ -151,7 +150,7 @@ const cancelBooking = (bookingId) => {
             
             <!-- Show message if there is no current booking -->
             <div v-else class="empty-booking">
-                <h3>NO CURRENT BOOKING</h3>
+                <h3>No Current Booking</h3>
                 <p> You don't have any upcoming bookings at the moment. </p> <router-link to="/book"
                     class="book-button"> BOOK A PROFESSIONAL </router-link>
             </div>
@@ -160,7 +159,7 @@ const cancelBooking = (bookingId) => {
         <!-- BOOKING HISTORY -->
         <section class="bookings-section history-section">
             <div class="section-heading">
-                <h2>BOOKING HISTORY</h2>
+                <h2>Booking History</h2>
                 <p> View your previous service appointments. </p>
             </div>
             <div v-if="bookingHistory.length" class="history-list">
@@ -202,15 +201,15 @@ const cancelBooking = (bookingId) => {
 /* PAGE */
 .bookings-page {
     min-height: 100vh;
-    padding: 40px 20px 80px;
+    /* padding: 40px 20px 80px; */
     background: var(--color-page);
 }
 
 /* PAGE HEADER */
 .bookings-header {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 45px 80px 35px;
+    /* max-width: 1200px; */
+    /* margin: 0 auto; */
+    padding: 10px 80px;
 }
 
 .bookings-label {
@@ -222,7 +221,14 @@ const cancelBooking = (bookingId) => {
 }
 
 .bookings-header h1 {
-    margin-bottom: 10px;
+    color: var(--color-primary);
+    font-size: var(--font-xl);
+    margin-bottom: var(--spacing-xs);
+    font-weight: bolder;
+    font-size: 50px;
+}
+.bookings-header h2 {
+    margin: 10px 80px;
     color: var(--color-primary);
     font-size: 50px;
     font-weight: 700;
@@ -230,11 +236,10 @@ const cancelBooking = (bookingId) => {
 }
 
 .bookings-header p:last-child {
-    max-width: 650px;
     color: #666;
     font-size: var(--font-md);
-    font-weight: 300;
-    line-height: 1.6;
+    font-weight: 200;
+    margin-bottom: var(--spacing-md);
 }
 
 /* SECTION */
@@ -244,14 +249,20 @@ const cancelBooking = (bookingId) => {
 }
 
 .section-heading {
-    margin-bottom: 20px;
+    margin: 10px 55px;
 }
 
 .section-heading h2 {
-    margin-bottom: 6px;
+    /* margin-bottom: 6px;
     color: var(--color-primary);
     font-size: var(--font-xl);
-    font-weight: 700;
+    font-weight: 700; */
+
+    color: var(--color-primary);
+    font-size: var(--font-xl);
+    margin-bottom: var(--spacing-xs);
+    font-weight: bolder;
+    /* font-size: 50px; */
 }
 
 .section-heading p {
