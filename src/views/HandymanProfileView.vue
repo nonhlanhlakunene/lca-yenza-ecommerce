@@ -19,14 +19,14 @@ const reviews = computed(() => pro.value ? [
     <aside class="profile-sidebar">
       <button class="profile-brand" @click="router.push('/')">YENZA!</button>
       <p>CATEGORIES</p>
-      <button class="side-link" @click="router.push('/')">▦ All Craftsmen</button>
+      <button class="side-link" @click="router.push('/services')">▦ All Craftsmen</button>
       <button class="side-link active">⌂ {{ pro.category }}</button>
       <button class="side-link" @click="router.push('/')">▣ My Bookings</button>
       <div class="coverage"><strong>Need insurance cover?</strong><br />All bookings are protected by our service
         guarantee.</div>
     </aside>
     <section class="profile-content">
-      <button class="back-link" @click="router.push('/')">← Back to handymen</button>
+      <button class="back-link" @click="router.push('/services')">← Back to handymen</button>
       <header class="profile-hero"><img :src="pro.photo" :alt="pro.name" />
         <div>
           <h1>{{ pro.name }} <small>✓ VERIFIED</small></h1>

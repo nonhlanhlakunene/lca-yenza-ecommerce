@@ -16,7 +16,7 @@ import { ref } from 'vue'
 
 const linkList = [
   { text: 'Home', path: '/' },
-  { text: 'Services', path: '/profiles/:slug' },
+  { text: 'Services', path: '/services' },
   { text: 'About Us', path: '/about' },
   { text: 'Bookings', path: '/bookings' },
   { text: 'Contact', path: '/contact' }
