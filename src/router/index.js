@@ -87,12 +87,6 @@ const routes = [
     name: "verification",
     component: () => import("../components/VerifyIdentity.vue"),
     props: { showVerification: true, userType: "worker" },
-  },
-
-  {
-    path: "/admin",
-    name: "/admin",
-    component : () => import ("../views/AdminView.vue"),
   }
 
 ];
