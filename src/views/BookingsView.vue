@@ -186,7 +186,7 @@ const cancelBooking = (bookingId) => {
                 </article>
             </div>
             <div v-else class="empty-booking">
-                <h3>NO BOOKING HISTORY</h3>
+                <h3>No Booking History</h3>
                 <p> You haven't made any previous bookings yet. </p>
             </div>
         </section>
@@ -212,13 +212,13 @@ const cancelBooking = (bookingId) => {
     padding: 10px 80px;
 }
 
-.bookings-label {
+/* .bookings-label {
     margin-bottom: 8px;
     color: var(--color-primary);
     font-size: var(--font-sm);
     font-weight: 700;
     letter-spacing: 2px;
-}
+} */
 
 .bookings-header h1 {
     color: var(--color-primary);
@@ -227,19 +227,19 @@ const cancelBooking = (bookingId) => {
     font-weight: bolder;
     font-size: 50px;
 }
-.bookings-header h2 {
+/* .bookings-header h2 {
     margin: 10px 80px;
     color: var(--color-primary);
     font-size: 50px;
     font-weight: 700;
     line-height: 1.1;
-}
+} */
 
 .bookings-header p:last-child {
     color: #666;
     font-size: var(--font-md);
     font-weight: 200;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 
 /* SECTION */
@@ -249,7 +249,7 @@ const cancelBooking = (bookingId) => {
 }
 
 .section-heading {
-    margin: 10px 55px 25px;
+    margin: 0 80px 25px;
 }
 
 .section-heading h2 {
@@ -262,6 +262,7 @@ const cancelBooking = (bookingId) => {
     font-size: var(--font-xl);
     margin-bottom: var(--spacing-xs);
     font-weight: bolder;
+    margin-top: var(--spacing-sm)
     /* font-size: 50px; */
 }
 
@@ -280,7 +281,7 @@ const cancelBooking = (bookingId) => {
 
 /* CURRENT BOOKING */
 .current-booking-card {
-    margin: 0 55px;
+    margin: 0 75px;
     padding: 35px 40px;
     background: #fafafa;
     border: 1px solid #e5e5e5;
