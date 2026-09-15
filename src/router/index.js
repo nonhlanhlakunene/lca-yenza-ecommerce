@@ -51,7 +51,6 @@ const routes = [
     component: CheckoutView,
   },
 
-  // Contact route
   {
     path: "/contact",
     name: "contact",
@@ -79,6 +78,13 @@ const routes = [
     component: () => import("../components/VerifyIdentity.vue"),
     props: { showVerification: true, userType: "worker" },
   },
+
+  {
+    path: "/admin",
+    name: "/admin",
+    component : () => import ("../views/AdminView.vue"),
+  }
+  
 ];
 
 const router = createRouter({
