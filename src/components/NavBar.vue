@@ -29,6 +29,11 @@ const navLinks = ref(linkList)
 
 <style scoped>
 .home-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+
   background-color: var(--color-primary);
   display: flex;
   justify-content: flex-end;
