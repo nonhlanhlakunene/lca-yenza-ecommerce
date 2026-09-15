@@ -8,6 +8,7 @@ import Login from '@/components/login.vue';
 import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
+import ServicesView from '../views/ServicesView.vue'
 
 const routes = [
   {
@@ -51,6 +52,15 @@ const routes = [
     component: CheckoutView,
   },
 
+
+  {
+    path: '/services',
+    name: 'services',
+    component: ServicesView
+  },
+
+  // Contact route
+
   {
     path: "/contact",
     name: "contact",
@@ -84,7 +94,7 @@ const routes = [
     name: "/admin",
     component : () => import ("../views/AdminView.vue"),
   }
-  
+
 ];
 
 const router = createRouter({
