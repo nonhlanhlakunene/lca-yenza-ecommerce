@@ -65,6 +65,10 @@ body,
   font-family: 'Plus Jakarta Sans', sans-serif;
 } */
 
+body {
+  background: white;
+}
+
 .signup-container {
   display: flex;
   width: 100%;
