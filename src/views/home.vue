@@ -1,5 +1,7 @@
 <script setup>
 import services from '../assets/services2.png'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 </script>
 
 <template>
@@ -14,7 +16,7 @@ import services from '../assets/services2.png'
                     get the job done by skilled workers you can rely on. <br><br>
                     Don't spend hours looking for someone you can trust. Find the right professional, 
                     book your service, and let the experts handle the rest <br><br>
-                    Find Your Professional → <button class="service-link">service</button>
+                    Find Your Professional → <button class="service-link" @click="router.push('/services')">service</button>
                 </p>
             </div>
 

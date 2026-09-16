@@ -149,7 +149,7 @@ const reviews = computed(() => pro.value ? [
 }
 
 .category span {
-  font-size: 17px;
+  font-size: 30px;
   color: #9dc8c8;
   line-height: 10px;
 }
@@ -565,7 +565,7 @@ const reviews = computed(() => pro.value ? [
 .profile-sidebar p {
   margin: 0 0 8px;
   color: #cfe9e9;
-  font-size: 8px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -579,7 +579,7 @@ const reviews = computed(() => pro.value ? [
   background: transparent;
   color: #eefafa;
   text-align: left;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .side-link.active,
@@ -595,7 +595,7 @@ const reviews = computed(() => pro.value ? [
   border: 1px solid #dce9eb;
   background: #effafa;
   color: #536271;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -713,13 +713,13 @@ const reviews = computed(() => pro.value ? [
 .profile-card h3,
 .reviews h3 {
   margin: 0 0 14px;
-  font-size: 15px;
+  font-size: 20px;
 }
 
 .profile-card p {
   margin: 0;
   color: #4d5c70;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -734,7 +734,7 @@ const reviews = computed(() => pro.value ? [
   border-radius: 13px;
   background: #dff2f1;
   color: #087876;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -761,19 +761,19 @@ const reviews = computed(() => pro.value ? [
   border-radius: 50%;
   background: #def3f2;
   color: #087a78;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .review-head b,
 .review-head small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .review-head small {
   color: #7a8997;
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .review-head strong {
@@ -784,7 +784,7 @@ const reviews = computed(() => pro.value ? [
 .review-card p {
   margin: 10px 0 0;
   color: #526174;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -800,7 +800,7 @@ const reviews = computed(() => pro.value ? [
 
 .booking-panel small {
   color: #657487;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .days {
@@ -814,7 +814,7 @@ const reviews = computed(() => pro.value ? [
   padding: 6px 2px;
   border-radius: 5px;
   color: #4a5b70;
-  font-size: 8px;
+  font-size: 10px;
   text-align: center;
 }
 
@@ -829,7 +829,7 @@ const reviews = computed(() => pro.value ? [
   width: 100%;
   height: 32px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -837,8 +837,9 @@ const reviews = computed(() => pro.value ? [
   width: 100%;
   height: 32px;
   padding: 0;
-  font-size: 10px;
+  font-size: 12px;
 }
+
 
 .question-button {
   margin-top: 8px;
@@ -915,7 +916,7 @@ const reviews = computed(() => pro.value ? [
   border-radius: 6px;
   background: #136163;
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
 

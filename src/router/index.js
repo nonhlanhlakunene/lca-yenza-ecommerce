@@ -10,7 +10,6 @@ import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue';
-import WorkerDashboard from '../views/workerDashboardView.vue';
 import Admin from '@/components/Admin.vue';
 import WorkerDashboardView from "../views/workerDashboardView.vue";
 
@@ -70,12 +69,13 @@ const routes = [
     path: '/services',
     name: 'services',
     component: ServicesView,
+    component: ServicesView,
   },
 
   {
     path: '/worker',
-    name: 'WorkerDashboard',
-    component: workerDashboardView,
+    name: 'WorkerDashboardView',
+    component: WorkerDashboardView,
   },
 
   // Contact route
