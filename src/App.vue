@@ -7,11 +7,11 @@ const route = useRoute()
 </script>
 
 <template>
-    <NavBar v-if="!['/login', '/signup'].includes(route.path)" />
+    <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin'].includes(route.path)" />
 
     <RouterView />
 
-    <Footer v-if="!['/login', '/signup'].includes(route.path)" />
+    <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin'].includes(route.path)" />
 </template>
 
 
