@@ -10,8 +10,9 @@ import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue';
-import WorkerDashboard from '../views/WorkerDashboardView.vue';
-import Admin from '@/components/AdminView.vue';
+import WorkerDashboard from '../views/workerDashboardView.vue';
+import Admin from '@/components/Admin.vue';
+import WorkerDashboardView from "../views/workerDashboardView.vue";
 
 const routes = [
   {
@@ -52,7 +53,7 @@ const routes = [
   {
     path: '/admin',
     name: 'admin',
-    component: Admin
+    component: Admin,
   },
   {
     path: "/book/:slug",
@@ -68,13 +69,13 @@ const routes = [
   {
     path: '/services',
     name: 'services',
-    component: ServicesView
+    component: ServicesView,
   },
 
   {
     path: '/worker',
     name: 'WorkerDashboard',
-    component: WorkerDashboard
+    component: workerDashboardView,
   },
 
   // Contact route
