@@ -68,13 +68,13 @@ const routes = [
   {
     path: '/services',
     name: 'services',
-    component: ServicesView
+    component: ServicesView,
   },
 
   {
     path: '/worker',
     name: 'WorkerDashboard',
-    component: WorkerDashboard
+    component: WorkerDashboard,
   },
 
   // Contact route
