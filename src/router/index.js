@@ -9,6 +9,7 @@ import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue'
+import Admin from '@/components/Admin.vue';
 
 const routes = [
   {
@@ -41,6 +42,12 @@ const routes = [
     name: "bookings",
     component: BookingsView,
   },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: Admin
+  },
+  
   {
     path: "/book/:slug",
     name: "book",
