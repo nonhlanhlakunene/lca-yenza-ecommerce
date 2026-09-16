@@ -107,7 +107,10 @@ import services from '../assets/services2.png'
 .home-heading {
     font-family: "JejuHallasan", sans-serif;
     color: white;
-    font-size: 100px;
+
+    /* font-size: 100px; */
+    font-size: clamp(65px, 6vw, 100px);
+
     font-weight: 800;
     margin-bottom: 25px;
 }
@@ -122,7 +125,11 @@ import services from '../assets/services2.png'
   padding: 50px;
   color: white;
   background: #136163;
-  width: 30%;
+  /* width: 30%; */
+
+  width: 35%;
+  flex: 0 0 35%;
+
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -138,19 +145,29 @@ import services from '../assets/services2.png'
 }
 
 .home-services {
-    width: 70%;
+    /* width: 70%; */
+
+    width: 65%;
+    flex: 0 0 65%;
+
     height: 600px;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
     box-sizing: border-box;
+    
+    background: #136163;
 }
 
 .home-services img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+
+  /* object-fit: cover; */
+  object-fit: contain;
+  object-position: center;
+
   display: block;
 }
 
@@ -162,7 +179,21 @@ import services from '../assets/services2.png'
     flex-shrink: 0;
 }
 
+@media (max-width: 1400px) {
+    .home-text {
+        width: 35%;
+        flex: 0 0 35%;
+    }
 
+    .home-services {
+        width: 65%;
+        flex: 0 0 65%;
+    }
+
+    .home-heading {
+        font-size: 80px;
+    }
+}
 
 @media (max-width: 1024px) {
 

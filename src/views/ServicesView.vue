@@ -1,87 +1,434 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { professionals } from '../data/professionals'
+import { RouterLink } from 'vue-router'
+import { computed, ref, watch } from 'vue'
 
-const route = useRoute()
-const router = useRouter()
-const reportSent = ref(false)
-const pro = computed(() => professionals.find((person) => person.slug === route.params.slug))
-const reviews = computed(() => pro.value ? [
-  { name: 'David G.', date: '2 days ago', text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.` },
-  { name: 'Melanie T.', date: '1 week ago', text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.` },
-  { name: 'James L.', date: '3 weeks ago', text: `Great workmanship and clear communication from start to finish.` },
-] : [])
+const categories = [
+  'Plumber',
+  'Carpenter',
+  'Electrician',
+  'Painter',
+  'Locksmith',
+  'HVAC Technician',
+  'Roofer',
+  'General Handyman'
+]
+
+const filters = ['Reviews', 'Availability', 'Location', 'Rating']
+
+const priceOptions = [
+  'All prices',
+  'Best prices (under R75/hr)',
+  'R76 – R90/hr',
+  'R91+/hr'
+]
+
+const activeCategory = ref('Plumber')
+const activeFilter = ref('All')
+const search = ref('')
+const selectedPro = ref(null)
+const currentPage = ref(0)
+const priceFilter = ref('All prices')
+const priceMenuOpen = ref(false)
+
+const profileSlug = (pro) =>
+  pro.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+
+const professionals = [
+  {
+    name: 'Arthur Pendleton',
+    job: 'Master Plumber & Pipe Specialist',
+    category: 'Plumber',
+    rating: '4.9',
+    reviews: 124,
+    price: 85,
+    tags: ['Emergency Repair', 'Leaky Pipes', 'Commercial'],
+    photo: 'https://i.pravatar.cc/100?img=12'
+  },
+  {
+    name: 'Marcus Vance',
+    job: 'Expert Cabinetry & Framing Carpenter',
+    category: 'Carpenter',
+    rating: '4.8',
+    reviews: 96,
+    price: 75,
+    tags: ['Furniture Assembly', 'Custom Decks', 'Drywall'],
+    photo: 'https://i.pravatar.cc/100?img=53'
+  },
+  {
+    name: 'Sarah Jenkins',
+    job: 'Licensed Residential Electrician',
+    category: 'Electrician',
+    rating: '5.0',
+    reviews: 83,
+    price: 90,
+    tags: ['Wiring', 'Smart Home', 'Lighting Installation'],
+    photo: 'https://i.pravatar.cc/100?img=47'
+  },
+  {
+    name: 'Elena Rodriguez',
+    job: 'Interior & Exterior Painting Specialist',
+    category: 'Painter',
+    rating: '4.9',
+    reviews: 108,
+    price: 72,
+    tags: ['Interior Painting', 'Feature Walls', 'Exterior Finishes'],
+    photo: 'https://i.pravatar.cc/100?img=36'
+  },
+  {
+    name: 'Daniel Okafor',
+    job: '24/7 Residential & Auto Locksmith',
+    category: 'Locksmith',
+    rating: '4.9',
+    reviews: 147,
+    price: 70,
+    tags: ['Lockout Service', 'Key Cutting', 'Rekeying'],
+    photo: 'https://i.pravatar.cc/100?img=11'
+  },
+  {
+    name: 'Maya Collins',
+    job: 'Certified Security Lock Specialist',
+    category: 'Locksmith',
+    rating: '4.8',
+    reviews: 78,
+    price: 82,
+    tags: ['Smart Locks', 'Security Upgrades', 'Safe Opening'],
+    photo: 'https://i.pravatar.cc/100?img=32'
+  },
+  {
+    name: 'Owen Hart',
+    job: 'Emergency Locksmith & Key Expert',
+    category: 'Locksmith',
+    rating: '4.7',
+    reviews: 112,
+    price: 65,
+    tags: ['Emergency Callout', 'Car Keys', 'Lock Repair'],
+    photo: 'https://i.pravatar.cc/100?img=68'
+  },
+  {
+    name: 'Priya Naidoo',
+    job: 'Licensed HVAC Installation Technician',
+    category: 'HVAC Technician',
+    rating: '5.0',
+    reviews: 91,
+    price: 95,
+    tags: ['AC Installation', 'Heat Pumps', 'Ventilation'],
+    photo: 'https://i.pravatar.cc/100?img=49'
+  },
+  {
+    name: 'Ethan Brooks',
+    job: 'Heating & Cooling Service Expert',
+    category: 'HVAC Technician',
+    rating: '4.8',
+    reviews: 134,
+    price: 88,
+    tags: ['AC Repair', 'Furnace Service', 'Maintenance'],
+    photo: 'https://i.pravatar.cc/100?img=14'
+  },
+  {
+    name: 'Lerato Mokoena',
+    job: 'Commercial HVAC Systems Technician',
+    category: 'HVAC Technician',
+    rating: '4.9',
+    reviews: 66,
+    price: 110,
+    tags: ['Ductwork', 'Diagnostics', 'Commercial'],
+    photo: 'https://i.pravatar.cc/100?img=45'
+  },
+  {
+    name: 'Jacob Miles',
+    job: 'Roof Repair & Waterproofing Pro',
+    category: 'Roofer',
+    rating: '4.9',
+    reviews: 156,
+    price: 86,
+    tags: ['Leak Repair', 'Waterproofing', 'Tile Roofing'],
+    photo: 'https://i.pravatar.cc/100?img=60'
+  },
+  {
+    name: 'Thabo Dlamini',
+    job: 'Residential Roofing Contractor',
+    category: 'Roofer',
+    rating: '4.8',
+    reviews: 103,
+    price: 92,
+    tags: ['Roof Replacement', 'Gutters', 'Inspections'],
+    photo: 'https://i.pravatar.cc/100?img=52'
+  },
+  {
+    name: 'Nina Patel',
+    job: 'Metal & Flat Roof Specialist',
+    category: 'Roofer',
+    rating: '4.7',
+    reviews: 74,
+    price: 89,
+    tags: ['Flat Roofs', 'Metal Roofing', 'Storm Damage'],
+    photo: 'https://i.pravatar.cc/100?img=44'
+  },
+  {
+    name: 'Carlos Mendes',
+    job: 'Reliable Home Repair Handyman',
+    category: 'General Handyman',
+    rating: '4.9',
+    reviews: 119,
+    price: 60,
+    tags: ['Minor Repairs', 'Mounting', 'Home Maintenance'],
+    photo: 'https://i.pravatar.cc/100?img=59'
+  },
+  {
+    name: 'Aisha Williams',
+    job: 'Multi-Skilled Home Services Pro',
+    category: 'General Handyman',
+    rating: '4.8',
+    reviews: 87,
+    price: 68,
+    tags: ['Painting', 'Fixtures', 'Furniture Repair'],
+    photo: 'https://i.pravatar.cc/100?img=37'
+  },
+  {
+    name: 'Ben Carter',
+    job: 'General Repairs & Installation',
+    category: 'General Handyman',
+    rating: '4.7',
+    reviews: 98,
+    price: 58,
+    tags: ['Shelving', 'Door Repair', 'Caulking'],
+    photo: 'https://i.pravatar.cc/100?img=8'
+  }
+]
+
+const filteredProfessionals = computed(() => {
+  const term = search.value.trim().toLowerCase()
+
+  return professionals.filter((pro) =>
+    (activeCategory.value === 'Plumber' ||
+      pro.category === activeCategory.value) &&
+    (!term ||
+      `${pro.name} ${pro.job} ${pro.tags.join(' ')}`
+        .toLowerCase()
+        .includes(term))
+  )
+})
+
+const priceFilteredProfessionals = computed(() => {
+  const matchesPrice = filteredProfessionals.value.filter((pro) => {
+    if (priceFilter.value === 'Best prices (under R75/hr)') {
+      return pro.price <= 75
+    }
+
+    if (priceFilter.value === 'R76 – R90/hr') {
+      return pro.price >= 76 && pro.price <= 90
+    }
+
+    if (priceFilter.value === 'R91+/hr') {
+      return pro.price >= 91
+    }
+
+    return true
+  })
+
+  return priceFilter.value === 'All prices'
+    ? matchesPrice
+    : [...matchesPrice].sort((a, b) => a.price - b.price)
+})
+
+const visibleProfessionals = computed(() => {
+  const start = currentPage.value * 3
+
+  return priceFilteredProfessionals.value.slice(start, start + 3)
+})
+
+watch([activeCategory, search, priceFilter], () => {
+  currentPage.value = 0
+})
 </script>
 
 <template>
-  <main v-if="pro" class="profile-page">
-    <aside class="profile-sidebar">
-      <button class="profile-brand" @click="router.push('/')">YENZA!</button>
-      <p>CATEGORIES</p>
-      <button class="side-link" @click="router.push('/services')">▦ All Craftsmen</button>
-      <button class="side-link active">⌂ {{ pro.category }}</button>
-      <button class="side-link" @click="router.push('/')">▣ My Bookings</button>
-      <div class="coverage"><strong>Need insurance cover?</strong><br />All bookings are protected by our service
-        guarantee.</div>
+  <main id="home" class="directory-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span>YENZA!</span>
+      </div>
+
+      <p class="section-label">CATEGORY</p>
+
+      <nav aria-label="Trade categories">
+        <button
+          v-for="category in categories"
+          :key="category"
+          class="category"
+          :class="{ active: activeCategory === category }"
+          @click="activeCategory = category"
+        >
+          {{ category }}
+          <span>›</span>
+        </button>
+      </nav>
     </aside>
-    <section class="profile-content">
-      <button class="back-link" @click="router.push('/services')">← Back to handymen</button>
-      <header class="profile-hero"><img :src="pro.photo" :alt="pro.name" />
-        <div>
-          <h1>{{ pro.name }} <small>✓ VERIFIED</small></h1>
-          <h2>{{ pro.job }}</h2>
-          <p><b>★</b> {{ pro.rating }} ({{ pro.reviews }} reviews) <span>│</span> ▣ 5+ years experience</p>
+
+    <section id="services" class="content">
+      <form class="search-bar" @submit.prevent>
+        <span class="search-icon">⌕</span>
+
+        <input
+          v-model="search"
+          type="search"
+          placeholder="Search services..."
+          aria-label="Search services"
+        />
+
+        <button>Search</button>
+      </form>
+
+      <p class="filter-label">QUICK FILTERS</p>
+
+      <div class="filters">
+        <button
+          :class="{ selected: activeFilter === 'All' }"
+          @click="activeFilter = 'All'"
+        >
+          All
+        </button>
+
+        <div class="price-filter">
+          <button
+            class="prices-button"
+            :class="{ selected: priceFilter !== 'All prices' }"
+            @click="priceMenuOpen = !priceMenuOpen"
+          >
+            Prices
+            <span>▼</span>
+          </button>
+
+          <div v-if="priceMenuOpen" class="price-menu">
+            <button
+              v-for="option in priceOptions"
+              :key="option"
+              :class="{ active: priceFilter === option }"
+              @click="priceFilter = option; priceMenuOpen = false"
+            >
+              {{ option }}
+            </button>
+          </div>
         </div>
-        <div class="hourly"><small>HOURLY RATE</small><strong>R{{ pro.price }}</strong>/hr</div>
-      </header>
-      <div class="profile-grid">
-        <div class="profile-main">
-          <article class="profile-card">
-            <h3>About Me</h3>
-            <p>Experienced {{ pro.category.toLowerCase() }} serving local homes and businesses. Known for reliable
-              service, careful workmanship, and clear communication from the first call to completion.</p>
-          </article>
-          <article class="profile-card">
-            <h3>Services & Specialties</h3>
-            <div class="profile-tags"><span v-for="tag in pro.tags" :key="tag">{{ tag }}</span></div>
-          </article>
-          <section class="reviews">
-            <h3>Recent Reviews</h3>
-            <article v-for="review in reviews" :key="review.name" class="review-card">
-              <div class="review-head"><span>{{ review.name.charAt(0) }}</span>
-                <div><b>{{ review.name }}</b><small>{{ review.date }}</small></div><strong>★★★★★</strong>
-              </div>
-              <p>{{ review.text }}</p>
-            </article>
-          </section>
-        </div>
-        <aside class="booking-panel">
-          <article class="profile-card">
-            <h3>Availability & Booking</h3><small>NEXT AVAILABLE DAYS</small>
-            <div class="days"><b>Mon<br />15</b><b>Tue<br />16</b><b>Wed<br />17</b><b>Thu<br />18</b><b>Fri<br />19</b>
+
+        <button
+          v-for="filter in filters"
+          :key="filter"
+          :class="{ selected: activeFilter === filter }"
+          @click="activeFilter = filter"
+        >
+          {{ filter }}
+          <span v-if="filter !== 'All'">▼</span>
+        </button>
+      </div>
+
+      <div class="results-heading">
+        <h1>
+          Available Handymen
+          ({{ priceFilteredProfessionals.length }} results)
+        </h1>
+
+        <span>
+          Sorted by:
+          <strong>
+            {{ priceFilter === 'All prices' ? 'Best Match' : 'Lowest Price' }}
+          </strong>
+        </span>
+      </div>
+
+      <div id="results" class="cards">
+        <article
+          v-for="pro in visibleProfessionals"
+          :key="pro.name"
+          class="professional-card"
+        >
+          <div class="pro-top">
+            <img :src="pro.photo" :alt="pro.name" />
+
+            <div class="pro-info">
+              <h2>{{ pro.name }}</h2>
+
+              <p>{{ pro.job }}</p>
+
+              <small>
+                <b>★</b>
+                {{ pro.rating }}
+                <span>({{ pro.reviews }} reviews)</span>
+              </small>
             </div>
-            <RouterLink class="button-link request-button" :to="{ name: 'book', params: { slug: pro.slug } }">
-              Request Booking
+
+            <strong class="price">
+              R{{ pro.price }}/hr
+            </strong>
+          </div>
+
+          <div class="card-footer">
+            <div class="tags">
+              <span
+                v-for="tag in pro.tags"
+                :key="tag"
+              >
+                {{ tag }}
+              </span>
+            </div>
+
+            <RouterLink
+              class="profile-button"
+              :to="{
+                name: 'profile',
+                params: {
+                  slug: profileSlug(pro)
+                }
+              }"
+            >
+              View Profile&nbsp; →
             </RouterLink>
-            <button class="question-button">Inquire / Ask a Question</button>
-              <button class="report-button" @click="reportSent = true">{{ reportSent ? 'Report Submitted' : 'Report' }}</button>
-            <p class="secure">Book safely. No charges are made until job completion.</p>
-          </article>
-          <article class="profile-card">
-            <h3>Contact & Service Area</h3>
-            <p>⌖ Tri-State Area / Metro<br />☏ (555) 382-9011<br />✉ {{ pro.name.toLowerCase().replace(' ', '.')
-              }}@craftsmanlink.net</p>
-          </article>
-        </aside>
+          </div>
+        </article>
+
+        <p
+          v-if="!priceFilteredProfessionals.length"
+          class="empty"
+        >
+          No handymen match your search.
+        </p>
+      </div>
+
+      <div
+        v-if="priceFilteredProfessionals.length > 3"
+        id="bookings"
+        class="view-more-wrap"
+      >
+        <button
+          v-if="currentPage > 0"
+          class="view-more"
+          @click="currentPage -= 1"
+        >
+          ← Previous
+        </button>
+
+        <button
+          v-if="(currentPage + 1) * 3 < priceFilteredProfessionals.length"
+          class="view-more"
+          @click="currentPage += 1"
+        >
+          View More →
+        </button>
       </div>
     </section>
-  </main>
-  <main v-else class="profile-not-found">
-    <h1>Profile not found</h1><button @click="router.push('/')">Return to handymen</button>
+
+    <div
+      v-if="selectedPro"
+      class="toast"
+      role="status"
+    >
+      Opening {{ selectedPro }}'s profile
+    </div>
   </main>
 </template>
-
 
 <style scoped>
 .directory-shell {
@@ -834,10 +1181,9 @@ const reviews = computed(() => pro.value ? [
 }
 
 .request-button {
-  width: 100%;
-  height: 32px;
-  padding: 0;
-  font-size: 10px;
+  border: 0;
+  background: #008581;
+  color: #fff;
 }
 
 .question-button {

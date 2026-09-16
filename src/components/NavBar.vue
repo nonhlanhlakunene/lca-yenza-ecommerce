@@ -16,7 +16,7 @@ import { ref } from 'vue'
 
 const linkList = [
   { text: 'Home', path: '/' },
-  { text: 'Services', path: '/profiles/:slug' },
+  { text: 'Services', path: '/services' },
   { text: 'About Us', path: '/about' },
   { text: 'Bookings', path: '/bookings' },
   { text: 'Contact', path: '/contact' }
@@ -29,6 +29,11 @@ const navLinks = ref(linkList)
 
 <style scoped>
 .home-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+
   background-color: var(--color-primary);
   display: flex;
   justify-content: flex-end;

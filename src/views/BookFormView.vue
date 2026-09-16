@@ -39,7 +39,7 @@ const submitBooking = () => {
 
         <!-- PAGE HEADER -->
         <section class="booking-header">
-            <h1>BOOK A PROFESSIONAL</h1>
+            <h1>Book A Professional</h1>
             <p> 
                Select a date and time that works for you and provide the details of the service you need.
             </p>
@@ -87,7 +87,7 @@ const submitBooking = () => {
 
             <!-- INFORMATION PANEL -->
             <aside class="booking-info">
-                <h2>HOW IT WORKS</h2>
+                <h2>How It Works</h2>
                 <!-- STEP 1 -->
                 <div class="info-item"> <span>01</span>
                     <div>
@@ -120,17 +120,18 @@ const submitBooking = () => {
 <style scoped>
 .booking-page {
     min-height: 100vh;
-    padding: 40px 20px;
+    /* padding: 40px 20px; */
     background: var(--color-page);
 }
 
 /* PAGE HEADER */
 .booking-header {
-    color: var(--color-primary);
+    /* color: var(--color-primary);
     font-size: var(--font-xl);
     margin-bottom: var(--spacing-xs);
     font-weight: bolder;
-    font-size: 50px;
+    font-size: 50px; */
+    padding: 10px 80px;
 }
 
 .booking-label {
