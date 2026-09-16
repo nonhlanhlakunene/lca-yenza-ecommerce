@@ -10,7 +10,7 @@ import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue';
-import WorkerDashboard from '../views/WorkerDashboardView.vue';
+import WorkerDashboard from '../views/workerDashboardView.vue';
 import Admin from '@/components/Admin.vue';
 
 const routes = [
@@ -52,7 +52,7 @@ const routes = [
   {
     path: '/admin',
     name: 'admin',
-    component: Admin
+    component: Admin,
   },
   {
     path: "/book/:slug",
