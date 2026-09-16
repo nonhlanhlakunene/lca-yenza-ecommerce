@@ -74,8 +74,8 @@ const routes = [
 
   {
     path: '/worker',
-    name: 'WorkerDashboardView',
-    component: WorkerDashboardView,
+    name: 'workerDashboardView',
+    component: workerDashboardView,
   },
 
   // Contact route
