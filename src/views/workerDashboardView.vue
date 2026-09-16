@@ -2,10 +2,10 @@
     <div class="dashboard">
       <aside class="sidebar">
         <div class="back" @click="">← <span>Back</span></div>
-        <div class="profile"></div>
+        <!-- <div class="profile"></div> -->
         <nav>
-          <a href="#">▢ <span>Messages</span></a>
-          <a href="#" @click.prevent="logout">↪ <span>Log out</span></a>
+          <!-- <a href="#">▢ <span>Messages</span></a>
+          <a href="#" @click.prevent="logout">↪ <span>Log out</span></a> -->
         </nav>
       </aside>
   
@@ -23,12 +23,12 @@
   
         <hr>
   
-        <h3>Progress Bar</h3>
+        <h3>Progress Bar</h3><br>
         <div class="progress">
           <div class="progress-fill"></div>
         </div>
   
-        <h3 class="more">More Jobs</h3>
+        <h3 class="more">More Jobs</h3><br>
   
         <div v-for="job in jobs" :key="job.id" class="job">
           <div class="job-top">
@@ -102,11 +102,11 @@
     min-height: 100vh;
     display: grid;
     grid-template-columns: 180px 1fr 265px;
-    font-family: Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
   
   .sidebar {
-    background: #146d70;
+    background: #136163;
     color: white;
     padding: 20px;
   }

@@ -4,18 +4,24 @@ import AboutView from "../views/AboutView.vue";
 import BookFormView from "../views/BookFormView.vue";
 import BookingsView from "../views/BookingsView.vue";
 import CheckoutView from "../views/CheckoutView.vue";
+import workerlogin from "@/components/workerlogin.vue";
 import Login from '@/components/login.vue';
 import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
-import ServicesView from '../views/ServicesView.vue'
-import WorkerDashboard from '../views/workerDashboard.vue'
+import ServicesView from '../views/ServicesView.vue';
+import WorkerDashboard from '../views/WorkerDashboardView.vue';
 
 const routes = [
   {
     path: "/login",
     name: "Login",
     component: Login,
+  },
+  {
+    path: "/workerlogin",
+    name: "workerlogin",
+    component: workerlogin,
   },
   {
     path: "/signup",
