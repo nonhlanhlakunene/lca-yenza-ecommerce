@@ -47,7 +47,6 @@ const routes = [
     name: 'admin',
     component: Admin
   },
-  
   {
     path: "/book/:slug",
     name: "book",
