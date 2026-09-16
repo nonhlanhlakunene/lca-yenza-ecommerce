@@ -91,9 +91,9 @@ const reviews = computed(() => pro.value ? [
   </main>
   <main v-else class="profile-not-found">
     <h1>Profile not found</h1><button @click="router.push('/')">Return to handymen</button>
-  </main>
-
+  </main>35ebf28141d4444cd520fca29948760dec0
 </template>
+
 
 
 <style scoped>
@@ -1023,4 +1023,3 @@ const reviews = computed(() => pro.value ? [
   background: #136163;
 }
 </style>
-

@@ -111,7 +111,7 @@ export default {
     color: white;
     padding: 32px;
     border-radius: 12px;
-    max-width: 480px;
+    max-width: 420px;
     width: 100%;
     font-family: var(--font-main);
 }
