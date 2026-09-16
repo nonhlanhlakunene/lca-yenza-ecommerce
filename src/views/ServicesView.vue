@@ -452,7 +452,7 @@ watch([activeCategory, search, priceFilter], () => {
   gap: 9px;
   color: white;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 30px;
   margin-bottom: 24px;
 }
 
@@ -492,11 +492,11 @@ watch([activeCategory, search, priceFilter], () => {
   border-radius: 5px;
   background: transparent;
   text-align: left;
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .category span {
-  font-size: 17px;
+  font-size: 25px;
   color: #9dc8c8;
   line-height: 10px;
 }
@@ -537,7 +537,7 @@ watch([activeCategory, search, priceFilter], () => {
   border: 0;
   outline: 0;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .search-bar input::placeholder {
@@ -577,13 +577,13 @@ watch([activeCategory, search, priceFilter], () => {
   border-radius: 17px;
   color: white;
   background: #126d6d;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .filters button span {
   margin-left: 3px;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .filters>button.selected,
@@ -715,7 +715,7 @@ watch([activeCategory, search, priceFilter], () => {
   right: 17px;
   top: 21px;
   color: #08646a;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .card-footer {
@@ -739,7 +739,7 @@ watch([activeCategory, search, priceFilter], () => {
   background: #e3eff0;
   border-radius: 4px;
   color: #1a6267;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -749,7 +749,7 @@ watch([activeCategory, search, priceFilter], () => {
   justify-content: center;
   width: 91px;
   height: 25px;
-  font-size: 9px;
+  font-size: 8.2px;
   line-height: 1;
   text-decoration: none;
 }
@@ -784,13 +784,14 @@ watch([activeCategory, search, priceFilter], () => {
 }
 
 .view-more {
+  margin-top: 50px;
   min-width: 112px;
   height: 33px;
   border: 1px solid #126d6d;
   border-radius: 6px;
   background: #fff;
   color: #126d6d;
-  font-size: 11px;
+  font-size: 15x;
   font-weight: 700;
 }
 
