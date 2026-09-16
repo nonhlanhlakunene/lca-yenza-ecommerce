@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import AboutView from "../views/AboutView.vue";
+import AboutView from "../components/AboutView.vue";
 import BookFormView from "../views/BookFormView.vue";
 import BookingsView from "../views/BookingsView.vue";
 import CheckoutView from "../views/CheckoutView.vue";
@@ -11,6 +11,7 @@ import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue';
 import WorkerDashboard from '../views/WorkerDashboardView.vue';
+import Admin from '@/components/AdminView.vue';
 
 const routes = [
   {
