@@ -9,7 +9,7 @@
             <div class="contact-content">
                 <div class="form-column">
                     <h1>Contact Us</h1>
-                    <h3>We would love hear from you.</h3>
+                    <h3>We would love to hear from you.</h3>
                     
                     <form class="contact-form" @submit.prevent="sendMessage">
                         <div class="form-group">
@@ -56,7 +56,7 @@
                         />
                     </div>
                 </div>
-            </div>
+            </div><br><br><br><br><br>
             <div class="contact-icons">
                 <div class="icon-item">
                     <Phone />
@@ -84,7 +84,7 @@
             </div>
         </div>
         
-        
+
     </div>
 </template>
 
@@ -151,11 +151,12 @@ export default {
 }
 
 .contact-page {
+    min-height: 100vh;
     font-family: var(--font-main);
     /* display: flex; */
     /* justify-content: center; */
     align-items: center;
-    /* padding: 40px 20px; */
+    padding: 40px 20px;
 }
 
 .contact-content {

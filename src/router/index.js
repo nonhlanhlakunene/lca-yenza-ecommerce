@@ -1,20 +1,28 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import AboutView from "../views/AboutView.vue";
+import AboutView from "../components/AboutView.vue";
 import BookFormView from "../views/BookFormView.vue";
 import BookingsView from "../views/BookingsView.vue";
 import CheckoutView from "../views/CheckoutView.vue";
+import workerlogin from "@/components/workerlogin.vue";
 import Login from '@/components/login.vue';
 import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
-import ServicesView from '../views/ServicesView.vue'
+import ServicesView from '../views/ServicesView.vue';
+import WorkerDashboard from '../views/workerDashboardView.vue';
+import Admin from '@/components/Admin.vue';
 
 const routes = [
   {
     path: "/login",
     name: "Login",
     component: Login,
+  },
+  {
+    path: "/workerlogin",
+    name: "workerlogin",
+    component: workerlogin,
   },
   {
     path: "/signup",
@@ -42,6 +50,11 @@ const routes = [
     component: BookingsView,
   },
   {
+    path: '/admin',
+    name: 'admin',
+    component: Admin,
+  },
+  {
     path: "/book/:slug",
     name: "book",
     component: BookFormView,
@@ -56,7 +69,13 @@ const routes = [
   {
     path: '/services',
     name: 'services',
-    component: ServicesView
+    component: ServicesView,
+  },
+
+  {
+    path: '/worker',
+    name: 'WorkerDashboard',
+    component: WorkerDashboard,
   },
 
   // Contact route
