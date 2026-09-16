@@ -1,4 +1,3 @@
-```vue
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -10,23 +9,96 @@ const currentPage = ref(1)
 const workersPerPage = 5
 
 const workers = ref([
-  { name: 'Arthur Pendleton', role: 'Plumber', city: 'Cape Town', slug: 'arthur-pendleton' },
-  { name: 'Marcus Vance', role: 'Carpenter', city: 'Cape Town', slug: 'marcus-vance' },
-  { name: 'Sarah Jenkins', role: 'Electrician', city: 'Cape Town', slug: 'sarah-jenkins' },
-  { name: 'Elena Rodriguez', role: 'Painter', city: 'Cape Town', slug: 'elena-rodriguez' },
-  { name: 'Daniel Okafor', role: 'Locksmith', city: 'Cape Town', slug: 'daniel-okafor' },
-
-  { name: 'James Anderson', role: 'Gardener', city: 'Cape Town', slug: 'james-anderson' },
-  { name: 'Michael Brown', role: 'Plumber', city: 'Durban', slug: 'michael-brown' },
-  { name: 'Olivia Smith', role: 'Painter', city: 'Johannesburg', slug: 'olivia-smith' },
-  { name: 'Thomas Williams', role: 'Carpenter', city: 'Durban', slug: 'thomas-williams' },
-  { name: 'Jessica Taylor', role: 'Electrician', city: 'Pretoria', slug: 'jessica-taylor' },
-
-  { name: 'William Davis', role: 'Gardener', city: 'Cape Town', slug: 'william-davis' },
-  { name: 'Sophia Wilson', role: 'Plumber', city: 'Durban', slug: 'sophia-wilson' },
-  { name: 'Robert Moore', role: 'Locksmith', city: 'Johannesburg', slug: 'robert-moore' },
-  { name: 'Emily Martin', role: 'Painter', city: 'Pretoria', slug: 'emily-martin' },
-  { name: 'Daniel Thompson', role: 'Carpenter', city: 'Cape Town', slug: 'daniel-thompson' },
+  {
+    name: 'Arthur Pendleton',
+    role: 'Plumber',
+    city: 'Cape Town',
+    slug: 'arthur-pendleton'
+  },
+  {
+    name: 'Marcus Vance',
+    role: 'Carpenter',
+    city: 'Cape Town',
+    slug: 'marcus-vance'
+  },
+  {
+    name: 'Sarah Jenkins',
+    role: 'Electrician',
+    city: 'Cape Town',
+    slug: 'sarah-jenkins'
+  },
+  {
+    name: 'Elena Rodriguez',
+    role: 'Painter',
+    city: 'Cape Town',
+    slug: 'elena-rodriguez'
+  },
+  {
+    name: 'Daniel Okafor',
+    role: 'Locksmith',
+    city: 'Cape Town',
+    slug: 'daniel-okafor'
+  },
+  {
+    name: 'James Anderson',
+    role: 'Gardener',
+    city: 'Cape Town',
+    slug: 'james-anderson'
+  },
+  {
+    name: 'Michael Brown',
+    role: 'Plumber',
+    city: 'Durban',
+    slug: 'michael-brown'
+  },
+  {
+    name: 'Olivia Smith',
+    role: 'Painter',
+    city: 'Johannesburg',
+    slug: 'olivia-smith'
+  },
+  {
+    name: 'Thomas Williams',
+    role: 'Carpenter',
+    city: 'Durban',
+    slug: 'thomas-williams'
+  },
+  {
+    name: 'Jessica Taylor',
+    role: 'Electrician',
+    city: 'Pretoria',
+    slug: 'jessica-taylor'
+  },
+  {
+    name: 'William Davis',
+    role: 'Gardener',
+    city: 'Cape Town',
+    slug: 'william-davis'
+  },
+  {
+    name: 'Sophia Wilson',
+    role: 'Plumber',
+    city: 'Durban',
+    slug: 'sophia-wilson'
+  },
+  {
+    name: 'Robert Moore',
+    role: 'Locksmith',
+    city: 'Johannesburg',
+    slug: 'robert-moore'
+  },
+  {
+    name: 'Emily Martin',
+    role: 'Painter',
+    city: 'Pretoria',
+    slug: 'emily-martin'
+  },
+  {
+    name: 'Daniel Thompson',
+    role: 'Carpenter',
+    city: 'Cape Town',
+    slug: 'daniel-thompson'
+  }
 ])
 
 /* Workers displayed on the current page */
@@ -42,13 +114,12 @@ const pages = computed(() => {
   return Math.ceil(workers.value.length / workersPerPage)
 })
 
+/* Delete worker */
 function removeWorker(name) {
   workers.value = workers.value.filter(
     (worker) => worker.name !== name
   )
 
-  /* If deleting the last worker on a page,
-     move back to the previous page */
   if (
     currentPage.value > 1 &&
     paginatedWorkers.value.length === 0
@@ -57,6 +128,7 @@ function removeWorker(name) {
   }
 }
 
+/* View worker profile */
 function viewProfile(slug) {
   router.push({
     name: 'profile',
@@ -68,7 +140,10 @@ function viewProfile(slug) {
 <template>
   <main class="admin-page">
 
-    <!-- Back button -->
+    <!-- =========================================
+         BACK BUTTON
+    ========================================== -->
+
     <button
       class="back-button"
       type="button"
@@ -79,26 +154,49 @@ function viewProfile(slug) {
       <span>Back</span>
     </button>
 
-    <section class="admin-layout" aria-label="Admin dashboard">
 
-      <!-- ================= MAIN CONTENT ================= -->
+    <!-- =========================================
+         ADMIN LAYOUT
+    ========================================== -->
+
+    <section
+      class="admin-layout"
+      aria-label="Admin dashboard"
+    >
+
+      <!-- =========================================
+           MAIN CONTENT
+      ========================================== -->
+
       <div class="dashboard-main">
 
-        <!-- Workers -->
+        <!-- =========================================
+             WORKERS
+        ========================================== -->
+
         <section class="dashboard-card workers-section">
 
           <div class="section-heading">
+
             <div>
               <h2>Workers</h2>
-              <p>Manage and view your registered workers</p>
+
+              <p>
+                Manage and view your registered workers
+              </p>
             </div>
 
             <span class="worker-count">
               {{ workers.length }} workers
             </span>
+
           </div>
 
+
+          <!-- Workers table -->
+
           <div class="worker-table">
+
             <table>
 
               <thead>
@@ -157,9 +255,14 @@ function viewProfile(slug) {
               </tbody>
 
             </table>
+
           </div>
 
-          <!-- Pagination -->
+
+          <!-- =========================================
+               PAGINATION
+          ========================================== -->
+
           <nav
             v-if="pages > 1"
             class="pagination"
@@ -199,22 +302,36 @@ function viewProfile(slug) {
         </section>
 
 
-        <!-- ================= ANALYTICS ================= -->
+        <!-- =========================================
+             STATISTICS
+        ========================================== -->
+
         <section class="dashboard-card analytics-section">
 
           <div class="section-heading analytics-heading">
+
             <div>
               <h2>Statistics</h2>
-              <p>Worker activity and category distribution</p>
+
+              <p>
+                Worker activity and category distribution
+              </p>
             </div>
+
           </div>
+
 
           <div class="analytics">
 
-            <!-- Bar chart -->
+            <!-- =========================================
+                 BAR CHART
+            ========================================== -->
+
             <div class="chart-container">
 
-              <h3>Worker Activity</h3>
+              <h3>
+                Worker Activity
+              </h3>
 
               <div class="bar-chart">
 
@@ -224,12 +341,12 @@ function viewProfile(slug) {
 
                   <div
                     v-for="(group, index) in [
-                      [100,44,39],
-                      [71,33,45],
-                      [82,57,47],
-                      [61,38,8],
-                      [45,94,37],
-                      [34,67,45]
+                      [100, 44, 39],
+                      [71, 33, 45],
+                      [82, 57, 47],
+                      [61, 38, 8],
+                      [45, 94, 37],
+                      [34, 67, 45]
                     ]"
                     :key="index"
                     class="bar-group"
@@ -237,17 +354,23 @@ function viewProfile(slug) {
 
                     <i
                       class="teal"
-                      :style="{ height: `${group[0]}%` }"
+                      :style="{
+                        height: `${group[0]}%`
+                      }"
                     ></i>
 
                     <i
                       class="blue"
-                      :style="{ height: `${group[1]}%` }"
+                      :style="{
+                        height: `${group[1]}%`
+                      }"
                     ></i>
 
                     <i
                       class="navy"
-                      :style="{ height: `${group[2]}%` }"
+                      :style="{
+                        height: `${group[2]}%`
+                      }"
                     ></i>
 
                   </div>
@@ -255,6 +378,9 @@ function viewProfile(slug) {
                 </div>
 
               </div>
+
+
+              <!-- Chart legend -->
 
               <div class="chart-key">
 
@@ -278,16 +404,28 @@ function viewProfile(slug) {
             </div>
 
 
-            <!-- Donut chart -->
+            <!-- =========================================
+                 DONUT CHART
+            ========================================== -->
+
             <div class="donut-container">
 
-              <h3>Worker Categories</h3>
+              <h3>
+                Worker Categories
+              </h3>
 
               <div class="donut-chart"></div>
 
               <div class="donut-label">
-                <strong>{{ workers.length }}</strong>
-                <span>Total</span>
+
+                <strong>
+                  {{ workers.length }}
+                </strong>
+
+                <span>
+                  Total
+                </span>
+
               </div>
 
             </div>
@@ -299,10 +437,16 @@ function viewProfile(slug) {
       </div>
 
 
-      <!-- ================= RIGHT SIDE ================= -->
+      <!-- =========================================
+           RIGHT SIDE
+      ========================================== -->
+
       <aside class="reports-panel">
 
-        <!-- Summary -->
+        <!-- =========================================
+             SUMMARY
+        ========================================== -->
+
         <div class="summary">
 
           <div class="summary-item">
@@ -334,14 +478,19 @@ function viewProfile(slug) {
         </div>
 
 
-        <!-- Reports -->
+        <!-- =========================================
+             REPORTS
+        ========================================== -->
+
         <div class="reports-card">
 
           <div class="reports-header">
 
             <div>
 
-              <h1>Reports</h1>
+              <h1>
+                Reports
+              </h1>
 
               <p>
                 Recent system reports
@@ -385,17 +534,23 @@ function viewProfile(slug) {
   </main>
 </template>
 
+
 <style>
 /* =========================================
-   PAGE
+   ADMIN PAGE
 ========================================= */
 
 .admin-page {
-  min-height: 100vh;
-  padding: 35px 60px 80px;
-  background: #f7f9f9;
-  color: #151515;
-  font-family: Arial, sans-serif;
+  width: 100% !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+
+  margin: 0 !important;
+  padding: 18px 40px !important;
+
+  overflow: hidden !important;
+
+  font-family: Arial, sans-serif !important;
 }
 
 
@@ -403,27 +558,74 @@ function viewProfile(slug) {
    BACK BUTTON
 ========================================= */
 
-.back-button {
-  display: flex;
-  align-items: center;
+.admin-page .back-button {
+  display: inline-flex !important;
 
-  gap: 10px;
+  align-items: center !important;
+  justify-content: center !important;
 
-  margin: 0 0 45px 5px;
+  gap: 7px !important;
 
-  border: none;
+  width: auto !important;
+  height: 24px !important;
 
-  background: transparent;
+  margin: 0 0 12px 3px !important;
+  padding: 0 !important;
 
-  color: #222;
+  border: none !important;
+  border-radius: 0 !important;
 
-  font-size: 17px;
+  outline: none !important;
 
-  cursor: pointer;
+  background: transparent !important;
+
+  color: #222 !important;
+
+  font-family: Arial, sans-serif !important;
+
+  font-size: 15px !important;
+  font-weight: 400 !important;
+
+  line-height: 20px !important;
+
+  box-shadow: none !important;
+
+  cursor: pointer !important;
 }
 
-.back-button span:first-child {
-  font-size: 34px;
+.admin-page .back-button span:first-child {
+  display: inline-flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 18px !important;
+  height: 20px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  font-size: 22px !important;
+
+  line-height: 20px !important;
+
+  transform: none !important;
+}
+
+.admin-page .back-button span:last-child {
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  width: auto !important;
+  height: 20px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  font-size: 15px !important;
+
+  line-height: 20px !important;
 }
 
 
@@ -431,20 +633,22 @@ function viewProfile(slug) {
    MAIN LAYOUT
 ========================================= */
 
-.admin-layout {
-  display: grid;
+.admin-page .admin-layout {
+  width: 100% !important;
+  max-width: 1600px !important;
 
-  grid-template-columns:
-    minmax(700px, 1fr)
-    360px;
+  height: calc(100vh - 65px) !important;
+  min-height: 0 !important;
 
-  gap: 65px;
+  margin: 0 auto !important;
 
-  max-width: 1450px;
+  display: grid !important;
 
-  margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr) 300px !important;
 
-  align-items: start;
+  gap: 25px !important;
+
+  overflow: hidden !important;
 }
 
 
@@ -452,151 +656,182 @@ function viewProfile(slug) {
    MAIN CONTENT
 ========================================= */
 
-.dashboard-main {
-  display: flex;
+.admin-page .dashboard-main {
+  min-width: 0 !important;
+  min-height: 0 !important;
 
-  flex-direction: column;
+  display: grid !important;
 
-  gap: 45px;
+  grid-template-rows:
+    minmax(0, 1.55fr)
+    minmax(0, 1fr) !important;
+
+  gap: 18px !important;
+
+  overflow: hidden !important;
 }
 
 
 /* =========================================
-   CARDS
+   DASHBOARD CARDS
 ========================================= */
 
-.dashboard-card {
-  background: white;
+.admin-page .dashboard-card {
+  min-width: 0 !important;
+  min-height: 0 !important;
 
-  border-radius: 24px;
+  padding: 18px !important;
 
-  padding: 34px;
+  border-radius: 16px !important;
 
-  box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.06);
+  border: none !important;
+
+  background: #ffffff !important;
+
+  overflow: hidden !important;
+
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07) !important;
 }
 
 
 /* =========================================
-   SECTION HEADER
+   SECTION HEADING
 ========================================= */
 
-.section-heading {
-  display: flex;
+.admin-page .section-heading {
+  display: flex !important;
 
-  justify-content: space-between;
+  align-items: center !important;
+  justify-content: space-between !important;
 
-  align-items: center;
+  gap: 15px !important;
 
-  margin-bottom: 30px;
+  margin-bottom: 12px !important;
 }
 
-.section-heading h2 {
-  margin: 0;
+.admin-page .section-heading h2 {
+  margin: 0 !important;
 
-  font-size: 29px;
+  color: #222 !important;
+
+  font-size: 20px !important;
+  font-weight: 700 !important;
 }
 
-.section-heading p {
-  margin: 8px 0 0;
+.admin-page .section-heading p {
+  margin: 3px 0 0 !important;
 
-  color: #777;
+  color: #777 !important;
 
-  font-size: 14px;
+  font-size: 12px !important;
 }
 
-.worker-count {
-  padding: 9px 16px;
+.admin-page .worker-count {
+  white-space: nowrap !important;
 
-  border-radius: 20px;
+  padding: 6px 10px !important;
 
-  background: #e5f3f3;
+  border-radius: 20px !important;
 
-  color: #12676a;
+  background: #eefafa !important;
 
-  font-size: 13px;
+  color: #136163 !important;
 
-  font-weight: 700;
+  font-size: 12px !important;
+
+  font-weight: 600 !important;
 }
 
 
 /* =========================================
-   TABLE
+   WORKERS
 ========================================= */
 
-.worker-table {
-  overflow: hidden;
+.admin-page .workers-section {
+  display: flex !important;
 
-  border-radius: 17px;
+  flex-direction: column !important;
 
-  background: #f6f7f7;
+  min-height: 0 !important;
 }
 
-table {
-  width: 100%;
+.admin-page .worker-table {
+  width: 100% !important;
 
-  border-collapse: collapse;
+  flex: 1 !important;
 
-  table-layout: fixed;
+  min-height: 0 !important;
+
+  overflow: hidden !important;
 }
 
-thead {
-  background: #12676a;
+.admin-page .worker-table table {
+  width: 100% !important;
 
-  color: white;
+  border-collapse: collapse !important;
+
+  table-layout: fixed !important;
 }
 
-th {
-  height: 58px;
+.admin-page .worker-table th {
+  padding: 7px 10px !important;
 
-  padding: 0 20px;
+  text-align: left !important;
 
-  font-size: 14px;
+  color: #777 !important;
 
-  text-align: left;
+  font-size: 11px !important;
+
+  font-weight: 600 !important;
+
+  border-bottom: 1px solid #eeeeee !important;
 }
 
-td {
-  height: 72px;
+.admin-page .worker-table td {
+  padding: 7px 10px !important;
 
-  padding: 0 20px;
+  color: #222 !important;
 
-  border-bottom: 1px solid #e1e1e1;
+  font-size: 12px !important;
 
-  font-size: 14px;
+  border-bottom: 1px solid #f0f0f0 !important;
+
+  white-space: nowrap !important;
 }
 
-tbody tr:last-child td {
-  border-bottom: none;
+.admin-page .worker-table tbody tr {
+  height: 39px !important;
 }
 
-tbody tr:hover {
-  background: #eef7f7;
+.admin-page .worker-table tbody tr:last-child td {
+  border-bottom: none !important;
 }
 
-.worker-name {
-  font-weight: 700;
+.admin-page .worker-name {
+  color: #222 !important;
+
+  font-weight: 600 !important;
 }
 
 
 /* =========================================
-   ROLE
+   ROLE BADGE
 ========================================= */
 
-.role-badge {
-  display: inline-block;
+.admin-page .role-badge {
+  display: inline-block !important;
 
-  padding: 7px 13px;
+  padding: 4px 8px !important;
 
-  border-radius: 20px;
+  border-radius: 12px !important;
 
-  background: #e7eeee;
+  background: #eef7f7 !important;
 
-  color: #12676a;
+  color: #136163 !important;
 
-  font-size: 12px;
+  font-size: 10px !important;
 
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
 
@@ -604,30 +839,30 @@ tbody tr:hover {
    PROFILE BUTTON
 ========================================= */
 
-.profile-button {
-  padding: 9px 16px;
+.admin-page .profile-button {
+  padding: 5px 9px !important;
 
-  border: none;
+  border: 1px solid #136163 !important;
 
-  border-radius: 20px;
+  border-radius: 6px !important;
 
-  background: #12676a;
+  background: transparent !important;
 
-  color: white;
+  color: #136163 !important;
 
-  font-size: 12px;
+  font-family: Arial, sans-serif !important;
 
-  font-weight: 600;
+  font-size: 10px !important;
 
-  cursor: pointer;
+  cursor: pointer !important;
 
-  transition: 0.2s;
+  box-shadow: none !important;
 }
 
-.profile-button:hover {
-  background: #0d5558;
+.admin-page .profile-button:hover {
+  background: #136163 !important;
 
-  transform: translateY(-1px);
+  color: #ffffff !important;
 }
 
 
@@ -635,28 +870,28 @@ tbody tr:hover {
    DELETE BUTTON
 ========================================= */
 
-.delete-button {
-  padding: 8px 15px;
+.admin-page .delete-button {
+  padding: 5px 9px !important;
 
-  border: none;
+  border: none !important;
 
-  border-radius: 20px;
+  border-radius: 6px !important;
 
-  background: #ffe5e5;
+  background: #f3f3f3 !important;
 
-  color: #d00000;
+  color: #555 !important;
 
-  font-size: 12px;
+  font-family: Arial, sans-serif !important;
 
-  font-weight: 600;
+  font-size: 10px !important;
 
-  cursor: pointer;
+  cursor: pointer !important;
 
-  transition: 0.2s;
+  box-shadow: none !important;
 }
 
-.delete-button:hover {
-  background: #ffd0d0;
+.admin-page .delete-button:hover {
+  background: #e5e5e5 !important;
 }
 
 
@@ -664,86 +899,87 @@ tbody tr:hover {
    PAGINATION
 ========================================= */
 
-.pagination {
-  display: flex;
+.admin-page .pagination {
+  display: flex !important;
 
-  justify-content: center;
+  align-items: center !important;
+  justify-content: center !important;
 
-  align-items: center;
+  gap: 5px !important;
 
-  gap: 10px;
-
-  margin-top: 30px;
+  margin-top: 8px !important;
 }
 
-.pagination button {
-  width: 38px;
+.admin-page .pagination button {
+  width: 26px !important;
+  height: 26px !important;
 
-  height: 38px;
+  padding: 0 !important;
 
-  border: none;
+  border: 1px solid #dddddd !important;
 
-  border-radius: 10px;
+  border-radius: 6px !important;
 
-  background: #e4e4e4;
+  background: #ffffff !important;
 
-  color: #222;
+  color: #333333 !important;
 
-  font-size: 13px;
+  font-family: Arial, sans-serif !important;
 
-  font-weight: 700;
+  font-size: 11px !important;
 
-  cursor: pointer;
+  cursor: pointer !important;
 
-  transition: 0.2s;
+  box-shadow: none !important;
 }
 
-.pagination button:hover:not(:disabled) {
-  background: #d1e8e8;
+.admin-page .pagination button.active {
+  background: #136163 !important;
+
+  border-color: #136163 !important;
+
+  color: #ffffff !important;
 }
 
-.pagination button.active {
-  background: #12676a;
-
-  color: white;
+.admin-page .pagination button:hover:not(.active) {
+  background: #f4f4f4 !important;
 }
 
-.pagination .page-arrow {
-  font-size: 16px;
-}
+.admin-page .pagination button:disabled {
+  opacity: 0.35 !important;
 
-.pagination button:disabled {
-  opacity: 0.35;
-
-  cursor: not-allowed;
+  cursor: not-allowed !important;
 }
 
 
 /* =========================================
-   STATISTICS
+   ANALYTICS
 ========================================= */
 
-.analytics-section {
-  min-height: 430px;
+.admin-page .analytics-section {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  min-height: 0 !important;
 }
 
-.analytics {
-  display: grid;
-
-  grid-template-columns: minmax(400px, 1fr) 300px;
-
-  gap: 80px;
-
-  align-items: center;
-
-  margin-top: 25px;
+.admin-page .analytics-heading {
+  margin-bottom: 5px !important;
 }
 
-.chart-container h3,
-.donut-container h3 {
-  margin-bottom: 25px;
+.admin-page .analytics {
+  flex: 1 !important;
 
-  font-size: 17px;
+  min-height: 0 !important;
+
+  display: grid !important;
+
+  grid-template-columns: 1.5fr 1fr !important;
+
+  gap: 25px !important;
+
+  overflow: hidden !important;
 }
 
 
@@ -751,112 +987,135 @@ tbody tr:hover {
    BAR CHART
 ========================================= */
 
-.bar-chart {
-  position: relative;
+.admin-page .chart-container {
+  position: relative !important;
 
-  width: 100%;
+  min-width: 0 !important;
+  min-height: 0 !important;
 
-  height: 210px;
+  display: flex !important;
 
-  border-left: 1px solid #aebcc1;
-
-  border-bottom: 1px solid #aebcc1;
+  flex-direction: column !important;
 }
 
-.chart-grid {
-  position: absolute;
+.admin-page .chart-container h3,
+.admin-page .donut-container h3 {
+  margin: 0 0 7px !important;
 
-  inset: 0;
+  color: #222 !important;
 
-  background:
-    repeating-linear-gradient(
+  font-size: 13px !important;
+
+  font-weight: 600 !important;
+}
+
+.admin-page .bar-chart {
+  position: relative !important;
+
+  flex: 1 !important;
+
+  min-height: 60px !important;
+
+  border-left: 1px solid #dddddd !important;
+
+  border-bottom: 1px solid #dddddd !important;
+
+  overflow: hidden !important;
+}
+
+.admin-page .chart-grid {
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  background-image:
+    linear-gradient(
       to bottom,
-      transparent 0,
-      transparent 41px,
-      #e7ecee 42px,
-      transparent 43px
-    );
+      #eeeeee 1px,
+      transparent 1px
+    ) !important;
+
+  background-size: 100% 25% !important;
 }
 
-.chart-bars {
-  position: relative;
+.admin-page .chart-bars {
+  position: absolute !important;
 
-  z-index: 1;
+  inset: 5px 10px 0 10px !important;
 
-  display: flex;
+  display: flex !important;
 
-  align-items: end;
+  align-items: flex-end !important;
 
-  justify-content: space-around;
+  justify-content: space-around !important;
 
-  height: 100%;
-
-  padding: 0 20px;
+  gap: 10px !important;
 }
 
-.bar-group {
-  display: flex;
+.admin-page .bar-group {
+  height: 100% !important;
 
-  align-items: end;
+  display: flex !important;
 
-  gap: 3px;
+  align-items: flex-end !important;
 
-  height: 100%;
+  gap: 2px !important;
 }
 
-.bar-group i {
-  width: 18px;
+.admin-page .bar-group i {
+  display: block !important;
 
-  display: block;
+  width: 8px !important;
 
-  border-radius: 4px 4px 0 0;
+  min-height: 3px !important;
+
+  border-radius: 3px 3px 0 0 !important;
 }
 
-.teal {
-  background: #14676a;
+.admin-page .teal {
+  background: #136163 !important;
 }
 
-.blue {
-  background: #1097e9;
+.admin-page .blue {
+  background: #4b8fa0 !important;
 }
 
-.navy {
-  background: #104c6b;
+.admin-page .navy {
+  background: #183b56 !important;
 }
 
 
 /* =========================================
-   CHART LEGEND
+   CHART KEY
 ========================================= */
 
-.chart-key {
-  display: flex;
+.admin-page .chart-key {
+  display: flex !important;
 
-  justify-content: center;
+  justify-content: center !important;
 
-  gap: 25px;
+  gap: 12px !important;
 
-  margin-top: 20px;
+  margin-top: 7px !important;
 }
 
-.chart-key span {
-  display: flex;
+.admin-page .chart-key span {
+  display: flex !important;
 
-  align-items: center;
+  align-items: center !important;
 
-  gap: 6px;
+  gap: 4px !important;
 
-  color: #666;
+  color: #666 !important;
 
-  font-size: 11px;
+  font-size: 9px !important;
 }
 
-.chart-key i {
-  width: 10px;
+.admin-page .chart-key i {
+  width: 7px !important;
+  height: 7px !important;
 
-  height: 10px;
-
-  border-radius: 2px;
+  border-radius: 2px !important;
 }
 
 
@@ -864,84 +1123,104 @@ tbody tr:hover {
    DONUT
 ========================================= */
 
-.donut-container {
-  position: relative;
+.admin-page .donut-container {
+  position: relative !important;
 
-  display: flex;
+  min-width: 0 !important;
 
-  flex-direction: column;
+  display: flex !important;
 
-  align-items: center;
+  flex-direction: column !important;
+
+  align-items: center !important;
 }
 
-.donut-chart {
-  width: 200px;
+.admin-page .donut-container h3 {
+  align-self: flex-start !important;
+}
 
-  height: 200px;
+.admin-page .donut-chart {
+  position: relative !important;
 
-  border-radius: 50%;
+  width: 105px !important;
+  height: 105px !important;
+
+  margin: auto !important;
+
+  border-radius: 50% !important;
 
   background:
     conic-gradient(
-      #ffb34e 0 16%,
-      #5378ed 16% 26%,
-      #826ff0 26% 58%,
-      #ff8983 58% 79%,
-      #3cbad3 79% 100%
-    );
+      #136163 0deg 110deg,
+      #4b8fa0 110deg 220deg,
+      #183b56 220deg 290deg,
+      #d7e5e5 290deg 360deg
+    ) !important;
 }
 
-.donut-chart::after {
-  content: '';
+.admin-page .donut-chart::after {
+  content: "" !important;
 
-  position: absolute;
+  position: absolute !important;
 
-  inset: 46px;
+  top: 50% !important;
+  left: 50% !important;
 
-  border-radius: 50%;
+  width: 60px !important;
+  height: 60px !important;
 
-  background: white;
+  transform: translate(-50%, -50%) !important;
+
+  border-radius: 50% !important;
+
+  background: #ffffff !important;
 }
 
-.donut-label {
-  position: absolute;
+.admin-page .donut-label {
+  position: absolute !important;
 
-  top: 110px;
+  top: 50% !important;
+  left: 50% !important;
 
-  display: flex;
+  transform: translate(-50%, -35%) !important;
 
-  flex-direction: column;
+  display: flex !important;
 
-  align-items: center;
+  flex-direction: column !important;
 
-  z-index: 2;
+  align-items: center !important;
+
+  z-index: 2 !important;
 }
 
-.donut-label strong {
-  font-size: 27px;
+.admin-page .donut-label strong {
+  color: #222 !important;
+
+  font-size: 18px !important;
 }
 
-.donut-label span {
-  color: #777;
+.admin-page .donut-label span {
+  color: #777 !important;
 
-  font-size: 12px;
+  font-size: 9px !important;
 }
 
 
 /* =========================================
-   REPORTS
+   RIGHT SIDE
 ========================================= */
 
-.reports-panel {
-  display: flex;
+.admin-page .reports-panel {
+  min-width: 0 !important;
+  min-height: 0 !important;
 
-  flex-direction: column;
+  display: flex !important;
 
-  gap: 25px;
+  flex-direction: column !important;
 
-  position: sticky;
+  gap: 15px !important;
 
-  top: 25px;
+  overflow: hidden !important;
 }
 
 
@@ -949,119 +1228,112 @@ tbody tr:hover {
    SUMMARY
 ========================================= */
 
-.summary {
-  display: grid;
+.admin-page .summary {
+  display: grid !important;
 
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto 1fr !important;
 
-  align-items: center;
+  align-items: center !important;
 
-  gap: 20px;
+  padding: 14px !important;
 
-  padding: 23px;
+  border-radius: 14px !important;
 
-  border-radius: 20px;
-
-  background: white;
+  background: #ffffff !important;
 
   box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.05);
+    0 4px 18px rgba(0, 0, 0, 0.07) !important;
 }
 
-.summary-item {
-  display: flex;
+.admin-page .summary-item {
+  display: flex !important;
 
-  flex-direction: column;
+  flex-direction: column !important;
 
-  gap: 7px;
+  gap: 4px !important;
+
+  text-align: center !important;
 }
 
-.summary-title {
-  color: #777;
+.admin-page .summary-title {
+  color: #888 !important;
 
-  font-size: 12px;
+  font-size: 10px !important;
 }
 
-.summary-item strong {
-  font-size: 14px;
+.admin-page .summary-item strong {
+  color: #222 !important;
+
+  font-size: 13px !important;
 }
 
-.summary-divider {
-  width: 1px;
+.admin-page .summary-divider {
+  width: 1px !important;
+  height: 35px !important;
 
-  height: 48px;
-
-  background: #ddd;
+  background: #dddddd !important;
 }
 
 
 /* =========================================
-   REPORTS CARD
+   REPORTS
 ========================================= */
 
-.reports-card {
-  min-height: 560px;
+.admin-page .reports-card {
+  flex: 1 !important;
 
-  padding: 30px;
+  min-height: 0 !important;
 
-  border-radius: 24px;
+  padding: 18px !important;
 
-  background: white;
+  border-radius: 14px !important;
+
+  background: #ffffff !important;
 
   box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.06);
+    0 4px 18px rgba(0, 0, 0, 0.07) !important;
+
+  overflow: hidden !important;
 }
 
-.reports-header {
-  display: flex;
+.admin-page .reports-header {
+  display: flex !important;
 
-  justify-content: space-between;
+  align-items: center !important;
 
-  align-items: center;
+  justify-content: space-between !important;
 }
 
-.reports-header h1 {
-  margin: 0;
+.admin-page .reports-header h1 {
+  margin: 0 !important;
 
-  color: #12676a;
+  color: #222 !important;
 
-  font-size: 38px;
+  font-size: 21px !important;
 }
 
-.reports-header p {
-  margin: 8px 0 0;
+.admin-page .reports-header p {
+  margin: 3px 0 0 !important;
 
-  color: #777;
+  color: #888 !important;
 
-  font-size: 13px;
+  font-size: 11px !important;
 }
 
-.reports-icon {
-  display: flex;
+.admin-page .reports-icon {
+  color: #136163 !important;
 
-  align-items: center;
-
-  justify-content: center;
-
-  width: 42px;
-
-  height: 42px;
-
-  border-radius: 12px;
-
-  background: #e6f2f2;
-
-  color: #12676a;
-
-  font-size: 22px;
+  font-size: 24px !important;
 }
 
-.reports-rule {
-  height: 1px;
+.admin-page .reports-rule {
+  width: 100% !important;
 
-  margin: 28px 0;
+  height: 1px !important;
 
-  background: #ddd;
+  margin: 14px 0 !important;
+
+  background: #eeeeee !important;
 }
 
 
@@ -1069,162 +1341,259 @@ tbody tr:hover {
    EMPTY REPORTS
 ========================================= */
 
-.empty-reports {
-  display: flex;
+.admin-page .empty-reports {
+  height: calc(100% - 80px) !important;
 
-  flex-direction: column;
+  display: flex !important;
 
-  align-items: center;
+  flex-direction: column !important;
 
-  justify-content: center;
+  align-items: center !important;
 
-  min-height: 390px;
+  justify-content: center !important;
 
-  text-align: center;
+  text-align: center !important;
 }
 
-.empty-icon {
-  display: flex;
+.admin-page .empty-icon {
+  display: flex !important;
 
-  align-items: center;
+  align-items: center !important;
 
-  justify-content: center;
+  justify-content: center !important;
 
-  width: 60px;
+  width: 42px !important;
+  height: 42px !important;
 
-  height: 60px;
+  margin-bottom: 10px !important;
 
-  margin-bottom: 20px;
+  border-radius: 50% !important;
 
-  border-radius: 50%;
+  background: #eef7f7 !important;
 
-  background: #e7f3f3;
+  color: #136163 !important;
 
-  color: #12676a;
-
-  font-size: 25px;
+  font-size: 18px !important;
 }
 
-.empty-reports h3 {
-  margin: 0 0 10px;
+.admin-page .empty-reports h3 {
+  margin: 0 0 5px !important;
 
-  font-size: 18px;
+  color: #222 !important;
+
+  font-size: 14px !important;
 }
 
-.empty-reports p {
-  max-width: 210px;
+.admin-page .empty-reports p {
+  max-width: 180px !important;
 
-  margin: 0;
+  margin: 0 !important;
 
-  color: #888;
+  color: #888 !important;
 
-  font-size: 13px;
+  font-size: 10px !important;
 
-  line-height: 1.6;
+  line-height: 1.5 !important;
 }
 
 
 /* =========================================
-   TABLET
+   LARGE DESKTOP
 ========================================= */
 
-@media (max-width: 1100px) {
+@media (min-width: 1400px) {
 
   .admin-page {
-    padding: 30px;
+    padding: 20px 55px !important;
   }
 
-  .admin-layout {
-    grid-template-columns: 1fr;
+  .admin-page .admin-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      330px !important;
 
-    gap: 40px;
+    gap: 30px !important;
   }
 
-  .reports-panel {
-    position: static;
-
-    display: grid;
-
-    grid-template-columns: 300px 1fr;
-
-    gap: 30px;
+  .admin-page .worker-table td {
+    padding: 8px 12px !important;
   }
 
+  .admin-page .worker-table tbody tr {
+    height: 41px !important;
+  }
+
+  .admin-page .donut-chart {
+    width: 115px !important;
+    height: 115px !important;
+  }
+
+  .admin-page .donut-chart::after {
+    width: 66px !important;
+    height: 66px !important;
+  }
 }
 
 
 /* =========================================
-   SMALL TABLET
+   LAPTOP
 ========================================= */
 
-@media (max-width: 800px) {
+@media (max-width: 1200px) and (min-width: 901px) {
 
-  .analytics {
-    grid-template-columns: 1fr;
-
-    gap: 60px;
+  .admin-page {
+    padding: 15px 25px !important;
   }
 
-  .reports-panel {
-    display: flex;
+  .admin-page .admin-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      270px !important;
+
+    gap: 18px !important;
+
+    height: calc(100vh - 55px) !important;
   }
 
+  .admin-page .dashboard-card {
+    padding: 14px !important;
+  }
+
+  .admin-page .worker-table th,
+  .admin-page .worker-table td {
+    padding: 6px 7px !important;
+  }
+
+  .admin-page .worker-table tbody tr {
+    height: 36px !important;
+  }
+
+  .admin-page .section-heading h2 {
+    font-size: 18px !important;
+  }
+
+  .admin-page .analytics {
+    gap: 15px !important;
+  }
+
+  .admin-page .donut-chart {
+    width: 90px !important;
+    height: 90px !important;
+  }
+
+  .admin-page .donut-chart::after {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .admin-page .summary {
+    padding: 11px !important;
+  }
+
+  .admin-page .reports-card {
+    padding: 14px !important;
+  }
 }
 
 
 /* =========================================
-   MOBILE
+   TABLET / MOBILE
+========================================= */
+
+@media (max-width: 900px) {
+
+  .admin-page {
+    height: auto !important;
+
+    min-height: 100vh !important;
+
+    overflow: visible !important;
+
+    padding: 20px !important;
+  }
+
+  .admin-page .admin-layout {
+    height: auto !important;
+
+    grid-template-columns: 1fr !important;
+
+    gap: 20px !important;
+
+    overflow: visible !important;
+  }
+
+  .admin-page .dashboard-main {
+    grid-template-rows:
+      auto
+      auto !important;
+
+    overflow: visible !important;
+  }
+
+  .admin-page .dashboard-card {
+    min-height: 400px !important;
+  }
+
+  .admin-page .reports-panel {
+    min-height: 400px !important;
+
+    overflow: visible !important;
+  }
+}
+
+
+/* =========================================
+   SMALL MOBILE
 ========================================= */
 
 @media (max-width: 600px) {
 
   .admin-page {
-    padding: 20px 15px 50px;
+    padding: 15px !important;
   }
 
-  .back-button {
-    margin-bottom: 30px;
+  .admin-page .admin-layout {
+    gap: 15px !important;
   }
 
-  .dashboard-main {
-    gap: 30px;
+  .admin-page .dashboard-card {
+    padding: 12px !important;
   }
 
-  .dashboard-card {
-    padding: 22px 16px;
-
-    border-radius: 19px;
+  .admin-page .section-heading h2 {
+    font-size: 17px !important;
   }
 
-  .section-heading {
-    align-items: flex-start;
-
-    gap: 15px;
+  .admin-page .section-heading p {
+    font-size: 10px !important;
   }
 
-  .section-heading h2 {
-    font-size: 24px;
+  .admin-page .worker-table th,
+  .admin-page .worker-table td {
+    padding: 6px 4px !important;
+
+    font-size: 10px !important;
   }
 
-  .worker-table {
-    overflow-x: auto;
+  .admin-page .worker-table tbody tr {
+    height: 34px !important;
   }
 
-  table {
-    min-width: 700px;
+  .admin-page .profile-button,
+  .admin-page .delete-button {
+    padding: 4px 6px !important;
+
+    font-size: 9px !important;
   }
 
-  .analytics {
-    gap: 50px;
+  .admin-page .analytics {
+    grid-template-columns: 1fr !important;
+
+    overflow: visible !important;
   }
 
-  .bar-chart {
-    height: 170px;
+  .admin-page .analytics-section {
+    min-height: 450px !important;
   }
-
-  .reports-card {
-    min-height: 450px;
-  }
-
 }
 </style>
