@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { professionals } from '../data/professionals'
+import { professionals } from '../data/professionals.js'
 
 const route = useRoute()
 

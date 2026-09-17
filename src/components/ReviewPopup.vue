@@ -59,7 +59,8 @@ export default {
         date: {
             type: String,
             required: true
-        }
+        },
+    emits: ['close'],
     },
     data() {
         return {

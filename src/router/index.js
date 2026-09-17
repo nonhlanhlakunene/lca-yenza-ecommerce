@@ -10,8 +10,8 @@ import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue';
-import WorkerDashboard from '../views/WorkerDashboardView.vue';
 import Admin from '@/components/Admin.vue';
+import workerDashboardView from "../views/workerDashboardView.vue";
 
 const routes = [
   {
@@ -52,7 +52,7 @@ const routes = [
   {
     path: '/admin',
     name: 'admin',
-    component: Admin
+    component: Admin,
   },
   {
     path: "/book/:slug",
@@ -65,19 +65,22 @@ const routes = [
     component: CheckoutView,
   },
 
+
   {
     path: '/services',
     name: 'services',
-    component: ServicesView
+    component: ServicesView,
+    component: ServicesView,
   },
 
   {
     path: '/worker',
-    name: 'WorkerDashboard',
-    component: WorkerDashboard
+    name: 'workerDashboardView',
+    component: workerDashboardView,
   },
 
   // Contact route
+
   {
     path: "/contact",
     name: "contact",
@@ -104,7 +107,8 @@ const routes = [
     name: "verification",
     component: () => import("../components/VerifyIdentity.vue"),
     props: { showVerification: true, userType: "worker" },
-  },
+  }
+
 ];
 
 const router = createRouter({
