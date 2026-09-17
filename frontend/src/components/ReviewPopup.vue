@@ -3,7 +3,7 @@
         <div class="n-reviewCard">
 
             <div class="n-header">
-                <h2>Rate your experience with  {{ personName }} ({{ personType }})</h2>
+                <h2>Rate your experience with {{ personName }} ({{ personType }})</h2>
             </div>
 
             <div class="form-group">
@@ -11,23 +11,22 @@
 
                 <div class="stars">
                     <span v-for="star in 5" :key="star" class="star"
-                    :class="{ active: star <= (hoveredRating || selectedRating) }"
-                    @mouseenter="hoveredRating = star"
-                    @mouseleave="hoveredRating = 0"
-                    @click="selectedRating = star"
+                        :class="{ active: star <= (hoveredRating || selectedRating) }"
+                        @mouseenter="hoveredRating = star"
+                        @mouseleave="hoveredRating = 0"
+                        @click="selectedRating = star"
                     >☆</span>
                 </div>
-
             </div>
 
             <div class="comments">
-                <label for="comment">Leave a comment (Optional) </label>
+                <label for="comment">Leave a comment (Optional)</label>
                 <textarea
-                id="comment"
-                name="comment"
-                rows="4"
-                v-model="comment">
-                </textarea>
+                    id="comment"
+                    name="comment"
+                    rows="4"
+                    v-model="comment"
+                ></textarea>
             </div>
 
             <div class="booking-info">
@@ -36,58 +35,78 @@
             </div>
 
             <div class="n-buttons">
-              <button class="skip-button" type="button" @click="$emit('close')">Skip</button>
-              <button class="submit-button" type="button" @click="submitReview" :disabled="selectedRating === 0">Submit Review</button>
+                <button class="skip-button" type="button" @click="$emit('close')">Skip</button>
+                <button
+                    class="submit-button"
+                    type="button"
+                    @click="submitReview"
+                    :disabled="selectedRating === 0 || isSubmitting"
+                >
+                    {{ isSubmitting ? 'Submitting...' : 'Submit Review' }}
+                </button>
             </div>
         </div>
     </div>
 </template>
 
 <script>
+import { createReview } from '../api/reviews'
+import Swal from 'sweetalert2'
+
 export default {
     props: {
-        personName: {
-            type: String,
-            required: true
-        },
-        personType: {
-            type: String,
-            required: true
-        },
-        bookingId: {
-            type: [String, Number],
-            required: true
-        },
-        date: {
-            type: String,
-            required: true
-        },
+        personName: { type: String, required: true },
+        personType: { type: String, required: true },
+        reviewedUserId: { type: Number, required: true },
+        bookingId: { type: [String, Number], required: true },
+        date: { type: String, required: true },
     },
     emits: ['close'],
     data() {
         return {
             hoveredRating: 0,
             selectedRating: 0,
-            comment: ''
+            comment: '',
+            isSubmitting: false
         }
     },
-
     methods: {
-        submitReview() {
-            const review = {
-                personName: this.personName,
-                personType: this.personType,
-                bookingId: this.bookingId,
-                rating: this.selectedRating,
-                comment: this.comment
+        async submitReview() {
+            this.isSubmitting = true
+
+            try {
+                await createReview({
+                    reviewerId: 1,
+                    reviewedUserId: this.reviewedUserId,
+                    bookingId: this.bookingId,
+                    rating: this.selectedRating,
+                    comment: this.comment
+                })
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Review Submitted',
+                    text: 'Thank you for your feedback!',
+                    confirmButtonColor: '#136163'
+                })
+
+                this.$emit('close')
+            } catch (err) {
+                console.error('Review submission failed:', err)
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: err.response?.data?.message || 'Something went wrong. Please try again.',
+                    confirmButtonColor: '#136163'
+                })
+            } finally {
+                this.isSubmitting = false
             }
-            console.log('Review submitted:', review)
-            this.$emit('close')
         }
     }
 }
 </script>
-
 
 <style scoped>
 .n-reviewOverlay {
