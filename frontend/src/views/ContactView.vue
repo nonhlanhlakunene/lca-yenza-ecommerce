@@ -1,58 +1,73 @@
 <template>
     <div class="contact-page">
-        
-        <p id="confirm-message" v-if="messageSent">
-            Thank you, the team will get back to you soon!
-        </p>
-        
+
         <div class="contact-card">
             <div class="contact-content">
                 <div class="form-column">
                     <h1>Contact Us</h1>
                     <h3>We would love to hear from you.</h3>
-                    
+
                     <form class="contact-form" @submit.prevent="sendMessage">
                         <div class="form-group">
                             <label for="n-name">Name:</label>
                             <input
-                            type="text"
-                            id="n-name"
-                            name="name"
-                            placeholder="Enter your name"
-                            required
+                                type="text"
+                                id="n-name"
+                                name="name"
+                                placeholder="Enter your name"
+                                v-model="form.name"
+                                required
                             />
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="n-email">Email:</label>
                             <input
-                            type="email"
-                            id="n-email"
-                            name="email"
-                            placeholder="Enter your email"
-                            required
+                                type="email"
+                                id="n-email"
+                                name="email"
+                                placeholder="Enter your email"
+                                v-model="form.email"
+                                required
                             />
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="n-message">Message:</label>
                             <textarea
-                            id="n-message"
-                            name="message"
-                            rows="4"
-                            placeholder="How can we help you?"
+                                id="n-message"
+                                name="message"
+                                rows="4"
+                                placeholder="How can we help you?"
+                                v-model="form.message"
+                                required
                             ></textarea>
                         </div>
-                        <button class="send-button" type="submit">Send Message</button>
+
+                        <!-- Honeypot: hidden from humans, bots fill it in -->
+                        <input
+                            type="checkbox"
+                            name="botcheck"
+                            v-model="form.botcheck"
+                            style="display:none"
+                            tabindex="-1"
+                            autocomplete="off"
+                        />
+
+                        
+
+                        <button class="send-button" type="submit" :disabled="isSubmitting">
+                            {{ isSubmitting ? 'Sending...' : 'Send Message' }}
+                        </button>
                     </form>
                 </div>
-                
+
                 <div class="contact-info">
                     <div class="contact-image">
                         <img
-                        :src="contactImage"
-                        alt="Image of woman with headphone and laptop"
-                        width="100%"
+                            :src="contactImage"
+                            alt="Image of woman with headphone and laptop"
+                            width="100%"
                         />
                     </div>
                 </div>
@@ -65,15 +80,15 @@
                         <span class="icon-label">Call us</span>
                     </div>
                 </div>
-                
+
                 <div class="icon-item">
                     <Mail />
                     <div class="icon-text">
-                        <span class="icon-value">support@yenza.co.za</span>
+                        <span class="icon-value">yenzasupport@gmail.com</span>
                         <span class="icon-label">Email us</span>
                     </div>
                 </div>
-                
+
                 <div class="icon-item">
                     <Clock />
                     <div class="icon-text">
@@ -83,35 +98,74 @@
                 </div>
             </div>
         </div>
-        
 
     </div>
 </template>
 
 <script>
-//Fetching image file into this component
-//"contactImgFile" is a name i chose myself
 import contactImgFile from "../assets/woman-on-a-call-using-headphones-with-laptop.png";
-
 import { Phone, Mail, Clock } from "lucide-vue-next";
-//Every component's script needs this wrapper
+import axios from "axios";
+import Swal from "sweetalert2";
+
+const WEB3FORMS_ACCESS_KEY = "8cc4e22e-e848-4804-a0c5-14f378192a69";
+
 export default {
-    components: {
-        Phone,
-        Mail,
-        Clock,
-    },
-    
-    data: function () {
+    components: { Phone, Mail, Clock },
+
+    data() {
         return {
             contactImage: contactImgFile,
-            messageSent: false,
+            isSubmitting: false,
+            form: {
+                name: '',
+                email: '',
+                message: '',
+                botcheck: false,
+            },
         };
     },
-    
+
     methods: {
-        sendMessage: function () {
-            this.messageSent = true;
+        async sendMessage() {
+            this.isSubmitting = true;
+
+            try {
+                const response = await axios.post(
+                    'https://api.web3forms.com/submit',
+                    {
+                        access_key: WEB3FORMS_ACCESS_KEY,
+                        name: this.form.name,
+                        email: this.form.email,
+                        message: this.form.message,
+                        botcheck: this.form.botcheck,
+                        subject: 'New message from Yenza contact form',
+                        from_name: 'Yenza Website',
+                    }
+                );
+
+                if (response.data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Message Sent!',
+                        text: 'Thank you, the team will get back to you soon.',
+                        confirmButtonColor: '#136163',
+                    });
+
+                    this.form = { name: '', email: '', message: '', botcheck: false };
+                }
+            } catch (err) {
+                console.error('Web3Forms submission failed:', err);
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: err.response?.data?.message || 'Something went wrong. Please try again.',
+                    confirmButtonColor: '#136163',
+                });
+            } finally {
+                this.isSubmitting = false;
+            }
         },
     },
 };
