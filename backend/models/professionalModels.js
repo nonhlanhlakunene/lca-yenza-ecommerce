@@ -1,8 +1,10 @@
 import db from "../config/db.js";
 
+
 const getProfessionalByUserId = async (userId) => {
     const [rows] = await db.query(
-        `SELECT
+        `
+        SELECT
             p.professional_id,
             p.user_id,
             p.service_id,
@@ -19,11 +21,15 @@ const getProfessionalByUserId = async (userId) => {
             u.first_name,
             u.last_name,
             u.email,
+            u.phone,
             s.name AS service_name
         FROM professionals p
-        JOIN users u ON p.user_id = u.user_id
-        JOIN services s ON p.service_id = s.id
-        WHERE p.user_id = ?`,
+        JOIN users u
+            ON p.user_id = u.user_id
+        LEFT JOIN services s
+            ON p.service_id = s.id
+        WHERE p.user_id = ?
+        `,
         [userId]
     );
 
@@ -33,39 +39,45 @@ const getProfessionalByUserId = async (userId) => {
 
 const getDashboardStats = async (professionalId) => {
     const [rows] = await db.query(
-        `SELECT
+        `
+        SELECT
             COUNT(*) AS total_jobs,
 
             SUM(
                 CASE
-                    WHEN status = 'pending' THEN 1
+                    WHEN status = 'pending'
+                    THEN 1
                     ELSE 0
                 END
             ) AS pending_jobs,
 
             SUM(
                 CASE
-                    WHEN status = 'confirmed' THEN 1
+                    WHEN status = 'confirmed'
+                    THEN 1
                     ELSE 0
                 END
             ) AS confirmed_jobs,
 
             SUM(
                 CASE
-                    WHEN status = 'completed' THEN 1
+                    WHEN status = 'completed'
+                    THEN 1
                     ELSE 0
                 END
             ) AS completed_jobs,
 
             SUM(
                 CASE
-                    WHEN status = 'cancelled' THEN 1
+                    WHEN status = 'cancelled'
+                    THEN 1
                     ELSE 0
                 END
             ) AS cancelled_jobs
 
         FROM bookings
-        WHERE professional_id = ?`,
+        WHERE professional_id = ?
+        `,
         [professionalId]
     );
 
@@ -74,13 +86,10 @@ const getDashboardStats = async (professionalId) => {
     const totalJobs = Number(stats.total_jobs) || 0;
     const completedJobs = Number(stats.completed_jobs) || 0;
 
-    let completionProgress = 0;
-
-    if (totalJobs > 0) {
-        completionProgress = Math.round(
-            (completedJobs / totalJobs) * 100
-        );
-    }
+    const completionProgress =
+        totalJobs > 0
+            ? Math.round((completedJobs / totalJobs) * 100)
+            : 0;
 
     return {
         total_jobs: totalJobs,
@@ -95,12 +104,16 @@ const getDashboardStats = async (professionalId) => {
 
 const getTotalEarnings = async (professionalId) => {
     const [rows] = await db.query(
-        `SELECT
+        `
+        SELECT
             COALESCE(SUM(p.amount), 0) AS total_earnings
         FROM payments p
-        JOIN bookings b ON p.booking_id = b.booking_id
+        JOIN bookings b
+            ON p.booking_id = b.booking_id
         WHERE b.professional_id = ?
-        AND b.status = 'completed'`,
+        AND b.status = 'completed'
+        AND p.payment_status = 'successful'
+        `,
         [professionalId]
     );
 
@@ -108,27 +121,42 @@ const getTotalEarnings = async (professionalId) => {
 };
 
 
-const getRecentJobs = async (professionalId) => {
+const getPendingJobs = async (professionalId) => {
     const [rows] = await db.query(
-        `SELECT
+        `
+        SELECT
             b.booking_id,
             b.booking_date,
             b.booking_time,
             b.service_address,
             b.city,
             b.province,
-            b.status,
+            b.postal_code,
             b.notes,
-            s.name AS service_name,
+            b.status,
+
+            u.user_id AS customer_id,
             u.first_name,
             u.last_name,
-            u.email
+            u.email,
+            u.phone,
+
+            s.id AS service_id,
+            s.name AS service_name
+
         FROM bookings b
-        JOIN users u ON b.customer_id = u.user_id
-        JOIN services s ON b.service_id = s.id
+
+        JOIN users u
+            ON b.customer_id = u.user_id
+
+        JOIN services s
+            ON b.service_id = s.id
+
         WHERE b.professional_id = ?
-        ORDER BY b.booking_date DESC, b.booking_time DESC
-        LIMIT 5`,
+        AND b.status = 'pending'
+
+        ORDER BY b.booking_date ASC, b.booking_time ASC
+        `,
         [professionalId]
     );
 
@@ -136,11 +164,138 @@ const getRecentJobs = async (professionalId) => {
 };
 
 
-const updateAvailability = async (professionalId, availabilityStatus) => {
+const getConfirmedBookings = async (professionalId) => {
+    const [rows] = await db.query(
+        `
+        SELECT
+            b.booking_id,
+            b.booking_date,
+            b.booking_time,
+            b.service_address,
+            b.city,
+            b.province,
+            b.postal_code,
+            b.notes,
+            b.status,
+
+            u.user_id AS customer_id,
+            u.first_name,
+            u.last_name,
+            u.email,
+            u.phone,
+
+            s.id AS service_id,
+            s.name AS service_name
+
+        FROM bookings b
+
+        JOIN users u
+            ON b.customer_id = u.user_id
+
+        JOIN services s
+            ON b.service_id = s.id
+
+        WHERE b.professional_id = ?
+        AND b.status = 'confirmed'
+
+        ORDER BY b.booking_date ASC, b.booking_time ASC
+        `,
+        [professionalId]
+    );
+
+    return rows;
+};
+
+
+const getBookingById = async (bookingId, professionalId) => {
+    const [rows] = await db.query(
+        `
+        SELECT
+            b.booking_id,
+            b.booking_date,
+            b.booking_time,
+            b.service_address,
+            b.city,
+            b.province,
+            b.postal_code,
+            b.notes,
+            b.status,
+
+            u.user_id AS customer_id,
+            u.first_name,
+            u.last_name,
+            u.email,
+            u.phone,
+
+            s.id AS service_id,
+            s.name AS service_name
+
+        FROM bookings b
+
+        JOIN users u
+            ON b.customer_id = u.user_id
+
+        JOIN services s
+            ON b.service_id = s.id
+
+        WHERE b.booking_id = ?
+        AND b.professional_id = ?
+        `,
+        [bookingId, professionalId]
+    );
+
+    return rows[0];
+};
+
+
+const acceptBooking = async (bookingId, professionalId) => {
     const [result] = await db.query(
-        `UPDATE professionals
-        SET availability_status = ?
-        WHERE professional_id = ?`,
+        `
+        UPDATE bookings
+        SET
+            status = 'confirmed',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE booking_id = ?
+        AND professional_id = ?
+        AND status = 'pending'
+        `,
+        [bookingId, professionalId]
+    );
+
+    return result;
+};
+
+
+const declineBooking = async (bookingId, professionalId) => {
+    const [result] = await db.query(
+        `
+        UPDATE bookings
+        SET
+            status = 'cancelled',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE booking_id = ?
+        AND professional_id = ?
+        AND status = 'pending'
+        `,
+        [bookingId, professionalId]
+    );
+
+    return result;
+};
+
+
+const updateAvailability = async (
+    professionalId,
+    availabilityStatus
+) => {
+    const [result] = await db.query(
+        `
+        UPDATE professionals
+        SET
+            availability_status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE professional_id = ?
+        `,
         [availabilityStatus, professionalId]
     );
 
@@ -152,6 +307,10 @@ export default {
     getProfessionalByUserId,
     getDashboardStats,
     getTotalEarnings,
-    getRecentJobs,
+    getPendingJobs,
+    getConfirmedBookings,
+    getBookingById,
+    acceptBooking,
+    declineBooking,
     updateAvailability
 };

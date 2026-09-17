@@ -1,11 +1,11 @@
 import professionalModel from "../models/professionalModels.js";
 
-
 const getDashboard = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.user_id;
 
-        const professional = await professionalModel.getProfessionalByUserId(userId);
+        const professional =
+            await professionalModel.getProfessionalByUserId(userId);
 
         if (!professional) {
             return res.status(404).json({
@@ -13,52 +13,48 @@ const getDashboard = async (req, res) => {
             });
         }
 
-        const stats = await professionalModel.getDashboardStats(
-            professional.professional_id
-        );
+        const statistics =
+            await professionalModel.getDashboardStats(
+                professional.professional_id
+            );
 
-        const totalEarnings = await professionalModel.getTotalEarnings(
-            professional.professional_id
-        );
+        const totalEarnings =
+            await professionalModel.getTotalEarnings(
+                professional.professional_id
+            );
 
-        const recentJobs = await professionalModel.getRecentJobs(
-            professional.professional_id
-        );
+        const pendingJobs =
+            await professionalModel.getPendingJobs(
+                professional.professional_id
+            );
 
-        res.status(200).json({
-            professional: {
-                professional_id: professional.professional_id,
-                user_id: professional.user_id,
-                first_name: professional.first_name,
-                last_name: professional.last_name,
-                email: professional.email,
-                service_name: professional.service_name,
-                hourly_rate: professional.hourly_rate,
-                experience_years: professional.experience_years,
-                city: professional.city,
-                verification_status: professional.verification_status,
-                availability_status: professional.availability_status,
-                profile_image: professional.profile_image
-            },
+        const confirmedBookings =
+            await professionalModel.getConfirmedBookings(
+                professional.professional_id
+            );
+
+        return res.status(200).json({
+            professional,
 
             statistics: {
-                total_jobs: stats.total_jobs,
-                pending_jobs: stats.pending_jobs,
-                confirmed_jobs: stats.confirmed_jobs,
-                completed_jobs: stats.completed_jobs,
-                cancelled_jobs: stats.cancelled_jobs,
+                total_jobs: statistics.total_jobs,
+                pending_jobs: statistics.pending_jobs,
+                confirmed_jobs: statistics.confirmed_jobs,
+                completed_jobs: statistics.completed_jobs,
+                cancelled_jobs: statistics.cancelled_jobs,
                 total_earnings: totalEarnings,
-                completion_progress: stats.completion_progress
+                completion_progress: statistics.completion_progress
             },
 
-            recent_jobs: recentJobs
+            pending_jobs: pendingJobs,
+            confirmed_bookings: confirmedBookings
         });
 
     } catch (error) {
         console.error("Dashboard error:", error);
 
-        res.status(500).json({
-            message: "Could not load dashboard",
+        return res.status(500).json({
+            message: "Failed to load dashboard",
             error: error.message
         });
     }
@@ -67,9 +63,10 @@ const getDashboard = async (req, res) => {
 
 const getProfile = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.user_id;
 
-        const professional = await professionalModel.getProfessionalByUserId(userId);
+        const professional =
+            await professionalModel.getProfessionalByUserId(userId);
 
         if (!professional) {
             return res.status(404).json({
@@ -77,15 +74,13 @@ const getProfile = async (req, res) => {
             });
         }
 
-        res.status(200).json({
-            professional
-        });
+        return res.status(200).json(professional);
 
     } catch (error) {
-        console.error("Profile error:", error);
+        console.error("Get profile error:", error);
 
-        res.status(500).json({
-            message: "Could not load profile",
+        return res.status(500).json({
+            message: "Failed to get profile",
             error: error.message
         });
     }
@@ -94,19 +89,17 @@ const getProfile = async (req, res) => {
 
 const updateAvailability = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.user_id;
         const { availability_status } = req.body;
 
-        if (
-            availability_status !== "available" &&
-            availability_status !== "unavailable"
-        ) {
+        if (!availability_status) {
             return res.status(400).json({
-                message: "Invalid availability status"
+                message: "Availability status is required"
             });
         }
 
-        const professional = await professionalModel.getProfessionalByUserId(userId);
+        const professional =
+            await professionalModel.getProfessionalByUserId(userId);
 
         if (!professional) {
             return res.status(404).json({
@@ -119,16 +112,126 @@ const updateAvailability = async (req, res) => {
             availability_status
         );
 
-        res.status(200).json({
-            message: "Availability updated successfully",
-            availability_status: availability_status
+        return res.status(200).json({
+            message: "Availability updated successfully"
         });
 
     } catch (error) {
         console.error("Availability error:", error);
 
-        res.status(500).json({
-            message: "Could not update availability",
+        return res.status(500).json({
+            message: "Failed to update availability",
+            error: error.message
+        });
+    }
+};
+
+
+const acceptBooking = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const bookingId = req.params.id;
+
+        const professional =
+            await professionalModel.getProfessionalByUserId(userId);
+
+        if (!professional) {
+            return res.status(404).json({
+                message: "Professional profile not found"
+            });
+        }
+
+        const booking =
+            await professionalModel.getBookingById(
+                bookingId,
+                professional.professional_id
+            );
+
+        if (!booking) {
+            return res.status(404).json({
+                message: "Booking not found"
+            });
+        }
+
+        if (booking.status !== "pending") {
+            return res.status(400).json({
+                message: "This booking is no longer pending"
+            });
+        }
+
+        await professionalModel.acceptBooking(
+            bookingId,
+            professional.professional_id
+        );
+
+        const updatedBooking =
+            await professionalModel.getBookingById(
+                bookingId,
+                professional.professional_id
+            );
+
+        return res.status(200).json({
+            message: "Booking accepted successfully",
+            booking: updatedBooking
+        });
+
+    } catch (error) {
+        console.error("Accept booking error:", error);
+
+        return res.status(500).json({
+            message: "Failed to accept booking",
+            error: error.message
+        });
+    }
+};
+
+
+const declineBooking = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const bookingId = req.params.id;
+
+        const professional =
+            await professionalModel.getProfessionalByUserId(userId);
+
+        if (!professional) {
+            return res.status(404).json({
+                message: "Professional profile not found"
+            });
+        }
+
+        const booking =
+            await professionalModel.getBookingById(
+                bookingId,
+                professional.professional_id
+            );
+
+        if (!booking) {
+            return res.status(404).json({
+                message: "Booking not found"
+            });
+        }
+
+        if (booking.status !== "pending") {
+            return res.status(400).json({
+                message: "This booking is no longer pending"
+            });
+        }
+
+        await professionalModel.declineBooking(
+            bookingId,
+            professional.professional_id
+        );
+
+        return res.status(200).json({
+            message: "Booking declined successfully"
+        });
+
+    } catch (error) {
+        console.error("Decline booking error:", error);
+
+        return res.status(500).json({
+            message: "Failed to decline booking",
             error: error.message
         });
     }
@@ -138,6 +241,7 @@ const updateAvailability = async (req, res) => {
 export {
     getDashboard,
     getProfile,
-    updateAvailability
+    updateAvailability,
+    acceptBooking,
+    declineBooking
 };
-
