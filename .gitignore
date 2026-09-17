@@ -1,5 +1,7 @@
 # Backend Environment variables
+frontend/.env
 backend/.env
+
 
 # Node Modules
 frontend/node_modules
@@ -44,3 +46,4 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+.vite/

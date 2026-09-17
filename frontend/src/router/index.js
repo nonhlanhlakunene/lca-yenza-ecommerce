@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+// Temporary route, delete after testing
+import ApiTest from '@/components/ApiTest.vue'
+
+
 import AboutView from "../components/AboutView.vue";
 import BookFormView from "../views/BookFormView.vue";
 import BookingsView from "../views/BookingsView.vue";
@@ -107,8 +111,14 @@ const routes = [
     name: "verification",
     component: () => import("../components/VerifyIdentity.vue"),
     props: { showVerification: true, userType: "worker" },
-  }
+  },
 
+   // TEMPORARY ROUTE, DELETE AFTER TESTING
+  {
+    path: '/api-test',
+    name: 'api-test',
+    component: ApiTest,
+  }
 ];
 
 const router = createRouter({

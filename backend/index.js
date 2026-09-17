@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './config/db.js'
+import bookingRoutes from './routes/bookingRoutes.js'
 
 // Initialize configurations
 dotenv.config();
@@ -11,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-// app.use('/api/bookings', bookingRoutes)
+app.use('/api/bookings', bookingRoutes)
 
 // Your first API test route
 app.get('/', (req, res) => {
@@ -20,7 +21,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/health', async (req, res) => {
     try {
-        const [result] = await db.query('SELECT 1 as connected')
+        const [result] = await db.query('Select 1 as connected')
 
         res.json({
             success: true,
@@ -35,6 +36,8 @@ app.get('/api/health', async (req, res) => {
         })
     }
 })
+
+app.use('/api/bookings', bookingRoutes)
 
 // Start Server
 app.listen(PORT, () => {
