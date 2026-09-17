@@ -11,7 +11,7 @@ import Home from '@/views/home.vue';
 import HandymanProfileView from '../views/HandymanProfileView.vue';
 import ServicesView from '../views/ServicesView.vue';
 import Admin from '@/components/Admin.vue';
-import WorkerDashboardView from "../views/workerDashboardView.vue";
+import workerDashboardView from "../views/workerDashboardView.vue";
 
 const routes = [
   {
