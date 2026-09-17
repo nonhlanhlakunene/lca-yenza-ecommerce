@@ -18,7 +18,7 @@ const router = useRouter()
                     book your service, and let the experts handle the rest <br><br>
                     Find Your Professional → <button class="service-link" @click="router.push('/services')">service</button>
                 </p><br>
-                <button class="worker-link" @click="router.push('/workerlogin')">Join as a worker</button>
+                <button class="worker-link" @click="router.push('/workersignup')">Join as a worker</button>
             </div>
 
             <div class="home-services">

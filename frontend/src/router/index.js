@@ -5,6 +5,7 @@ import BookFormView from "../views/BookFormView.vue";
 import BookingsView from "../views/BookingsView.vue";
 import CheckoutView from "../views/CheckoutView.vue";
 import workerlogin from "@/components/workerlogin.vue";
+import workersignup from "@/components/workersignup.vue";
 import Login from '@/components/login.vue';
 import Signup from '@/components/signup.vue';
 import Home from '@/views/home.vue';
@@ -18,6 +19,11 @@ const routes = [
     path: "/login",
     name: "Login",
     component: Login,
+  },
+  {
+    path: "/workersignup",
+    name: "workersignup",
+    component: workersignup,
   },
   {
     path: "/workerlogin",

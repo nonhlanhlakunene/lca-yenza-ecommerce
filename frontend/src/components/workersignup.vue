@@ -1,7 +1,7 @@
 
 <script setup>
-import router from '@/router';
-
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 </script>
 
@@ -11,10 +11,19 @@ import router from '@/router';
     <div class="signup-card">
 
       <div class="signup-logo-section">
-        <h2>Worker Login</h2>
+        <h2>Worker Signup</h2>
       </div>
 
       <form id="signupForm">
+        <div class="signup-input-group">
+          <label>first name</label>
+          <input type="text" id="email" placeholder="first name" required>
+        </div>
+
+        <div class="signup-input-group">
+          <label>last name</label>
+          <input type="text" id="email" placeholder="last name" required>
+        </div>
 
         <div class="signup-input-group">
           <label for="email">Email</label>
@@ -31,9 +40,9 @@ import router from '@/router';
         </button>
 
         <div class="signup-bottom-section">
-          <p>Don't have an account?</p>
-          <button type="button" class="signup-button-link" @click="router.push('/workersignup')">
-            Sign up
+          <p>Already have a account?</p>
+          <button type="button" class="signup-button-link" @click="router.push('/workerlogin')">
+            Login
           </button>
         </div>
 

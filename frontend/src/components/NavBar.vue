@@ -19,7 +19,8 @@ const linkList = [
   { text: 'Services', path: '/services' },
   { text: 'About Us', path: '/about' },
   { text: 'Bookings', path: '/bookings' },
-  { text: 'Contact', path: '/contact' }
+  { text: 'Contact', path: '/contact' },
+  { text: 'Logout', path: '/login'}
 ]
 
 const navLinks = ref(linkList)
