@@ -1,8 +1,41 @@
-
 <script setup>
-import router from '@/router';
+import { ref } from 'vue'
+import router from '@/router'
 
+const email = ref('')
+const password = ref('')
+const message = ref('')
+const loading = ref(false)
 
+const workerLogin = async () => {
+  message.value = ''
+  loading.value = true
+
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/worker-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, password: password.value })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      message.value = data.message || 'Login failed'
+      return
+    }
+
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(data.user))
+
+    router.push('/worker')
+  } catch (error) {
+    console.error(error)
+    message.value = 'Unable to connect to the server'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -14,20 +47,20 @@ import router from '@/router';
         <h2>Worker Login</h2>
       </div>
 
-      <form id="signupForm">
+      <form id="signupForm" @submit.prevent="workerLogin">
 
         <div class="signup-input-group">
           <label for="email">Email</label>
-          <input type="email" id="email" placeholder="someone@gmail.com" required>
+          <input v-model="email" type="email" id="email" placeholder="someone@gmail.com" required>
         </div>
 
         <div class="signup-input-group">
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="*************" required>
+          <input v-model="password" type="password" id="password" placeholder="*************" required>
         </div>
 
-        <button type="submit" class="signup-button">
-          Login
+        <button type="submit" class="signup-button" :disabled="loading">
+          {{ loading ? 'Logging in...' : 'Login' }}
         </button>
 
         <div class="signup-bottom-section">
@@ -37,7 +70,7 @@ import router from '@/router';
           </button>
         </div>
 
-        <p id="message"></p>
+        <p id="message">{{ message }}</p>
 
       </form>
 
@@ -59,10 +92,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-
   width: 100%;
   min-height: 100vh;
-
   box-sizing: border-box;
   padding: 20px;
 }
@@ -100,10 +131,8 @@ body {
   width: 100%;
   padding: 15px;
   box-sizing: border-box;
-
   border: 1px solid #d8d8d8;
   border-radius: 10px;
-
   outline: none;
   transition: 0.3s;
   font-size: 15px;
@@ -116,20 +145,15 @@ body {
 
 .signup-button {
   font-family: 'Plus Jakarta Sans', sans-serif;
-
   margin-top: 20px;
   width: 100%;
   padding: 15px;
-
   border: none;
   border-radius: 40px;
-
   background: #136163;
   color: white;
-
   font-size: 16px;
   font-weight: 600;
-
   cursor: pointer;
   transition: 0.3s;
 }
@@ -146,15 +170,11 @@ body {
 
 .signup-button-link {
   font-family: 'Plus Jakarta Sans', sans-serif;
-
   cursor: pointer;
   color: #136163;
-
   font-weight: 600;
-
   border: none;
   background: none;
-
   text-decoration: underline;
 }
 
@@ -172,6 +192,5 @@ body {
     max-width: 420px;
   }
 }
-
-
 </style>
+
