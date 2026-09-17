@@ -68,12 +68,12 @@ export default {
             required: true
         },
         bookingId: {
-            type: String,
-            default: ''
+            type: [String, Number],
+            required: true
         },
         date: {
             type: String,
-            default: ''
+            required: true
         },
         emits: ['close'],
     },

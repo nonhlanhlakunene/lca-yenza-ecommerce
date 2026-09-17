@@ -1,5 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue' 
+import { ref, computed } from 'vue'
+
+// Added : Imports for the popups
+import ReportPopup from '../components/ReportPopup.vue'
+import ReviewPopup from '../components/ReviewPopup.vue'
 
 
 /* Temporary booking data. Later, this information will come from the backend/database. */
@@ -95,6 +99,29 @@ const cancelBooking = (bookingId) => {
         booking.status = 'Cancelled'
     }
 }
+
+// Added: Variables to remember which booking is being reported/reviewed
+const activeReport = ref(null)
+const activeReview = ref(null)
+
+//Added: Called when the user clicks the report professional button and saves the booking
+function openReport(booking) {
+    activeReport.value = booking
+}
+
+// Added :Called when the user clicks cancel inside the report popup, clears the saved booking
+function closeReport () {
+    activeReport.value = null
+}
+
+function openReview(booking) {
+    activeReview.value = booking
+}
+
+function closeReview() {
+    activeReview.value = null
+}
+
 </script>
 
 
@@ -153,12 +180,6 @@ const cancelBooking = (bookingId) => {
                         Cancel Booking 
                     </button> 
 
-                    <button
-                        class="booking-action-button"
-                        type="button"
-                    >
-                        Report Professional
-                    </button>
                 </div>
 
             </div> 
@@ -199,9 +220,12 @@ const cancelBooking = (bookingId) => {
                         <div> <span class="detail-label">ADDRESS</span> <span> {{ booking.address }} </span> </div>
                     </div>
                     <div class="history-actions">
+                        <!-- Changed: Report button now only shows on completed and opens the popup -->
                         <button
+                            v-if="booking.status === 'Completed'"
                             class="booking-action-button"
                             type="button"
+                            @click="openReport(booking)"
                         >
                             Report Professional
                         </button>
@@ -210,6 +234,7 @@ const cancelBooking = (bookingId) => {
                             v-if="booking.status === 'Completed'"
                             class="booking-action-button"
                             type="button"
+                            @click="openReview(booking)"
                         >
                             Leave Review
                         </button>
@@ -222,6 +247,24 @@ const cancelBooking = (bookingId) => {
             </div>
         </section>
 
+        <!-- Added: report popup that shows only when a booking is selected for reporting -->
+         <ReportPopup
+            v-if="activeReport"
+            :personName="activeReport.professional"
+            :personType="'Worker'"
+            :bookingId="activeReport.id"
+            :date="formatDate(activeReport.date)"
+            @close="closeReport"
+         />
+
+          <ReviewPopup
+            v-if="activeReview"
+            :personName="activeReview.professional"
+            :personType="'Worker'"
+            :bookingId="activeReview.id"
+            :date="formatDate(activeReview.date)"
+            @close="closeReview"
+         />
     </main>
 
 </template>

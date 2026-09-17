@@ -1,42 +1,44 @@
 <template>
-    <div class="n-reviewCard">
-        
-        <div class="n-header">
-            <h2>Rate your experience with  {{ personName }} ({{ personType }})</h2>
-        </div>
-        
-        <div class="form-group">
-            <label for="rating">{{ personType === 'Worker' ? 'How was your service?' : 'How was this customer?' }}</label>
-            
-            <div class="stars">
-                <span v-for="star in 5" :key="star" class="star"
-                :class="{ active: star <= (hoveredRating || selectedRating) }"
-                @mouseenter="hoveredRating = star"
-                @mouseleave="hoveredRating = 0"
-                @click="selectedRating = star"
-                >☆</span>
+    <div class="n-reviewOverlay" @click.self="$emit('close')">
+        <div class="n-reviewCard">
+
+            <div class="n-header">
+                <h2>Rate your experience with  {{ personName }} ({{ personType }})</h2>
             </div>
-            
-        </div>
-        
-        <div class="comments">
-            <label for="comment">Leave a comment (Optional) </label>
-            <textarea
-            id="comment"
-            name="comment"
-            rows="4" 
-            v-model="comment">
-            </textarea>
-        </div>
 
-        <div class="booking-info">
-            <p><span class="label">Booking:</span> #{{ bookingId }}</p>
-            <p><span class="label">Date:</span> {{ date }}</p>
-        </div>
+            <div class="form-group">
+                <label>{{ personType === 'Worker' ? 'How was your service?' : 'How was this customer?' }}</label>
 
-        <div class="n-buttons">
-          <button class="skip-button" type="button" @click="$emit('close')">Skip</button>  
-          <button class="submit-button" type="button" @click="submitReview" :disabled="selectedRating === 0">Submit Review</button>
+                <div class="stars">
+                    <span v-for="star in 5" :key="star" class="star"
+                    :class="{ active: star <= (hoveredRating || selectedRating) }"
+                    @mouseenter="hoveredRating = star"
+                    @mouseleave="hoveredRating = 0"
+                    @click="selectedRating = star"
+                    >☆</span>
+                </div>
+
+            </div>
+
+            <div class="comments">
+                <label for="comment">Leave a comment (Optional) </label>
+                <textarea
+                id="comment"
+                name="comment"
+                rows="4"
+                v-model="comment">
+                </textarea>
+            </div>
+
+            <div class="booking-info">
+                <p><span class="label">Booking:</span> #{{ bookingId }}</p>
+                <p><span class="label">Date:</span> {{ date }}</p>
+            </div>
+
+            <div class="n-buttons">
+              <button class="skip-button" type="button" @click="$emit('close')">Skip</button>
+              <button class="submit-button" type="button" @click="submitReview" :disabled="selectedRating === 0">Submit Review</button>
+            </div>
         </div>
     </div>
 </template>
@@ -53,15 +55,15 @@ export default {
             required: true
         },
         bookingId: {
-            type: String,
+            type: [String, Number],
             required: true
         },
         date: {
             type: String,
             required: true
         },
-    emits: ['close'],
     },
+    emits: ['close'],
     data() {
         return {
             hoveredRating: 0,
@@ -88,18 +90,29 @@ export default {
 
 
 <style scoped>
+.n-reviewOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
 .n-reviewCard {
     background: var(--color-primary);
     color: white;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 350px;
-    margin: 70px auto;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 420px;
+    width: 100%;
     font-family: var(--font-main);
 }
 
 .n-header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .n-header h2 {
@@ -139,7 +152,7 @@ textarea {
   background: white;
   color: #333;
   box-sizing: border-box;
-  
+
 }
 
 textarea:focus {
