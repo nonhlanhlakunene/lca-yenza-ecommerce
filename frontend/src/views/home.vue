@@ -17,7 +17,8 @@ const router = useRouter()
                     Don't spend hours looking for someone you can trust. Find the right professional, 
                     book your service, and let the experts handle the rest <br><br>
                     Find Your Professional → <button class="service-link" @click="router.push('/services')">service</button>
-                </p>
+                </p><br>
+                <button class="worker-link" @click="router.push('/workerlogin')">Join as a worker</button>
             </div>
 
             <div class="home-services">
@@ -321,6 +322,20 @@ const router = useRouter()
 }
 
 .service-link:hover{
+    color: #bfcacb;
+}
+
+.worker-link{
+    background: #136163;
+    color: white;
+    border: none;
+    font-weight: 600;
+    font-size: 20px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.worker-link:hover{
     color: #bfcacb;
 }
 
