@@ -1,45 +1,122 @@
 ```vue
 <script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import plumberImage from '../assets/stickman plumber.png'
+
+const router = useRouter()
+
+const email = ref('')
+const password = ref('')
+const message = ref('')
+const loading = ref(false)
+
+const login = async () => {
+  loading.value = true
+  message.value = ''
+
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      message.value = data.message || 'Login failed'
+      loading.value = false
+      return
+    }
+
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(data.user))
+
+    message.value = 'Login successful!'
+
+    if (data.user.role === 'admin') {
+      router.push('/admin')
+    } else if (data.user.role === 'professional') {
+      router.push('/worker')
+    } else {
+      router.push('/')
+    }
+
+  } catch (error) {
+    console.error('Login error:', error)
+    message.value = 'Could not connect to the server'
+  }
+
+  loading.value = false
+}
+
+const goToSignup = () => {
+  router.push('/login')
+}
 </script>
 
+```vue
 <template>
   <div class="login-container">
+
     <div class="login-left-side">
       <img :src="plumberImage" alt="Plumber">
     </div>
 
     <div class="right-side">
       <div class="login-card">
+
         <div class="logo-section">
           <h2>Login</h2>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" @submit.prevent="login">
+
           <div class="input-group">
-            <label>Email</label>
-            <input type="text" id="username" placeholder="someone@gmail.com" required>
+            <label for="username">Email</label>
+
+            <input
+              type="email"
+              id="username"
+              v-model="email"
+              placeholder="someone@gmail.com"
+              autocomplete="email"
+              required
+            >
           </div>
 
           <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="password" placeholder="*************" required>
+            <label for="password">Password</label>
+
+            <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="current-password" required>
           </div>
 
-          <button type="submit" class="login-button">Login</button>
+          <button type="submit" class="login-button" :disabled="loading">{{ loading ? 'Logging in...' : 'Login' }}</button>
+
           <div class="bottom-section">
-                <p>no account?</p>
-            <button class="signup-button-link">
-                sign up
-            </button>
-          </div>
+            <p>no account?</p>
 
-          <p id="message"></p>
+            <button type="button" class="signup-button-link" @click="goToSignup">sign up</button>
+          </div><br>
+
+          <p id="message" :class="{ success: message === 'Login successful!' }">
+            {{ message }}
+          </p>
+
         </form>
+
       </div>
     </div>
+
   </div>
 </template>
+```
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
