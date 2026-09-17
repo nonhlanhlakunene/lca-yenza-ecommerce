@@ -8,7 +8,6 @@ const records = [
     85,
     ["Emergency Repair", "Leaky Pipes", "Commercial"],
     12,
-    3,
   ],
   [
     "Marcus Vance",
@@ -29,7 +28,6 @@ const records = [
     90,
     ["Wiring", "Smart Home", "Lighting Installation"],
     47,
-    4,
   ],
   [
     "Elena Rodriguez",
@@ -40,7 +38,6 @@ const records = [
     72,
     ["Interior Painting", "Feature Walls", "Exterior Finishes"],
     36,
-    5,
   ],
   [
     "Daniel Okafor",
@@ -51,7 +48,6 @@ const records = [
     70,
     ["Lockout Service", "Key Cutting", "Rekeying"],
     11,
-    6,
   ],
   [
     "Maya Collins",
@@ -166,7 +162,7 @@ const records = [
 ];
 
 export const professionals = records.map(
-  ([name, job, category, rating, reviews, price, tags, image, userId]) => ({
+  ([name, job, category, rating, reviews, price, tags, image]) => ({
     name,
     job,
     category,
@@ -174,7 +170,6 @@ export const professionals = records.map(
     reviews,
     price,
     tags,
-    userId,
     slug: name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
