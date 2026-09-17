@@ -17,7 +17,8 @@ const bookings = ref([
     time: '10:00',
     address: '123 Main Street, Cape Town',
     notes: 'Kitchen sink needs to be repaired.',
-    status: 'Confirmed'
+    status: 'Confirmed',
+    reportedUserId: 3
   },
   {
     id: 2,
@@ -28,7 +29,8 @@ const bookings = ref([
     time: '14:00',
     address: '45 Long Street, Cape Town',
     notes: 'Install two new lights.',
-    status: 'Completed'
+    status: 'Completed',
+    reportedUserId: 4
   },
   {
     id: 3,
@@ -39,7 +41,8 @@ const bookings = ref([
     time: '09:00',
     address: '18 Main Road, Cape Town',
     notes: 'Paint the living room and hallway.',
-    status: 'Completed'
+    status: 'Completed',
+    reportedUserId: 5
   },
   {
     id: 4,
@@ -50,8 +53,9 @@ const bookings = ref([
     time: '11:00',
     address: '7 Oak Avenue, Cape Town',
     notes: 'Replace the front door lock.',
-    status: 'Cancelled'
-  }
+    status: 'Cancelled',
+    reportedUserId: 6
+  },
 ])
 
 /* Finds the customer's current/upcoming booking. */
@@ -253,6 +257,7 @@ function closeReview() {
             :personName="activeReport.professional"
             :personType="'Worker'"
             :bookingId="activeReport.id"
+            :reportedUserId="activeReport.reportedUserId"
             :date="formatDate(activeReport.date)"
             @close="closeReport"
          />
@@ -261,6 +266,7 @@ function closeReview() {
             v-if="activeReview"
             :personName="activeReview.professional"
             :personType="'Worker'"
+            :reviewedUserId="activeReview.reportedUserId"
             :bookingId="activeReview.id"
             :date="formatDate(activeReview.date)"
             @close="closeReview"
