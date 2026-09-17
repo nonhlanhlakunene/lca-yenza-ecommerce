@@ -144,8 +144,23 @@ const cancelBooking = (bookingId) => {
                     <p>{{ currentBooking.notes }}</p>
                 </div>
 
-                <div class="booking-actions"> <button class="cancel-button" @click="cancelBooking(currentBooking.id)">
-                        CANCEL BOOKING </button> </div>
+                <div class="booking-actions"> 
+                    <button 
+                        class="cancel-button"
+                        type="button"
+                        @click="cancelBooking(currentBooking.id)"
+                    >
+                        Cancel Booking 
+                    </button> 
+
+                    <button
+                        class="booking-action-button"
+                        type="button"
+                    >
+                        Report Professional
+                    </button>
+                </div>
+
             </div> 
             
             <!-- Show message if there is no current booking -->
@@ -182,6 +197,22 @@ const cancelBooking = (bookingId) => {
                         <div> <span class="detail-label">TIME</span> <span> {{ formatTime(booking.time) }} </span>
                         </div>
                         <div> <span class="detail-label">ADDRESS</span> <span> {{ booking.address }} </span> </div>
+                    </div>
+                    <div class="history-actions">
+                        <button
+                            class="booking-action-button"
+                            type="button"
+                        >
+                            Report Professional
+                        </button>
+
+                        <button
+                            v-if="booking.status === 'Completed'"
+                            class="booking-action-button"
+                            type="button"
+                        >
+                            Leave Review
+                        </button>
                     </div>
                 </article>
             </div>
@@ -379,7 +410,9 @@ const cancelBooking = (bookingId) => {
 .booking-actions {
     display: flex;
     justify-content: flex-end;
+    gap: 12px;
     padding-top: 20px;
+    flex-wrap: wrap;
 }
 
 .cancel-button {
@@ -395,6 +428,23 @@ const cancelBooking = (bookingId) => {
 .cancel-button:hover {
     background: var(--color-primary);
     color: white;
+}
+
+.booking-action-button {
+    padding: 12px 25px;
+    /* margin-top: 20px; */
+    border: 2px solid var(--color-primary);
+    background: var(--color-primary);
+    color: white;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.booking-action-button:hover {
+    background: transparent;
+    color: var(--color-primary);
 }
 
 /* BOOKING HISTORY */
@@ -437,6 +487,14 @@ const cancelBooking = (bookingId) => {
     gap: 6px;
     color: #555;
     font-size: var(--font-sm);
+}
+
+.history-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
 
 /* EMPTY STATE */
@@ -557,6 +615,16 @@ const cancelBooking = (bookingId) => {
 
     .booking-actions {
         justify-content: stretch;
+    }
+
+    .booking-actions,
+    .history-actions {
+        flex-direction: column;
+    }
+
+    .booking-action-button,
+    .cancel-button {
+        width: 100%;
     }
 }
 
