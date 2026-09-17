@@ -1,6 +1,7 @@
+
 import db from "../config/db.js";
 
-const getuserbyemail = async (email) => {
+const getUserByEmail = async (email) => {
     const [rows] = await db.query(
         "SELECT * FROM users WHERE email = ?",
         [email]
@@ -10,5 +11,5 @@ const getuserbyemail = async (email) => {
 };
 
 export default {
-    getuserbyemail
+    getUserByEmail
 };

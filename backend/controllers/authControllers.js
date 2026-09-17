@@ -1,3 +1,4 @@
+
 import authModel from "../models/authModels.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -6,13 +7,15 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Check if email and password were provided
         if (!email || !password) {
             return res.status(400).json({
-                message: "Invalid email and password"
+                message: "Email and password are required"
             });
         }
 
-        const user = await authModel.getuserbyemail(email);
+        // Find user in the users table
+        const user = await authModel.getUserByEmail(email);
 
         if (!user) {
             return res.status(401).json({
@@ -20,6 +23,7 @@ const login = async (req, res) => {
             });
         }
 
+        // Compare entered password with password_hash in MySQL
         const passwordMatch = await bcrypt.compare(
             password,
             user.password_hash
@@ -31,9 +35,10 @@ const login = async (req, res) => {
             });
         }
 
+        // Create JWT token
         const token = jwt.sign(
             {
-                id: user.user_id,
+                user_id: user.user_id,
                 email: user.email,
                 role: user.role
             },
@@ -43,11 +48,13 @@ const login = async (req, res) => {
             }
         );
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Login successful",
-            token: token,
+            token,
             user: {
-                id: user.user_id,
+                user_id: user.user_id,
+                first_name: user.first_name,
+                last_name: user.last_name,
                 email: user.email,
                 role: user.role
             }
@@ -56,7 +63,7 @@ const login = async (req, res) => {
     } catch (error) {
         console.error("Login error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Server error",
             error: error.message
         });
@@ -64,3 +71,4 @@ const login = async (req, res) => {
 };
 
 export { login };
+
