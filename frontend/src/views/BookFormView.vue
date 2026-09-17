@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import Swal from 'sweetalert2'
 import { professionals } from '../data/professionals.js'
 
 const route = useRoute()
@@ -24,9 +25,17 @@ const submitBooking = () => {
         !booking.value.time ||
         !booking.value.address
     ) {
-        alert('Please complete all required fields.')
+        Swal.fire({
+            icon: 'Warning',
+            title: 'Missing information',
+            text: 'Please complete all required fields.'
+        })
         return
-    } alert('Your booking request has been submitted!')
+    }   Swal.fire({
+        icon: 'Success',
+        title: 'Booking submitted!',
+        text: 'Your booking request has been submitted successfully!'
+    })
 
     console.log('Booking:', booking.value)
 } 

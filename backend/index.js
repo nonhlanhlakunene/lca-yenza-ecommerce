@@ -37,7 +37,6 @@ app.get('/api/health', async (req, res) => {
     }
 })
 
-app.use('/api/bookings', bookingRoutes)
 
 // Start Server
 app.listen(PORT, () => {

@@ -1,92 +1,241 @@
 <script setup>
-import { ref, computed } from 'vue' 
+// import { ref, computed } from 'vue' 
 
 
 /* Temporary booking data. Later, this information will come from the backend/database. */
-const bookings = ref([
-  {
-    id: 1,
-    service: 'Plumbing',
-    professional: 'Arthur Pendleton',
-    job: 'Master Plumber & Pipe Specialist',
-    date: '2026-09-15',
-    time: '10:00',
-    address: '123 Main Street, Cape Town',
-    notes: 'Kitchen sink needs to be repaired.',
-    status: 'Confirmed'
-  },
-  {
-    id: 2,
-    service: 'Electrician',
-    professional: 'Sarah Jenkins',
-    job: 'Licensed Residential Electrician',
-    date: '2026-09-02',
-    time: '14:00',
-    address: '45 Long Street, Cape Town',
-    notes: 'Install two new lights.',
-    status: 'Completed'
-  },
-  {
-    id: 3,
-    service: 'Painter',
-    professional: 'Elena Rodriguez',
-    job: 'Interior & Exterior Painting Specialist',
-    date: '2026-08-25',
-    time: '09:00',
-    address: '18 Main Road, Cape Town',
-    notes: 'Paint the living room and hallway.',
-    status: 'Completed'
-  },
-  {
-    id: 4,
-    service: 'Locksmith',
-    professional: 'Daniel Okafor',
-    job: '24/7 Residential & Auto Locksmith',
-    date: '2026-08-18',
-    time: '11:00',
-    address: '7 Oak Avenue, Cape Town',
-    notes: 'Replace the front door lock.',
-    status: 'Cancelled'
-  }
-])
+// const bookings = ref([
+//   {
+//     id: 1,
+//     service: 'Plumbing',
+//     professional: 'Arthur Pendleton',
+//     job: 'Master Plumber & Pipe Specialist',
+//     date: '2026-09-15',
+//     time: '10:00',
+//     address: '123 Main Street, Cape Town',
+//     notes: 'Kitchen sink needs to be repaired.',
+//     status: 'Confirmed'
+//   },
+//   {
+//     id: 2,
+//     service: 'Electrician',
+//     professional: 'Sarah Jenkins',
+//     job: 'Licensed Residential Electrician',
+//     date: '2026-09-02',
+//     time: '14:00',
+//     address: '45 Long Street, Cape Town',
+//     notes: 'Install two new lights.',
+//     status: 'Completed'
+//   },
+//   {
+//     id: 3,
+//     service: 'Painter',
+//     professional: 'Elena Rodriguez',
+//     job: 'Interior & Exterior Painting Specialist',
+//     date: '2026-08-25',
+//     time: '09:00',
+//     address: '18 Main Road, Cape Town',
+//     notes: 'Paint the living room and hallway.',
+//     status: 'Completed'
+//   },
+//   {
+//     id: 4,
+//     service: 'Locksmith',
+//     professional: 'Daniel Okafor',
+//     job: '24/7 Residential & Auto Locksmith',
+//     date: '2026-08-18',
+//     time: '11:00',
+//     address: '7 Oak Avenue, Cape Town',
+//     notes: 'Replace the front door lock.',
+//     status: 'Cancelled'
+//   }
+// ])
 
 /* Finds the customer's current/upcoming booking. */
+// const currentBooking = computed(() => {
+//     return bookings.value.find(
+//         booking => booking.status === 'Confirmed'
+//     )
+// }) 
+
+/* Gets all bookings that are not the current booking. */
+// const bookingHistory = computed(() => {
+//     return bookings.value.filter(
+//         booking => booking.status !== 'Confirmed'
+//     )
+// }) 
+
+/* Converts the date into a more readable format. */
+// const formatDate = (date) => {
+//     return new Date(date + 'T00:00:00').toLocaleDateString('en-ZA', {
+//         day: 'numeric',
+//         month: 'long',
+//         year: 'numeric'
+//     })
+// }
+
+/* Converts 24-hour time into a 12-hour format. */
+// const formatTime = (time) => {
+//     const [hours, minutes] = time.split(':')
+//     const date = new Date()
+
+//     date.setHours(hours, minutes)
+//     return date.toLocaleTimeString('en-ZA', {
+//         hour: 'numeric',
+//         minute: '2-digit'
+//     })
+// } 
+
+/* Temporary cancel function. Later, this will send a request to the backend. */
+// const cancelBooking = (bookingId) => {
+//     const booking = bookings.value.find(
+//         booking => booking.id === bookingId
+//     )
+
+//     if (booking) {
+//         booking.status = 'Cancelled'
+//     }
+// }
+
+
+import { ref, computed, onMounted } from 'vue'
+import api from '../api/api.js'
+
+const bookings = ref([])
+
+const loading = ref(true)
+const error = ref(false)
+
+/*
+ * Gets the customer's bookings from the backend.
+ *
+ * 1 = temporary test customer from our database.
+ * Later this will come from the logged-in user's authentication.
+ */
+const fetchBookings = async () => {
+
+    try {
+
+        loading.value = true
+        error.value = false
+
+        const response = await api.get('/bookings/customer/1')
+
+        if (response.data.success) {
+
+            bookings.value = response.data.bookings.map(booking => ({
+                id: booking.booking_id,
+                service: booking.service_name,
+                professional: booking.professional_name,
+                job: '',
+                date: booking.booking_date,
+                time: booking.booking_time,
+                address: `${booking.service_address}, ${booking.city}`,
+                notes: booking.notes,
+                status: formatStatus(booking.status)
+            }))
+
+        }
+
+    } catch (err) {
+
+        console.error('Failed to load bookings:', err)
+
+        error.value = true
+
+    } finally {
+
+        loading.value = false
+
+    }
+
+}
+
+
+/*
+ * Converts the database status into the format
+ * currently expected by the template.
+ *
+ * confirmed -> Confirmed
+ * completed -> Completed
+ * cancelled -> Cancelled
+ * pending -> Pending
+ */
+const formatStatus = (status) => {
+
+    if (!status) {
+        return ''
+    }
+
+    return status.charAt(0).toUpperCase() + status.slice(1)
+
+}
+
+
+/*
+ * Finds the customer's current/upcoming booking.
+ */
 const currentBooking = computed(() => {
+
     return bookings.value.find(
         booking => booking.status === 'Confirmed'
     )
-}) 
 
-/* Gets all bookings that are not the current booking. */
+})
+
+
+/*
+ * Gets all bookings that are not the current booking.
+ */
 const bookingHistory = computed(() => {
+
     return bookings.value.filter(
         booking => booking.status !== 'Confirmed'
     )
-}) 
 
-/* Converts the date into a more readable format. */
+})
+
+
+/*
+ * Converts the date into a more readable format.
+ */
 const formatDate = (date) => {
+
     return new Date(date + 'T00:00:00').toLocaleDateString('en-ZA', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
     })
+
 }
 
-/* Converts 24-hour time into a 12-hour format. */
+
+/*
+ * Converts 24-hour time into a 12-hour format.
+ */
 const formatTime = (time) => {
+
     const [hours, minutes] = time.split(':')
+
     const date = new Date()
 
     date.setHours(hours, minutes)
+
     return date.toLocaleTimeString('en-ZA', {
         hour: 'numeric',
         minute: '2-digit'
     })
-} 
 
-/* Temporary cancel function. Later, this will send a request to the backend. */
+}
+
+
+/*
+ * Temporary cancel function.
+ *
+ * This still only changes the frontend for now.
+ * We will connect cancellation to the backend separately.
+ */
 const cancelBooking = (bookingId) => {
+
     const booking = bookings.value.find(
         booking => booking.id === bookingId
     )
@@ -94,7 +243,16 @@ const cancelBooking = (bookingId) => {
     if (booking) {
         booking.status = 'Cancelled'
     }
+
 }
+
+
+/*
+ * Load bookings when the page opens.
+ */
+onMounted(() => {
+    fetchBookings()
+})
 </script>
 
 

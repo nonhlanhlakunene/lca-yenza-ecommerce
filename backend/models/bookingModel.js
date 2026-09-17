@@ -95,3 +95,45 @@ export const getBookingById = async (bookingId) => {
     return rows[0]
 }
 
+export const getBookingsByCustomerId = async (customerId) => {
+    const [rows] = await db.execute(
+        `SELECT
+            b.booking_id,
+            b.customer_id,
+            b.professional_id,
+            b.service_id,
+            b.booking_date,
+            b.booking_time,
+            b.service_address,
+            b.city,
+            b.province,
+            b.postal_code,
+            b.notes,
+            b.status,
+            b.created_at,
+            b.updated_at,
+
+            CONCAT(u.first_name, ' ', u.last_name) AS professional_name,
+
+            p.hourly_rate,
+
+            s.name AS service_name
+
+        FROM bookings b
+
+        JOIN professionals p
+            ON b.professional_id = p.professional_id
+
+        JOIN users u
+            ON p.user_id = u.user_id
+
+        JOIN services s
+            ON b.service_id = s.id
+
+        WHERE b.customer_id = ?
+
+        ORDER BY b.booking_date DESC, b.booking_time DESC`,
+        [customerId]
+    )
+    return rows
+}

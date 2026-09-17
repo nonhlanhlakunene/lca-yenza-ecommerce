@@ -1,6 +1,7 @@
 import {
     createBooking,
-    getBookingById
+    getBookingById,
+    getBookingsByCustomerId
 } from '../models/bookingModel.js'
 
 export const createBookingController = async (req, res) => {
@@ -86,6 +87,26 @@ export const getBookingController = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to retrieve booking'
+        })
+    }
+}
+
+export const getCustomerBookingsController = async (req, res) => {
+    try {
+        const { customerId } = req.params
+
+        const bookings = await getBookingsByCustomerId(customerId)
+
+        res.json({
+            success: true,
+            bookings
+        })
+    } catch (error) {
+        console.error('Get customer bookings error:',error)
+
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve customer bookings'
         })
     }
 }
