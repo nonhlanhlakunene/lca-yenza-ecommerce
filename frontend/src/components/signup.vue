@@ -1,4 +1,3 @@
-```vue
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -42,8 +41,6 @@ const login = async () => {
 
     if (data.user.role === 'admin') {
       router.push('/admin')
-    } else if (data.user.role === 'professional') {
-      router.push('/worker')
     } else {
       router.push('/')
     }
