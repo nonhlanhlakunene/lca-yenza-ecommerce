@@ -1,5 +1,60 @@
 <script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import painterpicture from '../assets/painterpicture.png'
+
+const router = useRouter()
+
+const first_name = ref('')
+const last_name = ref('')
+const email = ref('')
+const password = ref('')
+const message = ref('')
+const loading = ref(false)
+
+const signup = async () => {
+  loading.value = true
+  message.value = ''
+
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        first_name: first_name.value,
+        last_name: last_name.value,
+        email: email.value,
+        password: password.value
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      message.value = data.message || 'Signup failed'
+      loading.value = false
+      return
+    }
+
+    message.value = 'Signup successful!'
+
+    setTimeout(() => {
+      router.push('/signup')
+    }, 1000)
+
+  } catch (error) {
+    console.error('Signup error:', error)
+    message.value = 'Could not connect to the server'
+  }
+
+  loading.value = false
+}
+
+const goToLogin = () => {
+  router.push('/signup')
+}
 </script>
 
 <template>
@@ -10,35 +65,37 @@ import painterpicture from '../assets/painterpicture.png'
           <h2>Sign up</h2>
         </div>
 
-        <form id="signupForm">
+        <form id="signupForm" @submit.prevent="signup">
           <div class="signup-input-group">
             <label for="firstName">First Name</label>
-            <input type="text" id="firstName" placeholder="First Name" required>
+            <input type="text" id="firstName" v-model="first_name" placeholder="First Name" autocomplete="given-name" required>
           </div>
 
           <div class="signup-input-group">
             <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" placeholder="Last Name" required>
+            <input type="text" id="lastName" v-model="last_name" placeholder="Last Name" autocomplete="family-name" required>
           </div>
 
           <div class="signup-input-group">
             <label for="email">Email</label>
-            <input type="email" id="email" placeholder="someone@gmail.com" required>
+            <input type="email" id="email" v-model="email" placeholder="someone@gmail.com" autocomplete="email" required>
           </div>
 
           <div class="signup-input-group">
             <label for="password">Password</label>
-            <input type="password" id="password" placeholder="*************" required>
+            <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="new-password" required>
           </div>
 
-          <button type="submit" class="signup-button">Signup</button>
-          
+          <button type="submit" class="signup-button" :disabled="loading">
+            {{ loading ? 'Signing up...' : 'Signup' }}
+          </button>
+
           <div class="signup-bottom-section">
             <p>Already have an account?</p>
-            <button type="button" class="signup-button-link">login</button>
+            <button type="button" class="signup-button-link" @click="goToLogin">login</button>
           </div>
 
-          <p id="message"></p>
+          <p id="message">{{ message }}</p>
         </form>
       </div>
     </div>
@@ -52,19 +109,6 @@ import painterpicture from '../assets/painterpicture.png'
 <style>
 @import url('https://googleapis.com');
 
-/* html,
-body,
-#app {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden; 
-  background: white;
-  color: black;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-} */
-
 body {
   background: white;
 }
@@ -72,8 +116,8 @@ body {
 .signup-container {
   display: flex;
   width: 100%;
-  height: 100vh; 
-  overflow: hidden; 
+  height: 100vh;
+  overflow: hidden;
 }
 
 .signup-left-side {
@@ -93,7 +137,6 @@ body {
   align-items: center;
   overflow: hidden;
 }
-
 
 .signup-right-side img {
   width: 100%;
@@ -166,6 +209,11 @@ body {
   box-shadow: 0 10px 20px rgba(19, 97, 99, 0.25);
 }
 
+.signup-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .signup-bottom-section {
   text-align: center;
   margin-top: 20px;
@@ -181,10 +229,14 @@ body {
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
+#message {
+  text-align: center;
+  margin-top: 15px;
+}
 
+@media (max-width: 768px) {
   .signup-container {
-    flex-direction: column; 
+    flex-direction: column;
     height: auto;
     min-height: 100vh;
     overflow-y: auto;
@@ -192,7 +244,7 @@ body {
 
   .signup-right-side {
     width: 100%;
-    height: 200px; 
+    height: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -203,19 +255,19 @@ body {
   .signup-right-side img {
     max-height: 100%;
     width: auto;
-    object-fit: contain; 
+    object-fit: contain;
   }
 
   .signup-left-side {
     width: 100%;
     height: auto;
-    padding: 20px 20px 60px 20px; 
-    display: block; 
+    padding: 20px 20px 60px 20px;
+    display: block;
   }
-  
+
   .signup-card {
     margin: 0 auto;
   }
 }
-
 </style>
+
