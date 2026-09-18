@@ -307,7 +307,12 @@
 </template>
 
 <script>
-import { submitExperience, sendOtp, verifyOtp } from "@/api/verification";
+import {
+  submitExperience,
+  sendOtp,
+  verifyOtp,
+  uploadDocument,
+} from "@/api/verification";
 export default {
   name: "PhoneVerification",
   props: {
@@ -451,11 +456,34 @@ export default {
       }
     },
 
-    submitId() {
-      // BACKEND: POST /api/verify/submit-id (multipart/form-data)
-      console.log("ID submitted:", this.idFile);
-      this.step = 4;
+    async submitId() {
+      if (!this.idFile) {
+        this.globalError = "Please select a file first.";
+        return;
+      }
+
+      this.globalError = "";
+      this.isSubmitting = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("file", this.idFile);
+        formData.append("userId", 1);
+        formData.append("documentType", "id");
+
+        await uploadDocument(formData);
+
+        this.step = 4;
+      } catch (err) {
+        console.error("ID upload failed:", err);
+        this.globalError =
+          err.response?.data?.message ||
+          "Failed to upload ID. Please try again.";
+      } finally {
+        this.isSubmitting = false;
+      }
     },
+
     submitAddress() {
       // BACKEND: POST /api/verify/submit-address (multipart/form-data)
       console.log("Address submitted:", this.addressFile);
