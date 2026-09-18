@@ -61,10 +61,7 @@ onMounted(() => {
 
                 <br>
 
-                <button
-                    class="worker-link"
-                    @click="router.push('/workersignup')"
-                >
+                <button class="worker-link" @click="router.push('/workersignup')">
                     Join as a worker
                 </button>
             </div>
@@ -141,38 +138,22 @@ onMounted(() => {
         <div class="home-reviews">
             <h2>Don't just take our word for it</h2>
 
-            <div
-                v-if="reviewsLoading"
-                class="reviews-message"
-            >
+            <div v-if="reviewsLoading" class="reviews-message">
                 Loading reviews...
             </div>
 
-            <div
-                v-else-if="reviews.length === 0"
-                class="reviews-message"
-            >
+            <div v-else-if="reviews.length === 0" class="reviews-message">
                 No reviews available.
             </div>
 
-            <div
-                v-else
-                class="review-cards"
-            >
-                <div
-                    v-for="review in reviews"
-                    :key="review.id"
-                    class="review-card"
-                >
+            <div v-else class="review-cards">
+                <div v-for="review in reviews" :key="review.id" class="review-card">
                     <div class="quote-mark">
                         “
                     </div>
 
                     <div class="review-stars">
-                        <span
-                            v-for="star in 5"
-                            :key="star"
-                        >
+                        <span v-for="star in 5" :key="star">
                             {{ star <= Math.round(review.rating) ? '★' : '☆' }}
                         </span>
                     </div>
