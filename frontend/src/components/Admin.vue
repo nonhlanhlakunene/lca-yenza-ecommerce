@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 
@@ -29,7 +30,9 @@ const loadWorkers = async () => {
 
     const data = await response.json()
 
-    if (!response.ok) throw new Error(data.message || 'Failed to load workers')
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to load workers')
+    }
 
     workers.value = data
   } catch (error) {
@@ -44,7 +47,9 @@ const loadStats = async () => {
 
     const data = await response.json()
 
-    if (!response.ok) throw new Error(data.message || 'Failed to load statistics')
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to load statistics')
+    }
 
     stats.value = {
       total_workers: Number(data.total_workers) || 0,
@@ -63,7 +68,9 @@ const loadActivity = async () => {
 
     const data = await response.json()
 
-    if (!response.ok) throw new Error(data.message || 'Failed to load activity')
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to load activity')
+    }
 
     activity.value = {
       active: Number(data.active) || 0,
@@ -89,9 +96,23 @@ const loadAdminData = async () => {
 }
 
 const removeWorker = async (professionalId) => {
-  const confirmed = confirm('Are you sure you want to delete this worker?')
+  const result = await Swal.fire({
+    title: 'Delete worker?',
+    text: 'Are you sure you want to delete this worker? This action cannot be undone.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#136163',
+    cancelButtonColor: '#183b56',
+    background: '#ffffff',
+    color: '#222222',
+    iconColor: '#136163',
+    reverseButtons: true,
+    focusCancel: true
+  })
 
-  if (!confirmed) return
+  if (!result.isConfirmed) return
 
   try {
     const response = await fetch(
@@ -112,15 +133,34 @@ const removeWorker = async (professionalId) => {
     )
 
     await loadStats()
+    await loadActivity()
 
     if (currentPage.value > 1 && paginatedWorkers.value.length === 0) {
       currentPage.value--
     }
 
-    alert('Worker deleted successfully')
+    Swal.fire({
+      title: 'Worker deleted',
+      text: 'The worker was successfully removed.',
+      icon: 'success',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163',
+      background: '#ffffff',
+      color: '#222222',
+      iconColor: '#136163'
+    })
   } catch (error) {
     console.error('Delete worker error:', error)
-    alert(error.message)
+
+    Swal.fire({
+      title: 'Delete failed',
+      text: error.message,
+      icon: 'error',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163',
+      background: '#ffffff',
+      color: '#222222'
+    })
   }
 }
 
@@ -137,6 +177,17 @@ const pages = computed(() => {
   return Math.ceil(workers.value.length / workersPerPage)
 })
 
+/*
+  BAR CHART
+
+  These values come directly from:
+  GET /api/admin/activity
+
+  active
+  completed
+  pending
+*/
+
 const chartGroups = computed(() => {
   const active = Number(activity.value.active) || 0
   const completed = Number(activity.value.completed) || 0
@@ -145,36 +196,21 @@ const chartGroups = computed(() => {
   const max = Math.max(active, completed, pending, 1)
 
   return [
-    [
-      Math.round((active / max) * 100),
-      Math.round((completed / max) * 100),
-      Math.round((pending / max) * 100)
-    ],
-    [
-      Math.round((active / max) * 100),
-      Math.round((completed / max) * 100),
-      Math.round((pending / max) * 100)
-    ],
-    [
-      Math.round((active / max) * 100),
-      Math.round((completed / max) * 100),
-      Math.round((pending / max) * 100)
-    ],
-    [
-      Math.round((active / max) * 100),
-      Math.round((completed / max) * 100),
-      Math.round((pending / max) * 100)
-    ],
-    [
-      Math.round((active / max) * 100),
-      Math.round((completed / max) * 100),
-      Math.round((pending / max) * 100)
-    ],
-    [
-      Math.round((active / max) * 100),
-      Math.round((completed / max) * 100),
-      Math.round((pending / max) * 100)
-    ]
+    {
+      label: 'Active',
+      value: active,
+      height: Math.round((active / max) * 100)
+    },
+    {
+      label: 'Completed',
+      value: completed,
+      height: Math.round((completed / max) * 100)
+    },
+    {
+      label: 'Pending',
+      value: pending,
+      height: Math.round((pending / max) * 100)
+    }
   ]
 })
 
@@ -200,27 +236,51 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <button class="back-button" type="button" @click="router.back()" aria-label="Go back">
+
+    <button
+      class="back-button"
+      type="button"
+      @click="router.back()"
+      aria-label="Go back"
+    >
       <span aria-hidden="true">←</span>
       <span>Back</span>
     </button>
 
-    <section class="admin-layout" aria-label="Admin dashboard">
+    <section
+      class="admin-layout"
+      aria-label="Admin dashboard"
+    >
+
       <div class="dashboard-main">
 
+        <!-- WORKERS -->
         <section class="dashboard-card workers-section">
+
           <div class="section-heading">
+
             <div>
               <h2>Workers</h2>
               <p>Manage and view your registered workers</p>
             </div>
-            <span class="worker-count">{{ workers.length }} workers</span>
+
+            <span class="worker-count">
+              {{ workers.length }} workers
+            </span>
+
           </div>
 
-          <p v-if="message" class="error-message">{{ message }}</p>
+          <p
+            v-if="message"
+            class="error-message"
+          >
+            {{ message }}
+          </p>
 
           <div class="worker-table">
+
             <table>
+
               <thead>
                 <tr>
                   <th>Name</th>
@@ -232,134 +292,289 @@ onMounted(() => {
               </thead>
 
               <tbody>
+
                 <tr v-if="loading">
-                  <td colspan="5" class="loading-row">Loading workers...</td>
+                  <td
+                    colspan="5"
+                    class="loading-row"
+                  >
+                    Loading workers...
+                  </td>
                 </tr>
 
                 <tr v-else-if="paginatedWorkers.length === 0">
-                  <td colspan="5" class="loading-row">No workers found.</td>
+                  <td
+                    colspan="5"
+                    class="loading-row"
+                  >
+                    No workers found.
+                  </td>
                 </tr>
 
-                <tr v-for="worker in paginatedWorkers" :key="worker.professional_id">
-                  <td class="worker-name">{{ worker.name }}</td>
+                <tr
+                  v-for="worker in paginatedWorkers"
+                  :key="worker.professional_id"
+                >
 
-                  <td>
-                    <span class="role-badge">{{ worker.role }}</span>
+                  <td class="worker-name">
+                    {{ worker.name }}
                   </td>
 
-                  <td>{{ worker.city || 'Not provided' }}</td>
+                  <td>
+                    <span class="role-badge">
+                      {{ worker.role }}
+                    </span>
+                  </td>
 
                   <td>
-                    <button class="profile-button" type="button" @click="viewProfile(worker.slug)">
+                    {{ worker.city || 'Not provided' }}
+                  </td>
+
+                  <td>
+                    <button
+                      class="profile-button"
+                      type="button"
+                      @click="viewProfile(worker.slug)"
+                    >
                       View Profile
                     </button>
                   </td>
 
                   <td>
-                    <button class="delete-button" type="button" @click="removeWorker(worker.professional_id)">
+                    <button
+                      class="delete-button"
+                      type="button"
+                      @click="removeWorker(worker.professional_id)"
+                    >
                       Delete
                     </button>
                   </td>
+
                 </tr>
+
               </tbody>
+
             </table>
+
           </div>
 
-          <nav v-if="pages > 1" class="pagination" aria-label="Worker pages">
-            <button type="button" class="page-arrow" :disabled="currentPage === 1" @click="currentPage--">←</button>
+          <nav
+            v-if="pages > 1"
+            class="pagination"
+            aria-label="Worker pages"
+          >
 
-            <button v-for="page in pages" :key="page" type="button" :class="{ active: currentPage === page }" @click="currentPage = page">
+            <button
+              type="button"
+              class="page-arrow"
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+            >
+              ←
+            </button>
+
+            <button
+              v-for="page in pages"
+              :key="page"
+              type="button"
+              :class="{ active: currentPage === page }"
+              @click="currentPage = page"
+            >
               {{ page }}
             </button>
 
-            <button type="button" class="page-arrow" :disabled="currentPage === pages" @click="currentPage++">→</button>
+            <button
+              type="button"
+              class="page-arrow"
+              :disabled="currentPage === pages"
+              @click="currentPage++"
+            >
+              →
+            </button>
+
           </nav>
+
         </section>
 
+        <!-- ANALYTICS -->
         <section class="dashboard-card analytics-section">
+
           <div class="section-heading analytics-heading">
+
             <div>
               <h2>Statistics</h2>
               <p>Worker activity and category distribution</p>
             </div>
+
           </div>
 
           <div class="analytics">
 
+            <!-- BAR CHART -->
             <div class="chart-container">
+
               <h3>Worker Activity</h3>
 
               <div class="bar-chart">
+
                 <div class="chart-grid"></div>
 
                 <div class="chart-bars">
-                  <div v-for="(group, index) in chartGroups" :key="index" class="bar-group">
-                    <i class="teal" :style="{ height: `${group[0]}%` }"></i>
-                    <i class="blue" :style="{ height: `${group[1]}%` }"></i>
-                    <i class="navy" :style="{ height: `${group[2]}%` }"></i>
+
+                  <div
+                    v-for="(group, index) in chartGroups"
+                    :key="index"
+                    class="bar-group"
+                  >
+
+                    <i
+                      :class="{
+                        teal: index === 0,
+                        blue: index === 1,
+                        navy: index === 2
+                      }"
+                      :style="{
+                        height: `${group.height}%`
+                      }"
+                      :title="`${group.label}: ${group.value}`"
+                    ></i>
+
+                    <span class="bar-value">
+                      {{ group.value }}
+                    </span>
+
                   </div>
+
                 </div>
+
+              </div>
+
+              <div class="chart-labels">
+                <span>Active</span>
+                <span>Completed</span>
+                <span>Pending</span>
               </div>
 
               <div class="chart-key">
-                <span><i class="teal"></i>Active</span>
-                <span><i class="blue"></i>Completed</span>
-                <span><i class="navy"></i>Pending</span>
+
+                <span>
+                  <i class="teal"></i>
+                  Active
+                </span>
+
+                <span>
+                  <i class="blue"></i>
+                  Completed
+                </span>
+
+                <span>
+                  <i class="navy"></i>
+                  Pending
+                </span>
+
               </div>
+
             </div>
 
+            <!-- DONUT CHART -->
             <div class="donut-container">
+
               <h3>Worker Categories</h3>
 
               <div class="donut-chart"></div>
 
               <div class="donut-label">
-                <strong>{{ stats.total_workers }}</strong>
-                <span>Total</span>
+
+                <strong>
+                  {{ stats.total_workers }}
+                </strong>
+
+                <span>
+                  Total
+                </span>
+
               </div>
+
             </div>
 
           </div>
+
         </section>
+
       </div>
 
+      <!-- RIGHT PANEL -->
       <aside class="reports-panel">
 
         <div class="summary">
+
           <div class="summary-item">
-            <span class="summary-title">Today</span>
-            <strong>{{ today }}</strong>
+
+            <span class="summary-title">
+              Today
+            </span>
+
+            <strong>
+              {{ today }}
+            </strong>
+
           </div>
 
           <div class="summary-divider"></div>
 
           <div class="summary-item">
-            <span class="summary-title">Total Workers</span>
-            <strong>{{ stats.total_workers }}</strong>
+
+            <span class="summary-title">
+              Total Workers
+            </span>
+
+            <strong>
+              {{ stats.total_workers }}
+            </strong>
+
           </div>
+
         </div>
 
         <div class="reports-card">
+
           <div class="reports-header">
+
             <div>
               <h1>Reports</h1>
               <p>Recent system reports</p>
             </div>
 
-            <span class="reports-icon">≡</span>
+            <span class="reports-icon">
+              ≡
+            </span>
+
           </div>
 
           <div class="reports-rule"></div>
 
           <div class="empty-reports">
-            <div class="empty-icon">✓</div>
-            <h3>No reports</h3>
-            <p>There are currently no reports available to display.</p>
+
+            <div class="empty-icon">
+              ✓
+            </div>
+
+            <h3>
+              No reports
+            </h3>
+
+            <p>
+              There are currently no reports available to display.
+            </p>
+
           </div>
+
         </div>
 
       </aside>
+
     </section>
+
   </main>
 </template>
 
@@ -660,37 +875,54 @@ onMounted(() => {
   min-height: 60px !important;
   border-left: 1px solid #dddddd !important;
   border-bottom: 1px solid #dddddd !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .admin-page .chart-grid {
   position: absolute !important;
   inset: 0 !important;
-  background-image: linear-gradient(to bottom, #eeeeee 1px, transparent 1px) !important;
+  background-image: linear-gradient(
+    to bottom,
+    #eeeeee 1px,
+    transparent 1px
+  ) !important;
   background-size: 100% 25% !important;
 }
 
 .admin-page .chart-bars {
   position: absolute !important;
-  inset: 5px 10px 0 10px !important;
+  inset: 5px 20px 0 20px !important;
   display: flex !important;
   align-items: flex-end !important;
   justify-content: space-around !important;
-  gap: 10px !important;
+  gap: 20px !important;
 }
 
 .admin-page .bar-group {
+  position: relative !important;
   height: 100% !important;
+  flex: 1 !important;
   display: flex !important;
   align-items: flex-end !important;
-  gap: 2px !important;
+  justify-content: center !important;
 }
 
 .admin-page .bar-group i {
   display: block !important;
-  width: 8px !important;
+  width: 30px !important;
   min-height: 3px !important;
-  border-radius: 3px 3px 0 0 !important;
+  border-radius: 4px 4px 0 0 !important;
+  transition: height 0.4s ease !important;
+}
+
+.admin-page .bar-value {
+  position: absolute !important;
+  bottom: 100% !important;
+  margin-bottom: 4px !important;
+  color: #333 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  pointer-events: none !important;
 }
 
 .admin-page .teal {
@@ -703,6 +935,21 @@ onMounted(() => {
 
 .admin-page .navy {
   background: #183b56 !important;
+}
+
+.admin-page .chart-labels {
+  display: flex !important;
+  justify-content: space-around !important;
+  gap: 20px !important;
+  margin-top: 6px !important;
+  padding: 0 10px !important;
+}
+
+.admin-page .chart-labels span {
+  flex: 1 !important;
+  text-align: center !important;
+  color: #666 !important;
+  font-size: 9px !important;
 }
 
 .admin-page .chart-key {
@@ -744,7 +991,12 @@ onMounted(() => {
   height: 105px !important;
   margin: auto !important;
   border-radius: 50% !important;
-  background: conic-gradient(#136163 0deg 110deg, #4b8fa0 110deg 220deg, #183b56 220deg 290deg, #d7e5e5 290deg 360deg) !important;
+  background: conic-gradient(
+    #136163 0deg 110deg,
+    #4b8fa0 110deg 220deg,
+    #183b56 220deg 290deg,
+    #d7e5e5 290deg 360deg
+  ) !important;
 }
 
 .admin-page .donut-chart::after {
@@ -899,30 +1151,99 @@ onMounted(() => {
 }
 
 @media (min-width: 1400px) {
-  .admin-page { padding: 20px 55px !important; }
-  .admin-page .admin-layout { grid-template-columns: minmax(0, 1fr) 330px !important; gap: 30px !important; }
-  .admin-page .worker-table td { padding: 8px 12px !important; }
-  .admin-page .worker-table tbody tr { height: 41px !important; }
-  .admin-page .donut-chart { width: 115px !important; height: 115px !important; }
-  .admin-page .donut-chart::after { width: 66px !important; height: 66px !important; }
+
+  .admin-page {
+    padding: 20px 55px !important;
+  }
+
+  .admin-page .admin-layout {
+    grid-template-columns: minmax(0, 1fr) 330px !important;
+    gap: 30px !important;
+  }
+
+  .admin-page .worker-table td {
+    padding: 8px 12px !important;
+  }
+
+  .admin-page .worker-table tbody tr {
+    height: 41px !important;
+  }
+
+  .admin-page .donut-chart {
+    width: 115px !important;
+    height: 115px !important;
+  }
+
+  .admin-page .donut-chart::after {
+    width: 66px !important;
+    height: 66px !important;
+  }
+
+  .admin-page .bar-group i {
+    width: 34px !important;
+  }
+
 }
 
 @media (max-width: 1200px) and (min-width: 901px) {
-  .admin-page { padding: 15px 25px !important; }
-  .admin-page .admin-layout { grid-template-columns: minmax(0, 1fr) 270px !important; gap: 18px !important; height: calc(100vh - 55px) !important; }
-  .admin-page .dashboard-card { padding: 14px !important; }
+
+  .admin-page {
+    padding: 15px 25px !important;
+  }
+
+  .admin-page .admin-layout {
+    grid-template-columns: minmax(0, 1fr) 270px !important;
+    gap: 18px !important;
+    height: calc(100vh - 55px) !important;
+  }
+
+  .admin-page .dashboard-card {
+    padding: 14px !important;
+  }
+
   .admin-page .worker-table th,
-  .admin-page .worker-table td { padding: 6px 7px !important; }
-  .admin-page .worker-table tbody tr { height: 36px !important; }
-  .admin-page .section-heading h2 { font-size: 18px !important; }
-  .admin-page .analytics { gap: 15px !important; }
-  .admin-page .donut-chart { width: 90px !important; height: 90px !important; }
-  .admin-page .donut-chart::after { width: 52px !important; height: 52px !important; }
-  .admin-page .summary { padding: 11px !important; }
-  .admin-page .reports-card { padding: 14px !important; }
+  .admin-page .worker-table td {
+    padding: 6px 7px !important;
+  }
+
+  .admin-page .worker-table tbody tr {
+    height: 36px !important;
+  }
+
+  .admin-page .section-heading h2 {
+    font-size: 18px !important;
+  }
+
+  .admin-page .analytics {
+    gap: 15px !important;
+  }
+
+  .admin-page .donut-chart {
+    width: 90px !important;
+    height: 90px !important;
+  }
+
+  .admin-page .donut-chart::after {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .admin-page .summary {
+    padding: 11px !important;
+  }
+
+  .admin-page .reports-card {
+    padding: 14px !important;
+  }
+
+  .admin-page .bar-group i {
+    width: 25px !important;
+  }
+
 }
 
 @media (max-width: 900px) {
+
   .admin-page {
     height: auto !important;
     min-height: 100vh !important;
@@ -942,23 +1263,63 @@ onMounted(() => {
     overflow: visible !important;
   }
 
-  .admin-page .dashboard-card { min-height: 400px !important; }
-  .admin-page .reports-panel { min-height: 400px !important; overflow: visible !important; }
+  .admin-page .dashboard-card {
+    min-height: 400px !important;
+  }
+
+  .admin-page .reports-panel {
+    min-height: 400px !important;
+    overflow: visible !important;
+  }
+
 }
 
 @media (max-width: 600px) {
-  .admin-page { padding: 15px !important; }
-  .admin-page .admin-layout { gap: 15px !important; }
-  .admin-page .dashboard-card { padding: 12px !important; }
-  .admin-page .section-heading h2 { font-size: 17px !important; }
-  .admin-page .section-heading p { font-size: 10px !important; }
+
+  .admin-page {
+    padding: 15px !important;
+  }
+
+  .admin-page .admin-layout {
+    gap: 15px !important;
+  }
+
+  .admin-page .dashboard-card {
+    padding: 12px !important;
+  }
+
+  .admin-page .section-heading h2 {
+    font-size: 17px !important;
+  }
+
+  .admin-page .section-heading p {
+    font-size: 10px !important;
+  }
+
   .admin-page .worker-table th,
-  .admin-page .worker-table td { padding: 6px 4px !important; font-size: 10px !important; }
-  .admin-page .worker-table tbody tr { height: 34px !important; }
+  .admin-page .worker-table td {
+    padding: 6px 4px !important;
+    font-size: 10px !important;
+  }
+
+  .admin-page .worker-table tbody tr {
+    height: 34px !important;
+  }
+
   .admin-page .profile-button,
-  .admin-page .delete-button { padding: 4px 6px !important; font-size: 9px !important; }
-  .admin-page .analytics { grid-template-columns: 1fr !important; overflow: visible !important; }
-  .admin-page .analytics-section { min-height: 450px !important; }
+  .admin-page .delete-button {
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+  }
+
+  .admin-page .analytics {
+    grid-template-columns: 1fr !important;
+    overflow: visible !important;
+  }
+
+  .admin-page .analytics-section {
+    min-height: 450px !important;
+  }
+
 }
 </style>
-

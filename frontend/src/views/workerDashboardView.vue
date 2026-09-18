@@ -108,6 +108,7 @@
 
 
         <div class="earnings-progress">
+
           <span>
             Earnings:
             <b>
@@ -121,13 +122,16 @@
               {{ statistics.confirmed_jobs }}
             </b>
           </span>
+
         </div>
 
 
         <!-- MORE JOBS -->
         <h3 class="section-title">
           More Jobs
-        </h3><br>
+        </h3>
+
+        <br>
 
 
         <div
@@ -184,7 +188,11 @@
                 @click="declineJob(job)"
                 :disabled="processingId === job.booking_id"
               >
-                Decline
+                {{
+                  processingId === job.booking_id
+                    ? 'Processing...'
+                    : 'Decline'
+                }}
               </button>
 
             </div>
@@ -286,6 +294,7 @@
 <script setup>
 
 import { ref, computed, onMounted } from 'vue'
+import Swal from 'sweetalert2'
 
 
 const jobs = ref([])
@@ -363,6 +372,14 @@ async function loadDashboard() {
       errorMessage.value =
         'You are not logged in.'
 
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'Please log in before accessing the worker dashboard.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#136163'
+      })
+
       return
     }
 
@@ -418,6 +435,14 @@ async function loadDashboard() {
     errorMessage.value =
       error.message
 
+    await Swal.fire({
+      icon: 'error',
+      title: 'Dashboard Error',
+      text: error.message,
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163'
+    })
+
   } finally {
 
     loading.value = false
@@ -437,6 +462,14 @@ async function acceptJob(job) {
 
 
     const token = getToken()
+
+
+    if (!token) {
+
+      throw new Error(
+        'You are not logged in.'
+      )
+    }
 
 
     const response = await fetch(
@@ -478,9 +511,13 @@ async function acceptJob(job) {
     /*
         Add it to Bookings
     */
-    bookings.value.push(
-      data.booking
-    )
+    if (data.booking) {
+
+      bookings.value.push(
+        data.booking
+      )
+
+    }
 
 
     /*
@@ -496,6 +533,18 @@ async function acceptJob(job) {
     statistics.value.confirmed_jobs += 1
 
 
+    /*
+        Success message
+    */
+    await Swal.fire({
+      icon: 'success',
+      title: 'Job Accepted',
+      text: 'The booking has been added to your bookings.',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163'
+    })
+
+
   } catch (error) {
 
     console.error(
@@ -503,11 +552,20 @@ async function acceptJob(job) {
       error
     )
 
-    alert(error.message)
+
+    await Swal.fire({
+      icon: 'error',
+      title: 'Could Not Accept Job',
+      text: error.message,
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163'
+    })
+
 
   } finally {
 
     processingId.value = null
+
   }
 }
 
@@ -517,6 +575,25 @@ async function acceptJob(job) {
 */
 async function declineJob(job) {
 
+  const result = await Swal.fire({
+    title: 'Decline this job?',
+    text: 'Are you sure you want to decline this booking?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, decline',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#b94a48',
+    cancelButtonColor: '#136163',
+    reverseButtons: true,
+    focusCancel: true
+  })
+
+
+  if (!result.isConfirmed) {
+    return
+  }
+
+
   try {
 
     processingId.value =
@@ -524,6 +601,14 @@ async function declineJob(job) {
 
 
     const token = getToken()
+
+
+    if (!token) {
+
+      throw new Error(
+        'You are not logged in.'
+      )
+    }
 
 
     const response = await fetch(
@@ -572,6 +657,18 @@ async function declineJob(job) {
     statistics.value.cancelled_jobs += 1
 
 
+    /*
+        Success message
+    */
+    await Swal.fire({
+      icon: 'success',
+      title: 'Job Declined',
+      text: 'The booking has been declined.',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163'
+    })
+
+
   } catch (error) {
 
     console.error(
@@ -579,11 +676,20 @@ async function declineJob(job) {
       error
     )
 
-    alert(error.message)
+
+    await Swal.fire({
+      icon: 'error',
+      title: 'Could Not Decline Job',
+      text: error.message,
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#136163'
+    })
+
 
   } finally {
 
     processingId.value = null
+
   }
 }
 
@@ -591,15 +697,55 @@ async function declineJob(job) {
 /*
     View booking
 */
-function viewBooking(booking) {
+async function viewBooking(booking) {
 
-  alert(
-    `Booking for ${booking.first_name} ${booking.last_name}\n\n` +
-    `Service: ${booking.service_name}\n` +
-    `Date: ${formatDate(booking.booking_date)}\n` +
-    `Time: ${formatTime(booking.booking_time)}\n` +
-    `Address: ${booking.service_address}`
-  )
+  await Swal.fire({
+
+    title: 'Booking Details',
+
+    html: `
+      <div style="text-align: left; line-height: 1.8; font-size: 14px;">
+
+        <p>
+          <strong>Customer:</strong>
+          ${booking.first_name || ''} ${booking.last_name || ''}
+        </p>
+
+        <p>
+          <strong>Service:</strong>
+          ${booking.service_name || 'Not provided'}
+        </p>
+
+        <p>
+          <strong>Date:</strong>
+          ${formatDate(booking.booking_date)}
+        </p>
+
+        <p>
+          <strong>Time:</strong>
+          ${formatTime(booking.booking_time)}
+        </p>
+
+        <p>
+          <strong>Address:</strong>
+          ${booking.service_address || 'Not provided'}
+        </p>
+
+      </div>
+    `,
+
+    icon: 'info',
+
+    confirmButtonText: 'Close',
+
+    confirmButtonColor: '#136163',
+
+    background: '#ffffff',
+
+    color: '#222222'
+
+  })
+
 }
 
 
@@ -610,6 +756,7 @@ function formatMoney(amount) {
 
   return Number(amount || 0)
     .toFixed(2)
+
 }
 
 
@@ -631,6 +778,7 @@ function formatDate(date) {
         year: 'numeric'
       }
     )
+
 }
 
 
@@ -644,6 +792,7 @@ function formatTime(time) {
   }
 
   return String(time).substring(0, 5)
+
 }
 
 
@@ -653,6 +802,7 @@ function formatTime(time) {
 function goBack() {
 
   window.history.back()
+
 }
 
 
@@ -1141,8 +1291,6 @@ hr {
     13px;
 }
 
-
-/* EMPTY */
 
 .empty {
 
