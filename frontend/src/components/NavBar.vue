@@ -9,13 +9,7 @@
           {{ link.text }}
         </router-link>
 
-        <a
-          v-else
-          href="/login"
-          @click.prevent="logout"
-        >
-          Logout
-        </a>
+        <a v-else href="/login" @click.prevent="logout">Logout</a>
       </li>
     </ul>
   </nav>
@@ -120,7 +114,7 @@ const logout = () => {
   color: var(--color-page);
   text-decoration: none;
   font-size: var(--font-sm);
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .navbar-links a:hover {
@@ -131,6 +125,24 @@ const logout = () => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 5px;
+}
+
+/* Logout button */
+.navbar-links li:last-child a {
+  background-color: #ffffff;
+  color: #136163;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid #ffffff;
+  transition: all 0.3s ease;
+}
+
+.navbar-links li:last-child a:hover {
+  background-color: transparent;
+  color: #ffffff;
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
