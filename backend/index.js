@@ -5,6 +5,7 @@ import db from './config/db.js'
 import bookingRoutes from './routes/bookingRoutes.js'
 import reportRoutes from './routes/reportRoutes.js'
 import reviewRoutes from './routes/reviewRoutes.js'
+import verificationRoutes from './routes/verificationRoutes.js'
 
 // Initialize configurations
 dotenv.config();
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/reports', reportRoutes)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/verifications', verificationRoutes)
 app.use('/api/bookings', bookingRoutes)
 
 // Your first API test route
