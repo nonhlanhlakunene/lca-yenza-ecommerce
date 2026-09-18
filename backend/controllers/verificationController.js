@@ -2,7 +2,7 @@ import { saveWorkerExperience } from "../models/verificationModel.js";
 
 export const submitExperienceController = async (req, res) => {
     try {
-        const { professionalId, experienceNotes } = req.body;
+        const { professionalId, service, yearsExperience, experienceNotes } = req.body;
 
         if (!professionalId) {
             return res.status(400).json({
@@ -13,6 +13,8 @@ export const submitExperienceController = async (req, res) => {
 
         const experienceId = await saveWorkerExperience({
             professionalId,
+            service,
+            yearsExperience,
             experienceNotes
         });
 

@@ -226,6 +226,7 @@
 </template>
 
 <script>
+import { submitExperience } from '@/api/verification';
 export default {
     name: "PhoneVerification",
     props: {
@@ -347,19 +348,27 @@ export default {
             console.log('Background docs submitted:', this.policeClearanceFile, this.affidavitFile)
             this.step = 6
         },
-        submitExperience() {
+        async submitExperience() {
             if (!this.service) {
                 this.globalError = 'Please select a service.'
                 return
             }
             this.globalError = ''
-            // BACKEND: POST /api/verify/submit-experience { service, yearsExperience, experienceChecks, experienceNotes }
-            console.log('Experience submitted:', {
-                service: this.service,
-                yearsExperience: this.yearsExperience,
-                experienceNotes: this.experienceNotes
-            })
-            this.step = this.totalSteps
+            
+            try {
+                await submitExperience({
+                    professionalId: 1,
+                    service: this.service,
+                    yearsExperience: this.yearsExperience,
+                    experienceNotes: this.experienceNotes
+                })
+
+                this.step = this.totalSteps
+            } catch (err) {
+                console.error('Experience submission failed:', err)
+                this.globalError = err.response?.data?.message || 'Something went wrong. Please try again.'   
+            }
+
         },
 
         goBack() {
