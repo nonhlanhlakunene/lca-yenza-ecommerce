@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import Swal from 'sweetalert2'
+
+import api from '../api/api.js'
 import { professionals } from '../data/professionals.js'
 
 const route = useRoute()
@@ -12,33 +14,98 @@ const professional = computed(() => {
     )
 })
 
+const customerId = 1
+
 const booking = ref({
     date: '',
     time: '',
     address: '',
+    city: '',
     notes: ''
 })
 
-const submitBooking = () => {
+const isSubmitting = ref(false)
+
+cosnt submitPayFastForm = (paymentUrl, paymentData) => {
+
+    const form = document.createElement('form')
+
+    form.method = 'POST'
+    form.action = paymentUrl
+
+    Object.entries(paymentData).forEach(([Key, value]) => {
+        const input = document.createElement('input')
+
+        input.type = 'hidden'
+        input.name = key
+        input.value = value
+
+        form.appendChild(input)
+    })
+
+    document.body.appendChild(form)
+
+    form.submit()
+}
+
+const submitBooking = async () => {
+    if (!professional.value) {
+
+        Swal.fire({
+            icon:'error',
+            title: 'Professional not found',
+            text: 'We could not find the selected professional.'
+        })
+        return
+    }
+
     if (
         !booking.value.date ||
         !booking.value.time ||
-        !booking.value.address
+        !booking.value.address ||
+        !booking.value.city
     ) {
+
         Swal.fire({
-            icon: 'Warning',
+            icon: 'warning',
             title: 'Missing information',
             text: 'Please complete all required fields.'
         })
         return
-    }   Swal.fire({
-        icon: 'Success',
-        title: 'Booking submitted!',
-        text: 'Your booking request has been submitted successfully!'
-    })
+    }
 
-    console.log('Booking:', booking.value)
-} 
+    try {
+        isSubmitting.value = true
+
+        // CREATE BOOKIGN IN DATABASE
+        const bookingResponse = await api.post('/bookings', {
+            customerId,
+            professionalName: professional.value.name,
+            bookingDate: booking.value.date,
+            bookingTime: booking.value.time,
+            serviceAddress: booking.value.address,
+            city: booking.value.city,
+            province: null,
+            postalCode: null,
+            notes: booking.value.notes
+        })
+
+
+        if (!bookingResponse.data.success) {
+            throw new Error(
+                bookingResponse.data.message ||
+                'Failed to create booking'
+            )
+        }
+
+        const bookingId = bookingResponse.data.booking_id
+
+        console.log('Booking created:', bookingId)
+
+
+        // Ask backend to create a pending PayFast payment for booking
+        const paymentResponse
+    }
 </script>
 
 
