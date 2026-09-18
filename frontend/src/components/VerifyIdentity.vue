@@ -158,7 +158,7 @@
       <div v-if="step === 5 && userType === 'worker'">
         <div class="n-headings">
           <h3>BACKGROUND CHECK</h3>
-          <p>Submit the documents required for your background verification.</p>
+          <p>Upload your police clearance certificate.</p>
         </div>
 
         <form class="verification-card" @submit.prevent="submitBackground">
@@ -168,7 +168,7 @@
             <input
               id="policeClearance"
               type="file"
-              accept="image/*"
+              accept="image/*,application/pdf"
               @change="
                 handleFileUpload(
                   $event,
@@ -182,26 +182,10 @@
             </p>
           </div>
 
-          <div class="upload-section">
-            <label for="affidavit">Affidavit</label>
-            <p>Upload your completed affidavit.</p>
-            <input
-              id="affidavit"
-              type="file"
-              accept="image/*"
-              @change="
-                handleFileUpload($event, 'affidavitFile', 'affidavitFileName')
-              "
-            />
-            <p v-if="affidavitFileName" class="file-selected">
-              Selected: {{ affidavitFileName }}
-            </p>
-          </div>
-
           <button
             class="send-otp"
             type="submit"
-            :disabled="!policeClearanceFile || !affidavitFile"
+            :disabled="!policeClearanceFile"
           >
             Continue
           </button>
@@ -288,9 +272,9 @@
             <span>✓</span>
             <p>Address submitted</p>
           </div>
-          <div class="summary-item" v-if="policeClearanceFile && affidavitFile">
+          <div class="summary-item" v-if="policeClearanceFile">
             <span>✓</span>
-            <p>Background check submitted</p>
+            <p>Police Clearance Submitted</p>
           </div>
           <div class="summary-item" v-if="service">
             <span>✓</span>
@@ -489,15 +473,35 @@ export default {
       console.log("Address submitted:", this.addressFile);
       this.step = 5;
     },
-    submitBackground() {
-      // BACKEND: POST /api/verify/submit-background (multipart/form-data, 2 files)
-      console.log(
-        "Background docs submitted:",
-        this.policeClearanceFile,
-        this.affidavitFile,
-      );
-      this.step = 6;
+
+    async submitBackground() {
+      if (!this.policeClearanceFile) {
+        this.globalError = "Please select a file first.";
+        return;
+      }
+
+      this.globalError = "";
+      this.isSubmitting = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("file", this.policeClearanceFile);
+        formData.append("userId", 1);
+        formData.append("documentType", "police_clearance");
+
+        await uploadDocument(formData);
+
+        this.step = 6;
+      } catch (err) {
+        console.error("Police clearance upload failed:", err);
+        this.globalError =
+          err.response?.data?.message ||
+          "Failed to upload police clearance. Please try again.";
+      } finally {
+        this.isSubmitting = false;
+      }
     },
+
     async submitExperience() {
       if (!this.service) {
         this.globalError = "Please select a service.";
