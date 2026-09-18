@@ -26,14 +26,15 @@ const booking = ref({
 
 const isSubmitting = ref(false)
 
-cosnt submitPayFastForm = (paymentUrl, paymentData) => {
+// Submit the PayFast hosted checkout form
+const submitPayFastForm = (paymentUrl, paymentData) => {
 
     const form = document.createElement('form')
 
     form.method = 'POST'
     form.action = paymentUrl
 
-    Object.entries(paymentData).forEach(([Key, value]) => {
+    Object.entries(paymentData).forEach(([key, value]) => {
         const input = document.createElement('input')
 
         input.type = 'hidden'
@@ -59,6 +60,7 @@ const submitBooking = async () => {
         return
     }
 
+// Check required booking fields
     if (
         !booking.value.date ||
         !booking.value.time ||
@@ -77,7 +79,7 @@ const submitBooking = async () => {
     try {
         isSubmitting.value = true
 
-        // CREATE BOOKIGN IN DATABASE
+        // CREATE BOOKING IN DATABASE
         const bookingResponse = await api.post('/bookings', {
             customerId,
             professionalName: professional.value.name,
@@ -104,8 +106,47 @@ const submitBooking = async () => {
 
 
         // Ask backend to create a pending PayFast payment for booking
-        const paymentResponse
+        const paymentResponse = await api.post(
+            '/payments/payfast',
+            {
+                bookingId
+            }
+        )
+
+
+        if (!paymentResponse.data.success) {
+            throw new Error(
+                paymentResponse.data.message ||
+                'Failed to create payment'
+            )
+        }
+
+        console.log(
+            'Payment created:',
+            paymentResponse.data.payment_id
+        )
+
+        // Send customer to PayFast
+        submitPayFastForm(
+            paymentResponse.data.payment_url,
+            paymentResponse.data.payfast_data
+        )
+
+    } catch (error) {
+        console.error('Booking.payment error:', error)
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Something went wrong',
+            text:
+                error.response?.data?.message ||
+                error.message ||
+                'We could not process your booking.'
+        })
+    } finally {
+        isSubmitting.value = false
     }
+}
 </script>
 
 
@@ -147,9 +188,27 @@ const submitBooking = async () => {
                 </div>
 
                 <!-- ADDRESS -->
-                <div class="form-group"> <label for="address"> Service Address * </label> <input id="address"
-                        v-model="booking.address" type="text"
-                        placeholder="Enter the address where the service is needed"> </div>
+                <div class="form-group">
+                    <label for="address"> Service Address * </label> 
+                    <input 
+                        id="address"
+                        v-model="booking.address" 
+                        type="text"
+                        placeholder="Enter the address where the service is needed"
+                    > 
+                </div>
+
+                <!-- CITY -->
+                <div class="form-group">
+                    <label for="city">City *</label>
+
+                    <input
+                        id="city"
+                        v-model="booking.city"
+                        type="text"
+                        placeholder="Enter the city where the service is needed"
+                    >
+                </div>
 
                 <!-- ADDITIONAL INFORMATION -->
                 <div class="form-group"> <label for="notes"> Additional Information </label> <textarea id="notes"
@@ -158,7 +217,14 @@ const submitBooking = async () => {
                 </div>
 
                 <!-- SUBMIT BUTTON -->
-                <button type="submit" class="booking-button"> REQUEST BOOKING </button>
+                <button 
+                    type="submit" 
+                    class="booking-button"
+                    :disabled="isSubmitting"
+                >
+                    {{  isSubmitting ? 'PROCESSING...' : 'REQUEST BOOKING' }} 
+                </button>
+
             </form>
 
             <!-- INFORMATION PANEL -->
@@ -314,6 +380,13 @@ const submitBooking = async () => {
     background: var(--color-primary-dark);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(26, 95, 95, 0.3);
+}
+
+.booking-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* HOW IT WORKS */
