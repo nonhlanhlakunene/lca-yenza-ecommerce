@@ -1,7 +1,9 @@
-import  {createPayment, getPaymentByBookingId} from '../models/paymentModel.js'
-import db from '../config/bd.js'
+import  { createPayment, getPaymentByBookingId, updatePaymentStatus } from '../models/paymentModel.js'
+import db from '../config/db.js'
 import { generatePayFastSignature } from '../services/payfastService.js'
 
+
+// CREATE PAYFAST PAYMENT
 export const createPayFastPayment = async (req, res) => {
 
     try {
@@ -77,7 +79,7 @@ export const createPayFastPayment = async (req, res) => {
 
 
         // CHECK FOR EXISTING PAYMENT
-        const existingPayment = await getPaymentByBookingId(id)
+        const existingPayment = await getPaymentByBookingId(Id)
 
         if (
             existingPayment &&
@@ -114,11 +116,13 @@ export const createPayFastPayment = async (req, res) => {
         // PAYFAST SETTINGS
         const merchantId = process.env.PAYFAST_MERCHANT_ID
 
-        const merchantKey = process.env.PAYMENT_MERCHANT_KEY
+        const merchantKey = process.env.PAYFAST_MERCHANT_KEY
 
         const passphrase = process.env.PAYFAST_PASSPHRASE || null
 
         const paymentUrl = process.env.PAYFAST_URL || 'https://sandbox.payfast.co.za/eng/process'
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 
         const notifyUrl = process.env.PAYFAST_NOTIFY_URL
 
@@ -211,5 +215,77 @@ export const createPayFastPayment = async (req, res) => {
             success: false,
             message: 'Failed to create PayFast payment'
         })
+    }
+}
+
+
+// HANDLE PAYFAST NOTIFICATIONS
+export const handlePayFastNotify = async (req, res) => {
+    try {
+        const data = req.body
+
+        console.log('PayFast ITN received:', data)
+
+        const bookingId = data.custom_str1
+        const paymentId = data.custom_str2
+
+        if (!bookingId || !paymentId) {
+            return res
+                .status(400)
+                .send('Payment not found')
+        }
+
+        const receivedAmount =
+            Number(data.amount_gross)
+
+        const expectedAmount = 
+            Number(paymentId.amount)
+
+        if (receivedAmount !== expectedAmount) {
+            console.error('PayFast amount mismatch:', {
+                receivedAmount,
+                expectedAmount
+            })
+
+            return res
+                .status(400)
+                .send('Amount mismatch')
+        }
+
+        if (data.payment_status === 'COMPLETE') {
+
+            await updatePaymentStatus({
+                paymentId: paymentId.payment_id,
+                transactionId: data.pf_payment_id,
+                paymentStatus: 'successful',
+                paidAt: new Date()
+            })
+
+            await db.execute(
+                `UPDATE bookings
+                SET status = 'confirmed'
+                WHERE booking_id = ?`,
+                [bookingId]
+            )
+
+            console.log(
+                `Payment ${paymentId.payment_id} marked as successful`
+            )
+        }
+
+        return res
+            .status(200)
+            .send('OK')
+
+    } catch (error) {
+        console.error(
+            'PayFast ITN error:',
+            error
+        )
+
+        return res
+            .status(500)
+            .send('ITN processing failed')
+            
     }
 }

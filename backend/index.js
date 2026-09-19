@@ -3,16 +3,21 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './config/db.js'
 import bookingRoutes from './routes/bookingRoutes.js'
+import paymentRoutes from './routes/paymentRoutes.js'
+
 
 // Initialize configurations
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use('/api/bookings', bookingRoutes)
+app.use('/api/payments', paymentRoutes)
+
 
 // Your first API test route
 app.get('/', (req, res) => {
