@@ -31,6 +31,11 @@ const route = useRoute()
        @complete="showVerify = false"
      />
 
+    <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path)" />
+
+    <RouterView />
+
+    <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path)" />
 </template>
 
 
