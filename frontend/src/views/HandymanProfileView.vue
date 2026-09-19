@@ -1,15 +1,18 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ReportPopup from '../components/ReportPopup.vue'
 import api from '../api/api.js'
 
 const route = useRoute()
 const router = useRouter()
+
 const pro = ref(null)
 const loading = ref(true)
 const errorMessage = ref('')
 const showReport = ref(false)
+
+const fromAdmin = computed(() => route.query.fromAdmin === 'true')
 
 function initials(name) {
   return name
@@ -91,10 +94,11 @@ watch(
     <section class="profile-content">
       <button
         class="back-link"
-        @click="router.push('/services')"
-      >
-        ← Back to handymen
+        @click="fromAdmin ? router.push('/admin') : router.push('/services')">
+        ← {{ fromAdmin ? 'Back' : 'Back to handymen' }}
       </button>
+
+
 
       <header class="profile-hero">
         <img
@@ -203,7 +207,7 @@ watch(
 }
 
 .profile-sidebar {
-  width: 205px;
+  width: 276px;
   flex: 0 0 205px;
   padding: 20px 16px;
   background: #136163;
@@ -215,8 +219,8 @@ watch(
   border: 0;
   background: transparent;
   color: #fff;
-  font-family: 'Jeju Hallasan', sans-serif;
-  font-size: 21px;
+  font-family: 'JejuHallasan', sans-serif;
+  font-size: 50px;
   cursor: pointer;
 }
 

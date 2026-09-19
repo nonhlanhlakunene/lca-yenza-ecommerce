@@ -1,22 +1,51 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import {
+    computed,
+    onMounted,
+    onBeforeUnmount,
+    ref,
+    watch
+} from 'vue'
+
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
 import api from '../api/api.js'
 
+delete L.Icon.Default.prototype._getIconUrl
+
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow
+})
+
 const categories = ref([])
+
 const professionals = ref([])
 
 const activeCategory = ref('')
+
 const activeFilter = ref('All')
 
 const search = ref('')
 
 const currentPage = ref(1)
 
-const priceFilter = ref('All prices')
-const priceMenuOpen = ref(false)
+const priceFilter =
+    ref('All prices')
+
+const priceMenuOpen =
+    ref(false)
 
 const loading = ref(false)
-const errorMessage = ref('')
+
+const errorMessage =
+    ref('')
 
 const workersPerPage = 3
 
@@ -32,12 +61,100 @@ const priceOptions = [
     'R501+/hr'
 ]
 
-const totalPages = computed(() => {
-    return Math.ceil(
-        professionals.value.length /
-        workersPerPage
-    )
-})
+/*
+|--------------------------------------------------------------------------
+| MAP
+|--------------------------------------------------------------------------
+*/
+
+const mapElement =
+    ref(null)
+
+const map =
+    ref(null)
+
+const markersLayer =
+    ref(null)
+
+const mapReady =
+    ref(false)
+
+const mapFilterEnabled =
+    ref(false)
+
+const workerLocations =
+    ref([])
+
+const geocoding =
+    ref(false)
+
+const mapMessage =
+    ref('')
+
+/*
+|--------------------------------------------------------------------------
+| PROFESSIONAL FILTERING
+|--------------------------------------------------------------------------
+*/
+
+const filteredProfessionals =
+    computed(() => {
+        let result = [
+            ...professionals.value
+        ]
+
+        if (
+            mapFilterEnabled.value &&
+            mapReady.value
+        ) {
+            const bounds =
+                map.value.getBounds()
+
+            result =
+                result.filter(pro => {
+                    const location =
+                        workerLocations.value.find(
+                            item =>
+                                String(
+                                    item.id
+                                ) ===
+                                String(
+                                    pro.id
+                                )
+                        )
+
+                    if (
+                        !location ||
+                        location.latitude === null ||
+                        location.longitude === null
+                    ) {
+                        return false
+                    }
+
+                    return bounds.contains([
+                        location.latitude,
+                        location.longitude
+                    ])
+                })
+        }
+
+        return result
+    })
+
+/*
+|--------------------------------------------------------------------------
+| PAGINATION
+|--------------------------------------------------------------------------
+*/
+
+const totalPages =
+    computed(() => {
+        return Math.ceil(
+            filteredProfessionals.value
+                .length /
+            workersPerPage
+        )
+    })
 
 const visibleProfessionals =
     computed(() => {
@@ -48,37 +165,64 @@ const visibleProfessionals =
         const end =
             start + workersPerPage
 
-        return professionals.value.slice(
+        return filteredProfessionals.value.slice(
             start,
             end
         )
     })
 
-    function addPriceParams(params) {
-    if (priceFilter.value === 'Under R300/hr') {
+/*
+|--------------------------------------------------------------------------
+| PRICE FILTER
+|--------------------------------------------------------------------------
+*/
+
+function addPriceParams(
+    params
+) {
+    if (
+        priceFilter.value ===
+        'Under R300/hr'
+    ) {
         params.maxPrice = 299.99
-    } else if (priceFilter.value === 'R300 – R500/hr') {
+    } else if (
+        priceFilter.value ===
+        'R300 – R500/hr'
+    ) {
         params.minPrice = 300
         params.maxPrice = 500
-    } else if (priceFilter.value === 'R501+/hr') {
+    } else if (
+        priceFilter.value ===
+        'R501+/hr'
+    ) {
         params.minPrice = 501
     }
 }
 
+/*
+|--------------------------------------------------------------------------
+| LOAD PROFESSIONALS
+|--------------------------------------------------------------------------
+*/
 
 async function loadProfessionals() {
     loading.value = true
+
     errorMessage.value = ''
 
     try {
         const params = {}
 
-        if (activeCategory.value) {
+        if (
+            activeCategory.value
+        ) {
             params.category =
                 activeCategory.value
         }
 
-        if (search.value.trim()) {
+        if (
+            search.value.trim()
+        ) {
             params.search =
                 search.value.trim()
         }
@@ -87,22 +231,28 @@ async function loadProfessionals() {
             activeFilter.value ===
             'Reviews'
         ) {
-            params.sort = 'reviews'
+            params.sort =
+                'reviews'
         } else if (
             activeFilter.value ===
             'Rating'
         ) {
-            params.sort = 'rating'
+            params.sort =
+                'rating'
         } else if (
             priceFilter.value !==
             'All prices'
         ) {
-            params.sort = 'price-asc'
+            params.sort =
+                'price-asc'
         } else {
-            params.sort = 'best-match'
+            params.sort =
+                'best-match'
         }
 
-        addPriceParams(params)
+        addPriceParams(
+            params
+        )
 
         const response =
             await api.get(
@@ -117,6 +267,8 @@ async function loadProfessionals() {
                 .professionals || []
 
         currentPage.value = 1
+
+        await updateMapMarkers()
     } catch (error) {
         console.error(
             'Failed to load professionals:',
@@ -124,6 +276,7 @@ async function loadProfessionals() {
         )
 
         professionals.value = []
+
         currentPage.value = 1
 
         errorMessage.value =
@@ -133,6 +286,12 @@ async function loadProfessionals() {
         loading.value = false
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| LOAD CATEGORIES
+|--------------------------------------------------------------------------
+*/
 
 async function loadCategories() {
     try {
@@ -154,6 +313,507 @@ async function loadCategories() {
     }
 }
 
+/*
+|--------------------------------------------------------------------------
+| MAP INITIALISATION
+|--------------------------------------------------------------------------
+*/
+
+function initialiseMap() {
+    if (
+        !mapElement.value ||
+        map.value
+    ) {
+        return
+    }
+
+    map.value =
+        L.map(
+            mapElement.value,
+            {
+                zoomControl: true
+            }
+        ).setView(
+            [
+                -33.9249,
+                18.4241
+            ],
+            11
+        )
+
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            attribution:
+                '&copy; OpenStreetMap contributors',
+
+            maxZoom: 19
+        }
+    ).addTo(
+        map.value
+    )
+
+    markersLayer.value =
+        L.layerGroup().addTo(
+            map.value
+        )
+
+    map.value.on(
+        'moveend',
+        () => {
+            if (
+                mapFilterEnabled.value
+            ) {
+                currentPage.value = 1
+            }
+        }
+    )
+
+    map.value.on(
+        'zoomend',
+        () => {
+            if (
+                mapFilterEnabled.value
+            ) {
+                currentPage.value = 1
+            }
+        }
+    )
+
+    mapReady.value = true
+}
+
+/*
+|--------------------------------------------------------------------------
+| CREATE ADDRESS
+|--------------------------------------------------------------------------
+*/
+
+function getProfessionalAddress(
+    professional
+) {
+    return [
+        professional.address,
+        professional.city,
+        professional.province,
+        professional.postal_code,
+        'South Africa'
+    ]
+        .filter(Boolean)
+        .join(', ')
+}
+
+/*
+|--------------------------------------------------------------------------
+| GEOCODING
+|--------------------------------------------------------------------------
+*/
+
+async function geocodeAddress(
+    address
+) {
+    try {
+        const url =
+            'https://nominatim.openstreetmap.org/search?' +
+            new URLSearchParams({
+                q: address,
+                format: 'json',
+                limit: '1',
+                countrycodes: 'za'
+            })
+
+        const response =
+            await fetch(url, {
+                headers: {
+                    Accept:
+                        'application/json'
+                }
+            })
+
+        if (
+            !response.ok
+        ) {
+            return null
+        }
+
+        const data =
+            await response.json()
+
+        if (
+            !data.length
+        ) {
+            return null
+        }
+
+        return {
+            latitude:
+                Number(
+                    data[0].lat
+                ),
+
+            longitude:
+                Number(
+                    data[0].lon
+                )
+        }
+    } catch (error) {
+        console.error(
+            'Geocoding failed:',
+            error
+        )
+
+        return null
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| GEOCODE ALL PROFESSIONALS
+|--------------------------------------------------------------------------
+*/
+
+async function geocodeProfessionals() {
+    if (
+        !professionals.value.length
+    ) {
+        workerLocations.value = []
+
+        return
+    }
+
+    geocoding.value = true
+
+    mapMessage.value =
+        'Finding worker locations...'
+
+    const locations = []
+
+    for (
+        const professional
+        of professionals.value
+    ) {
+        const address =
+            getProfessionalAddress(
+                professional
+            )
+
+        let coordinates = null
+
+        /*
+         * If the API ever gives us
+         * coordinates in the future,
+         * use them first.
+         */
+        if (
+            professional.latitude !==
+                undefined &&
+            professional.longitude !==
+                undefined &&
+            professional.latitude !==
+                null &&
+            professional.longitude !==
+                null
+        ) {
+            coordinates = {
+                latitude:
+                    Number(
+                        professional.latitude
+                    ),
+
+                longitude:
+                    Number(
+                        professional.longitude
+                    )
+            }
+        }
+
+        /*
+         * Otherwise use the existing
+         * database address.
+         */
+        if (
+            !coordinates &&
+            address
+        ) {
+            coordinates =
+                await geocodeAddress(
+                    address
+                )
+
+            /*
+             * Small delay between
+             * requests.
+             */
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        1000
+                    )
+            )
+        }
+
+        locations.push({
+            id: professional.id,
+
+            latitude:
+                coordinates
+                    ? coordinates.latitude
+                    : null,
+
+            longitude:
+                coordinates
+                    ? coordinates.longitude
+                    : null,
+
+            address
+        })
+    }
+
+    workerLocations.value =
+        locations
+
+    geocoding.value = false
+
+    mapMessage.value = ''
+
+    updateMapMarkers()
+}
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE MAP MARKERS
+|--------------------------------------------------------------------------
+*/
+
+function updateMapMarkers() {
+    if (
+        !mapReady.value ||
+        !markersLayer.value
+    ) {
+        return
+    }
+
+    markersLayer.value.clearLayers()
+
+    const markerBounds = []
+
+    professionals.value.forEach(
+        professional => {
+            const location =
+                workerLocations.value.find(
+                    item =>
+                        String(
+                            item.id
+                        ) ===
+                        String(
+                            professional.id
+                        )
+                )
+
+            if (
+                !location ||
+                location.latitude === null ||
+                location.longitude === null
+            ) {
+                return
+            }
+
+            const marker =
+                L.marker([
+                    location.latitude,
+                    location.longitude
+                ])
+
+            const popup = `
+                <div class="map-popup">
+                    <strong>
+                        ${escapeHtml(
+                            professional.name ||
+                            'Professional'
+                        )}
+                    </strong>
+
+                    <br>
+
+                    <span>
+                        ${escapeHtml(
+                            professional.job ||
+                            'Professional'
+                        )}
+                    </span>
+
+                    <br>
+
+                    <strong>
+                        R${Number(
+                            professional.price || 0
+                        ).toFixed(2)}/hr
+                    </strong>
+
+                    <br>
+
+                    <span>
+                        ${escapeHtml(
+                            professional.city ||
+                            ''
+                        )}
+                    </span>
+                </div>
+            `
+
+            marker.bindPopup(
+                popup
+            )
+
+            marker.on(
+                'click',
+                () => {
+                    marker.openPopup()
+                }
+            )
+
+            marker.addTo(
+                markersLayer.value
+            )
+
+            markerBounds.push([
+                location.latitude,
+                location.longitude
+            ])
+        }
+    )
+
+    /*
+     * Only fit the map to workers
+     * when the map is first populated.
+     */
+    if (
+        markerBounds.length &&
+        !map.value._yenzaInitialFit
+    ) {
+        map.value.fitBounds(
+            markerBounds,
+            {
+                padding: [
+                    30,
+                    30
+                ]
+            }
+        )
+
+        map.value._yenzaInitialFit =
+            true
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| HTML ESCAPE FOR POPUPS
+|--------------------------------------------------------------------------
+*/
+
+function escapeHtml(
+    value
+) {
+    return String(value)
+        .replace(
+            /&/g,
+            '&amp;'
+        )
+        .replace(
+            /</g,
+            '&lt;'
+        )
+        .replace(
+            />/g,
+            '&gt;'
+        )
+        .replace(
+            /"/g,
+            '&quot;'
+        )
+        .replace(
+            /'/g,
+            '&#039;'
+        )
+}
+
+/*
+|--------------------------------------------------------------------------
+| MAP FILTER
+|--------------------------------------------------------------------------
+*/
+
+function toggleMapFilter() {
+    mapFilterEnabled.value =
+        !mapFilterEnabled.value
+
+    currentPage.value = 1
+}
+
+function clearMapFilter() {
+    mapFilterEnabled.value =
+        false
+
+    currentPage.value = 1
+}
+
+/*
+|--------------------------------------------------------------------------
+| RESET MAP VIEW
+|--------------------------------------------------------------------------
+*/
+
+function showAllWorkersOnMap() {
+    if (
+        !map.value
+    ) {
+        return
+    }
+
+    const coordinates =
+        workerLocations.value
+            .filter(
+                location =>
+                    location.latitude !==
+                        null &&
+                    location.longitude !==
+                        null
+            )
+            .map(
+                location => [
+                    location.latitude,
+                    location.longitude
+                ]
+            )
+
+    if (
+        coordinates.length
+    ) {
+        map.value.fitBounds(
+            coordinates,
+            {
+                padding: [
+                    30,
+                    30
+                ]
+            }
+        )
+    }
+
+    mapFilterEnabled.value =
+        false
+
+    currentPage.value = 1
+}
+
+/*
+|--------------------------------------------------------------------------
+| PAGINATION
+|--------------------------------------------------------------------------
+*/
+
 function nextPage() {
     if (
         currentPage.value <
@@ -171,7 +831,15 @@ function previousPage() {
     }
 }
 
-function initials(name) {
+/*
+|--------------------------------------------------------------------------
+| INITIALS
+|--------------------------------------------------------------------------
+*/
+
+function initials(
+    name
+) {
     if (!name) {
         return ''
     }
@@ -185,6 +853,12 @@ function initials(name) {
         .join('')
 }
 
+/*
+|--------------------------------------------------------------------------
+| WATCHERS
+|--------------------------------------------------------------------------
+*/
+
 watch(
     [
         activeCategory,
@@ -194,14 +868,51 @@ watch(
     ],
     () => {
         currentPage.value = 1
+
         loadProfessionals()
     }
 )
 
-onMounted(async () => {
-    await loadCategories()
-    await loadProfessionals()
-})
+watch(
+    mapFilterEnabled,
+    () => {
+        currentPage.value = 1
+    }
+)
+
+/*
+|--------------------------------------------------------------------------
+| MOUNT
+|--------------------------------------------------------------------------
+*/
+
+onMounted(
+    async () => {
+        initialiseMap()
+
+        await loadCategories()
+
+        await loadProfessionals()
+
+        await geocodeProfessionals()
+    }
+)
+
+/*
+|--------------------------------------------------------------------------
+| CLEANUP
+|--------------------------------------------------------------------------
+*/
+
+onBeforeUnmount(
+    () => {
+        if (map.value) {
+            map.value.remove()
+
+            map.value = null
+        }
+    }
+)
 </script>
 
 <template>
@@ -215,7 +926,7 @@ onMounted(async () => {
 
       <p class="section-label">
         CATEGORY
-      </p><br>
+      </p>
 
       <nav aria-label="Trade categories">
 
@@ -365,11 +1076,87 @@ onMounted(async () => {
 
       </div>
 
+      <!-- MAP -->
+
+      <section class="map-section">
+
+        <div class="map-header">
+
+          <div>
+
+            <h2>
+              Find Handymen Near You
+            </h2>
+
+            <p>
+              Move or zoom the map to explore worker locations.
+            </p>
+
+          </div>
+
+          <div class="map-actions">
+
+            <button
+              type="button"
+              class="map-filter-button"
+              :class="{
+                enabled:
+                  mapFilterEnabled
+              }"
+              @click="
+                toggleMapFilter
+              "
+            >
+              {{
+                mapFilterEnabled
+                  ? 'Map Filter On'
+                  : 'Filter by Map Area'
+              }}
+            </button>
+
+            <button
+              type="button"
+              class="map-reset-button"
+              @click="
+                showAllWorkersOnMap
+              "
+            >
+              Show All
+            </button>
+
+          </div>
+
+        </div>
+
+        <div
+          ref="mapElement"
+          class="map"
+        ></div>
+
+        <div
+          v-if="geocoding"
+          class="map-status"
+        >
+          {{ mapMessage }}
+        </div>
+
+        <div
+          v-if="mapFilterEnabled"
+          class="map-filter-status"
+        >
+          Map filtering is active. Only workers inside the visible map area
+          are shown below.
+        </div>
+
+      </section>
+
+      <!-- RESULTS -->
+
       <div class="results-heading">
 
         <h1>
           Available Handymen
-          ({{ professionals.length }}
+          ({{ filteredProfessionals.length }}
           results)
         </h1>
 
@@ -464,6 +1251,13 @@ onMounted(async () => {
 
                   </small>
 
+                  <small
+                    v-if="pro.city"
+                    class="location"
+                  >
+                    📍 {{ pro.city }}
+                  </small>
+
                 </div>
 
                 <strong class="price">
@@ -507,7 +1301,7 @@ onMounted(async () => {
             v-else
             class="state-message"
           >
-            No handymen match your search.
+            No handymen match your search or current map area.
           </p>
 
         </template>
@@ -633,8 +1427,8 @@ onMounted(async () => {
     width: calc(100% - 276px);
     height: 100vh;
     max-height: 100vh;
-    padding: 31px 36px;
-    overflow: hidden;
+    padding: 25px 36px;
+    overflow-y: auto;
 }
 
 .search-bar {
@@ -667,7 +1461,7 @@ onMounted(async () => {
 }
 
 .filter-label {
-    margin: 25px 0 10px;
+    margin: 20px 0 10px;
     color: #66808b;
     font-size: 10px;
     font-weight: 700;
@@ -702,7 +1496,7 @@ onMounted(async () => {
 
 .price-menu {
     position: absolute;
-    z-index: 100;
+    z-index: 1000;
     top: 39px;
     left: 0;
     width: 210px;
@@ -729,12 +1523,94 @@ onMounted(async () => {
     background: #e7f1f1;
 }
 
+/* MAP */
+
+.map-section {
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid #e2e8ea;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.map-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.map-header h2 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.map-header p {
+    margin: 4px 0 0;
+    color: #71818a;
+    font-size: 11px;
+}
+
+.map-actions {
+    display: flex;
+    gap: 7px;
+}
+
+.map-filter-button,
+.map-reset-button {
+    padding: 8px 11px;
+    border: 0;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.map-filter-button {
+    background: #136163;
+    color: #ffffff;
+}
+
+.map-filter-button.enabled {
+    background: #0b484a;
+    box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.map-reset-button {
+    background: #e3eff0;
+    color: #136163;
+}
+
+.map {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+    border-radius: 9px;
+}
+
+.map-status {
+    padding: 7px 0 0;
+    color: #136163;
+    font-size: 11px;
+}
+
+.map-filter-status {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    background: #e7f1f1;
+    color: #136163;
+    font-size: 11px;
+}
+
+/* RESULTS */
+
 .results-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 15px;
-    margin: 22px 0 15px;
+    margin: 20px 0 15px;
 }
 
 .results-heading h1 {
@@ -758,7 +1634,6 @@ onMounted(async () => {
 .cards {
     display: grid;
     gap: 12px;
-    overflow: hidden;
 }
 
 .professional-card {
@@ -796,6 +1671,7 @@ onMounted(async () => {
 
 .pro-info {
     min-width: 0;
+    padding-right: 80px;
 }
 
 .pro-info h2 {
@@ -823,6 +1699,12 @@ onMounted(async () => {
 
 .reviews {
     display: block;
+}
+
+.location {
+    display: block;
+    margin-top: 3px;
+    color: #71818a;
 }
 
 .price {
@@ -887,7 +1769,7 @@ onMounted(async () => {
     justify-content: center;
     gap: 20px;
     width: 100%;
-    margin-top: 14px;
+    margin: 14px 0 25px;
 }
 
 .pagination button {
@@ -912,6 +1794,8 @@ onMounted(async () => {
     text-align: center;
 }
 
+/* MOBILE */
+
 @media (max-width: 1000px) {
     .sidebar {
         width: 230px;
@@ -920,7 +1804,7 @@ onMounted(async () => {
 
     .content {
         width: calc(100% - 230px);
-        padding: 25px;
+        padding: 22px;
     }
 }
 
@@ -928,31 +1812,31 @@ onMounted(async () => {
     .directory-shell {
         display: block;
         width: 100%;
-        height: 100vh;
+        height: auto;
         min-height: 100vh;
-        max-height: 100vh;
-        overflow: hidden;
+        max-height: none;
+        overflow: visible;
     }
 
     .sidebar {
         width: 100%;
         min-width: 100%;
-        height: 170px;
-        max-height: 170px;
+        height: auto;
+        max-height: none;
         padding: 20px;
         overflow: hidden;
     }
 
-    .brand {
+    .directory-shell .sidebar .brand {
         margin-bottom: 12px;
-        font-size: 25px;
+        font-size: 35px;
     }
 
     .sidebar nav {
         display: flex;
         gap: 5px;
         width: 100%;
-        overflow: hidden;
+        overflow-x: auto;
     }
 
     .category {
@@ -965,10 +1849,28 @@ onMounted(async () => {
 
     .content {
         width: 100%;
-        height: calc(100vh - 170px);
-        max-height: calc(100vh - 170px);
+        height: auto;
+        max-height: none;
         padding: 18px;
-        overflow: hidden;
+        overflow: visible;
+    }
+
+    .map-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .map-actions {
+        width: 100%;
+    }
+
+    .map-filter-button,
+    .map-reset-button {
+        flex: 1;
+    }
+
+    .map {
+        height: 250px;
     }
 
     .results-heading h1 {
@@ -988,6 +1890,10 @@ onMounted(async () => {
         width: 43px;
         min-width: 43px;
         height: 43px;
+    }
+
+    .pro-info {
+        padding-right: 70px;
     }
 
     .pro-info h2 {
@@ -1019,4 +1925,3 @@ onMounted(async () => {
     }
 }
 </style>
-
