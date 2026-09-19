@@ -27,9 +27,9 @@ const filters = [
 
 const priceOptions = [
     'All prices',
-    'Best prices (under R75/hr)',
-    'R76 – R90/hr',
-    'R91+/hr'
+    'Under R300/hr',
+    'R300 – R500/hr',
+    'R501+/hr'
 ]
 
 const totalPages = computed(() => {
@@ -54,29 +54,17 @@ const visibleProfessionals =
         )
     })
 
-function addPriceParams(params) {
-    if (
-        priceFilter.value ===
-        'Best prices (under R75/hr)'
-    ) {
-        params.maxPrice = 75
-    }
-
-    if (
-        priceFilter.value ===
-        'R76 – R90/hr'
-    ) {
-        params.minPrice = 76
-        params.maxPrice = 90
-    }
-
-    if (
-        priceFilter.value ===
-        'R91+/hr'
-    ) {
-        params.minPrice = 91
+    function addPriceParams(params) {
+    if (priceFilter.value === 'Under R300/hr') {
+        params.maxPrice = 299.99
+    } else if (priceFilter.value === 'R300 – R500/hr') {
+        params.minPrice = 300
+        params.maxPrice = 500
+    } else if (priceFilter.value === 'R501+/hr') {
+        params.minPrice = 501
     }
 }
+
 
 async function loadProfessionals() {
     loading.value = true
@@ -227,7 +215,7 @@ onMounted(async () => {
 
       <p class="section-label">
         CATEGORY
-      </p>
+      </p><br>
 
       <nav aria-label="Trade categories">
 
@@ -572,6 +560,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+@import url('https://db.onlinewebfonts.com/c/2da952d097bffd198ec0f0aa3fdd6804?family=JejuHallasan');
+
 * {
     box-sizing: border-box;
 }
@@ -597,11 +587,12 @@ onMounted(async () => {
     overflow: hidden;
 }
 
-.brand {
+.directory-shell .sidebar .brand {
     margin-bottom: 24px;
-    color: #ffffff;
-    font-family: 'Jeju Hallasan', sans-serif;
-    font-size: 30px;
+    color: #ffffff !important;
+    font-family: "JejuHallasan", sans-serif !important;
+    font-size: 50px;
+    font-weight: 700;
 }
 
 .section-label {
@@ -893,7 +884,7 @@ onMounted(async () => {
 .pagination {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 20px;
     width: 100%;
     margin-top: 14px;
