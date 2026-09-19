@@ -1,11 +1,11 @@
 <template>
     <div class="n-reportOverlay" @click.self="$emit('close')">
         <div class="n-reportCard">
-            
+
             <div class="n-header">
                 <h2>Report an issue with {{ personName }} ({{ personType }})</h2>
             </div>
-            
+
             <div class="form-group">
                 <label for="reasons">Reasons for reporting:</label>
                 <select name="reasons" id="reasons" v-model="selectedReason">
@@ -18,37 +18,38 @@
                     <option value="unprofessional">Unprofessional</option>
                     <option value="Other">Other</option>
                 </select>
-                
             </div>
-            
+
             <div class="description-text">
                 <label for="message">Please describe what happened: </label>
                 <textarea
-                id="message"
-                name="message"
-                rows="4" 
-                placeholder="Add details about the incident...?"
-                v-model="description"
+                    id="message"
+                    name="message"
+                    rows="4"
+                    placeholder="Add details about the incident...?"
+                    v-model="description"
                 ></textarea>
             </div>
-            
+
             <div class="booking-info" v-if="bookingId || date">
                 <p v-if="bookingId"><span class="label">Booking:</span> #{{ bookingId }}</p>
                 <p v-if="date"><span class="label">Date:</span> {{ date }}</p>
             </div>
-            
+
             <div class="warning">
                 <p>False reports may result in action against your account!!</p>
             </div>
-            
+
             <div class="n-buttons">
-                <button class="cancel-button" type="button" @click="$emit('close')">Cancel</button>  
+                <button class="cancel-button" type="button" @click="$emit('close')">Cancel</button>
                 <button
-                class="submit-button"
-                type="button"
-                @click="submitReport"
-                :disabled="!selectedReason || !description.trim()"
-                >Submit</button>
+                    class="submit-button"
+                    type="button"
+                    @click="submitReport"
+                    :disabled="!selectedReason || !description.trim() || isSubmitting"
+                >
+                    {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+                </button>
             </div>
         </div>
     </div>
@@ -56,6 +57,9 @@
 
 
 <script>
+import { createReport } from '../api/reports'
+import Swal from 'sweetalert2'
+
 export default {
     name: "ReportCard",
     props: {
@@ -67,37 +71,65 @@ export default {
             type: String,
             required: true
         },
+        reportedUserId: {
+            type: Number,
+            required: true
+        },
         bookingId: {
-            type: String,
+            type: [String, Number],
             default: ''
         },
         date: {
             type: String,
             default: ''
-        },
-        emits: ['close'],
+        }
     },
+    emits: ['close'],
     data() {
         return {
             selectedReason: '',
-            description: ''
+            description: '',
+            isSubmitting: false
         }
     },
     methods: {
-        submitReport() {
-            const report = {
-                personName: this.personName,
-                personType: this.personType,
-                bookingId: this.bookingId,
-                reason: this.selectedReason,
-                description: this.description
+        async submitReport() {
+            this.isSubmitting = true
+
+            try {
+                await createReport({
+                    reporterId: 1,
+                    reportedUserId: this.reportedUserId,
+                    bookingId: this.bookingId,
+                    reason: this.selectedReason,
+                    description: this.description
+                })
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Report Submitted',
+                    text: 'Thank you. Our team will review this report.',
+                    confirmButtonColor: '#136163'
+                })
+
+                this.$emit('close')
+            } catch (err) {
+                console.error('Report submission failed:', err)
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: err.response?.data?.message || 'Something went wrong. Please try again.',
+                    confirmButtonColor: '#136163'
+                })
+            } finally {
+                this.isSubmitting = false
             }
-            console.log('Report submitted:', report)
-            this.$emit('close')
         }
     }
 };
 </script>
+
 
 <style scoped>
 
@@ -123,7 +155,6 @@ export default {
 .n-header h2 {
     font-size: var(--font-lg);
     text-align: center;
-    
 }
 
 .form-group,
@@ -138,8 +169,6 @@ export default {
     font-size: var(--font-sm);
     margin-bottom: 8px;
 }
-
-
 
 select,
 textarea {
@@ -168,13 +197,12 @@ select {
     cursor: pointer;
 }
 
-
 .booking-info {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     padding: 12px 16px;
     margin-bottom: 16px;
-    font-size: var(--font-sm)
+    font-size: var(--font-sm);
 }
 
 .warning p {
@@ -228,17 +256,14 @@ select {
 }
 
 .n-reportOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
 }
-
-
-
 
 </style>

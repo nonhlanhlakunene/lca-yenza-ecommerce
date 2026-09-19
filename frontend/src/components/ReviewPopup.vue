@@ -1,105 +1,137 @@
 <template>
-    <div class="n-reviewCard">
-        
-        <div class="n-header">
-            <h2>Rate your experience with  {{ personName }} ({{ personType }})</h2>
-        </div>
-        
-        <div class="form-group">
-            <label for="rating">{{ personType === 'Worker' ? 'How was your service?' : 'How was this customer?' }}</label>
-            
-            <div class="stars">
-                <span v-for="star in 5" :key="star" class="star"
-                :class="{ active: star <= (hoveredRating || selectedRating) }"
-                @mouseenter="hoveredRating = star"
-                @mouseleave="hoveredRating = 0"
-                @click="selectedRating = star"
-                >☆</span>
+    <div class="n-reviewOverlay" @click.self="$emit('close')">
+        <div class="n-reviewCard">
+
+            <div class="n-header">
+                <h2>Rate your experience with {{ personName }} ({{ personType }})</h2>
             </div>
-            
-        </div>
-        
-        <div class="comments">
-            <label for="comment">Leave a comment (Optional) </label>
-            <textarea
-            id="comment"
-            name="comment"
-            rows="4" 
-            v-model="comment">
-            </textarea>
-        </div>
 
-        <div class="booking-info">
-            <p><span class="label">Booking:</span> #{{ bookingId }}</p>
-            <p><span class="label">Date:</span> {{ date }}</p>
-        </div>
+            <div class="form-group">
+                <label>{{ personType === 'Worker' ? 'How was your service?' : 'How was this customer?' }}</label>
 
-        <div class="n-buttons">
-          <button class="skip-button" type="button" @click="$emit('close')">Skip</button>  
-          <button class="submit-button" type="button" @click="submitReview" :disabled="selectedRating === 0">Submit Review</button>
+                <div class="stars">
+                    <span v-for="star in 5" :key="star" class="star"
+                        :class="{ active: star <= (hoveredRating || selectedRating) }"
+                        @mouseenter="hoveredRating = star"
+                        @mouseleave="hoveredRating = 0"
+                        @click="selectedRating = star"
+                    >☆</span>
+                </div>
+            </div>
+
+            <div class="comments">
+                <label for="comment">Leave a comment (Optional)</label>
+                <textarea
+                    id="comment"
+                    name="comment"
+                    rows="4"
+                    v-model="comment"
+                ></textarea>
+            </div>
+
+            <div class="booking-info">
+                <p><span class="label">Booking:</span> #{{ bookingId }}</p>
+                <p><span class="label">Date:</span> {{ date }}</p>
+            </div>
+
+            <div class="n-buttons">
+                <button class="skip-button" type="button" @click="$emit('close')">Skip</button>
+                <button
+                    class="submit-button"
+                    type="button"
+                    @click="submitReview"
+                    :disabled="selectedRating === 0 || isSubmitting"
+                >
+                    {{ isSubmitting ? 'Submitting...' : 'Submit Review' }}
+                </button>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
+import { createReview } from '../api/reviews'
+import Swal from 'sweetalert2'
+
 export default {
     props: {
-        personName: {
-            type: String,
-            required: true
-        },
-        personType: {
-            type: String,
-            required: true
-        },
-        bookingId: {
-            type: String,
-            required: true
-        },
-        date: {
-            type: String,
-            required: true
-        },
-    emits: ['close'],
+        personName: { type: String, required: true },
+        personType: { type: String, required: true },
+        reviewedUserId: { type: Number, required: true },
+        bookingId: { type: [String, Number], required: true },
+        date: { type: String, required: true },
     },
+    emits: ['close'],
     data() {
         return {
             hoveredRating: 0,
             selectedRating: 0,
-            comment: ''
+            comment: '',
+            isSubmitting: false
         }
     },
-
     methods: {
-        submitReview() {
-            const review = {
-                personName: this.personName,
-                personType: this.personType,
-                bookingId: this.bookingId,
-                rating: this.selectedRating,
-                comment: this.comment
+        async submitReview() {
+            this.isSubmitting = true
+
+            try {
+                await createReview({
+                    reviewerId: 1,
+                    reviewedUserId: this.reviewedUserId,
+                    bookingId: this.bookingId,
+                    rating: this.selectedRating,
+                    comment: this.comment
+                })
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Review Submitted',
+                    text: 'Thank you for your feedback!',
+                    confirmButtonColor: '#136163'
+                })
+
+                this.$emit('close')
+            } catch (err) {
+                console.error('Review submission failed:', err)
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: err.response?.data?.message || 'Something went wrong. Please try again.',
+                    confirmButtonColor: '#136163'
+                })
+            } finally {
+                this.isSubmitting = false
             }
-            console.log('Review submitted:', review)
-            this.$emit('close')
         }
     }
 }
 </script>
 
-
 <style scoped>
+.n-reviewOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
 .n-reviewCard {
     background: var(--color-primary);
     color: white;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 350px;
-    margin: 70px auto;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 420px;
+    width: 100%;
     font-family: var(--font-main);
 }
 
 .n-header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .n-header h2 {
@@ -139,7 +171,7 @@ textarea {
   background: white;
   color: #333;
   box-sizing: border-box;
-  
+
 }
 
 textarea:focus {
