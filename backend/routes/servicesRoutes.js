@@ -1,4 +1,5 @@
 import express from 'express'
+
 import {
     getCategories,
     getProfessionalBySlug,
@@ -7,8 +8,20 @@ import {
 
 const router = express.Router()
 
-router.get('/categories', getCategories)
-router.get('/professionals', getProfessionals)
-router.get('/professionals/:slug', getProfessionalBySlug)
+router.get(
+    '/categories',
+    getCategories
+)
+
+router.get(
+    '/professionals',
+    getProfessionals
+)
+
+router.get(
+    '/professionals/:slug',
+    getProfessionalBySlug
+)
 
 export default router
+
