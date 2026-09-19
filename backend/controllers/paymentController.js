@@ -1,0 +1,215 @@
+import  {createPayment, getPaymentByBookingId} from '../models/paymentModel.js'
+import db from '../config/bd.js'
+import { generatePayFastSignature } from '../services/payfastService.js'
+
+export const createPayFastPayment = async (req, res) => {
+
+    try {
+        const { bookingId } = req.body
+
+        // CHECK BOOKING ID
+        if (!bookingId) {
+
+            return res.status(400).json({
+                success: false,
+                message: 'Booking ID is required'
+            })
+        }
+
+
+        // GET BOOKING INFORMATION
+        const [rows] = await db.execute(
+            `SELECT
+                b.booking_id,
+                b.customer_id,
+                b.professional_id,
+                b.service_id,
+                b.status,
+                
+                u.first_name,
+                u.last_name,
+                u.email,
+                
+                p.hourly_rate,
+                
+                s.name AS service_name
+                
+            FROM bookings b
+            
+            JOIN users u
+                ON b.customer_id = u.user_id
+
+            JOIN professionals p
+                ON b.professional_id = p.professional_id
+
+            JOIN services s
+                ON b.service_id = s.id
+                
+            WHERE b.booking_id = ?
+
+            LIMIT 1`
+            [bookingId]
+        )
+
+        const booking = rows[0]
+
+
+        // CHECK BOOKING EXISTS
+        if (!booking) {
+
+            return res.status(404).json({
+                success: false,
+                message: 'Booking not found'
+            })
+        }
+
+
+        // GET PAYMENT AMOUNT
+        const amount = Number(booking.hourly_rate)
+
+        if (!amount || amount <= 0) {
+
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid booking amount'
+            })
+        }
+
+
+        // CHECK FOR EXISTING PAYMENT
+        const existingPayment = await getPaymentByBookingId(id)
+
+        if (
+            existingPayment &&
+            existingPayment.payment_status === 'successful'
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message: 'This booking has already been paid'
+            })
+        }
+
+
+        // CREATE PAYMENT IN DATABASE
+        let paymentId
+
+        if (
+            existingPayment &&
+            existingPayment.payment_status === 'pending'
+        ) {
+            paymentId = existingPayment.payment_id
+        } else {
+
+            paymentId = await createPayment({
+
+                bookingId,
+                userId: booking.customer_id,
+                amount
+
+            })
+        }
+
+
+        // PAYFAST SETTINGS
+        const merchantId = process.env.PAYFAST_MERCHANT_ID
+
+        const merchantKey = process.env.PAYMENT_MERCHANT_KEY
+
+        const passphrase = process.env.PAYFAST_PASSPHRASE || null
+
+        const paymentUrl = process.env.PAYFAST_URL || 'https://sandbox.payfast.co.za/eng/process'
+
+        const notifyUrl = process.env.PAYFAST_NOTIFY_URL
+
+
+        // CHECK PAYFAST CREDENTIALS
+        if (!merchantId || !merchantKey) {
+
+            return res.status(500).json({
+                success: false,
+                message: 'PayFast credentials are not configured'
+            })
+        }
+
+
+        // CREATE PAYFAST DATA
+        const payfastData = {
+
+            merchant_id: merchantId,
+
+            merchant_key: merchantKey,
+
+            return_url:
+                `${frontendUrl}/bookings`,
+
+            cancel_url:
+                `${frontendUrl}/bookings`,
+
+            notify_url:
+                notifyUrl,
+
+            name_first:
+                booking.first_name,
+
+            name_last:
+                booking.last_name,
+
+            email_address:
+                booking.email,
+
+            amount:
+                amount.toFixed(2),
+
+            item_name:
+                `YENZA ${booking.service_name}`,
+
+            item_description:
+                `Booking #${booking.booking_id}`,
+
+            custom_str1:
+                String(booking.booking_id),
+
+            custom_str2:
+                String(paymentId)
+        }
+
+
+        // GENERATE PAYFAST SIGNATURE
+        const signature =
+            generatePayFastSignature(
+                payfastData,
+                passphrase
+            )
+
+        payfastData.signature = signature
+
+
+        // SEND PAYMENT INFORMATION TO FRONTEND
+        return res.status(200).json({
+            success: true,
+
+            payment_id: paymentId,
+
+            booking_id: booking.booking_id,
+
+            amount,
+
+            payment_url: paymentUrl,
+
+            payfast_data: payfastData
+
+        })
+    } catch (error) {
+
+        console.error(
+            'Create PayFast payment error:',
+            error
+        )
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to create PayFast payment'
+        })
+    }
+}
