@@ -34,14 +34,6 @@ const hideLayout = computed(() => {
     
     <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
     
-
-    <VerifyIdentity
-       v-if="showVerify"
-       :showVerification="true"
-       :userType="'worker'"
-       @close="showVerify = false"
-       @complete="showVerify = false"
-     />
 </template>
 
 <style>
