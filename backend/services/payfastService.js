@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-// Generate a PayFast signature
+// Generates MD5 signature
 export const generatePayFastSignature = (
     data,
     passphrase = null
@@ -36,7 +36,7 @@ export const generatePayFastSignature = (
 }
 
 
-// Validate the PayFast signature
+// Compares PayFast signature with server generated signature
 export const validatePayFastSignature = (
     data,
     passphrase = null
@@ -48,11 +48,70 @@ export const validatePayFastSignature = (
         return false
     }
 
-    const generatedSignature = generatePayFastSignature(
-        data,
-        passphrase
-    )
+    const generatedSignature = 
+        generatePayFastSignature(
+            data,
+            passphrase
+        )
 
-    return receivedSignature === generatedSignature
+    return (
+        receivedSignature.toLowerCase() ===
+        generatedSignature.toLowerCase()
+    )
+}
+
+
+// Confirm ITN with PayFast
+export const validatePayFastServerConfirmation = async (
+    data
+) => {
+    const payfastUrl =
+        process.env.PAYFAST_URL ||
+        'https://sandbox.payfast.co.za/eng/process'
+
     
+    const validationUrl =
+        payfastUrl.includes('sandbox')
+            ? 'https://sandbox.payfast.co.za/eng/query/validate'
+            : 'https://www.payfast.co.za/eng/query/validate'
+
+
+    const parameterString =
+        Object.entries(data)
+            .map(([key, value]) => {
+                return `${key}=${encodeURIComponent(
+                    String(value)
+                )}`
+            })
+            .join('&')
+
+    try {
+        const response = await fetch(
+            validationUrl,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type':
+                        'application/x-www-form-urlencoded'
+                },
+                body: parameterString
+            }
+        )
+
+        const result = await response.text()
+
+        console.log(
+            'PayFast server validation:',
+            result
+        )
+
+        return result.trim() ==='VALID'
+
+    } catch (error) {
+        console.error(
+            'PayFast server validation error:',
+            error
+        )
+        return false
+    }
 }

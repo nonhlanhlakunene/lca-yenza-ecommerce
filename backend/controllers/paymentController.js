@@ -1,6 +1,6 @@
 import  { createPayment, getPaymentsByBookingId, updatePaymentStatus } from '../models/paymentModel.js'
 import db from '../config/db.js'
-import { generatePayFastSignature, validatePayFastSignature } from '../services/payfastService.js'
+import { generatePayFastSignature, validatePayFastSignature, validatePayFastServerConfirmation } from '../services/payfastService.js'
 
 
 // CREATE PAYFAST PAYMENT
@@ -49,7 +49,7 @@ export const createPayFastPayment = async (req, res) => {
                 
             WHERE b.booking_id = ?
 
-            LIMIT 1`
+            LIMIT 1`,
             [bookingId]
         )
 
@@ -114,21 +114,30 @@ export const createPayFastPayment = async (req, res) => {
 
 
         // PAYFAST SETTINGS
-        const merchantId = process.env.PAYFAST_MERCHANT_ID
+        const merchantId =
+            process.env.PAYFAST_MERCHANT_ID
 
-        const merchantKey = process.env.PAYFAST_MERCHANT_KEY
+        const merchantKey = 
+            process.env.PAYFAST_MERCHANT_KEY
 
-        const passphrase = process.env.PAYFAST_PASSPHRASE || null
+        const passphrase =
+            process.env.PAYFAST_PASSPHRASE ||
+            null
 
-        const paymentUrl = process.env.PAYFAST_URL || 'https://sandbox.payfast.co.za/eng/process'
+        const paymentUrl =
+            process.env.PAYFAST_URL ||
+            'https://sandbox.payfast.co.za/eng/process'
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+        const frontendUrl =
+            process.env.FRONTEND_URL ||
+            'http://localhost:5173'
 
-        const notifyUrl = process.env.PAYFAST_NOTIFY_URL
+        const notifyUrl = 
+            process.env.PAYFAST_NOTIFY_URL
 
 
         // CHECK PAYFAST CREDENTIALS
-        if (!merchantId || !merchantKey) {
+        if (!merchantId || !merchantKey || !notifyUrl) {
 
             return res.status(500).json({
                 success: false,
@@ -140,9 +149,11 @@ export const createPayFastPayment = async (req, res) => {
         // CREATE PAYFAST DATA
         const payfastData = {
 
-            merchant_id: merchantId,
+            merchant_id:
+                merchantId,
 
-            merchant_key: merchantKey,
+            merchant_key:
+                merchantKey,
 
             return_url:
                 `${frontendUrl}/bookings`,
@@ -239,7 +250,8 @@ export const handlePayFastNotify = async (req, res) => {
         }
 
         // PayFast Settings
-        const passphrase = process.env.PAYFAST_PASSPHRASE || null
+        const passphrase =
+            process.env.PAYFAST_PASSPHRASE || null
 
 
         // Validate PayFast signature
@@ -250,14 +262,27 @@ export const handlePayFastNotify = async (req, res) => {
             )
 
         if (!validSignature) {
-
             console.error(
                 'Invalid PayFast ITN signature'
             )
-
             return res
                 .status(400)
                 .send('Invalid signature')
+        }
+
+        // Confirm ITN with PayFast's server
+        const validServerConfirmation =
+            await validatePayFastServerConfirmation(
+                data
+            )
+
+        if (!validServerConfirmation) {
+            console.error(
+                'PayFast server confirmation failed'
+            )
+            return res
+                .status(400)
+                .send('ITN validation failed')
         }
 
         // Get payment from database
@@ -292,14 +317,23 @@ export const handlePayFastNotify = async (req, res) => {
         }
 
         // Compare the amount PayFast sent with the amount in database
-        const receivedAmount = Number(data.amount_gross)
-        const expectedAmount = Number(payment.amount)
+        const receivedAmount =
+            Number(data.amount_gross)
+        const expectedAmount =
+            Number(payment.amount)
 
-        if (receivedAmount !== expectedAmount) {
-            console.error('PayFast amount mismatch:', {
-                receivedAmount,
-                expectedAmount
-            })
+        if (
+            Math.abs(
+                receivedAmount - expectedAmount
+            ) > 0.01
+        ) {
+            console.error(
+                'PayFast amount mismatch:',
+                {
+                    receivedAmount,
+                    expectedAmount
+                }
+            )
 
             return res
                 .status(400)
@@ -336,7 +370,7 @@ export const handlePayFastNotify = async (req, res) => {
             .send('OK')
 
     } catch (error) {
-        
+
         console.error(
             'PayFast ITN error:',
             error

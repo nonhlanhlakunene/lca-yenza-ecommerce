@@ -1,5 +1,8 @@
 import express from 'express'
-import { createPayFastPayment, handlePayFastNotify } from '../controllers/paymentController.js'
+import {
+    createPayFastPayment,
+    handlePayFastNotify
+} from '../controllers/paymentController.js'
 
 const router = express.Router()
 
