@@ -1,14 +1,33 @@
+```vue
 <script setup>
 import {ref} from 'vue'
+import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
 
 
 const route = useRoute()
+
+const hideLayout = computed(() => {
+  return [
+    '/login',
+    '/signup',
+    '/worker',
+    '/workerlogin',
+    '/admin',
+    '/workersignup'
+  ].includes(route.path) ||
+  (route.name === 'profile' && route.query.fromAdmin === 'true')
+})
 </script>
 
 <template>
+  <NavBar v-if="!hideLayout" />
+
+  <RouterView />
+
+  <Footer v-if="!hideLayout" />
     <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
     
     <RouterView />
@@ -25,24 +44,20 @@ const route = useRoute()
      />
 </template>
 
-
-
 <style>
 html,
 body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    min-height: 100%;
-    height: auto !important;
-    /* overflow-x: hidden !important;
-    overflow-y: auto !important; */
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  height: auto !important;
 }
 
 #app {
-    width: 100%;
-    min-height: 100vh;
-    height: auto !important;
-    /* overflow: visible !important; */
+  width: 100%;
+  min-height: 100vh;
+  height: auto !important;
 }
 </style>
+```
