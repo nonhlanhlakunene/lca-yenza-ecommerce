@@ -225,9 +225,13 @@ const today = computed(() => {
 const viewProfile = (slug) => {
   router.push({
     name: 'profile',
-    params: { slug }
+    params: { slug },
+    query: {
+      fromAdmin: 'true'
+    }
   })
 }
+
 
 onMounted(() => {
   loadAdminData()

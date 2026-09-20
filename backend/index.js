@@ -14,6 +14,7 @@ import authRoutes from './routes/authRoutes.js';
 import professionalRoutes from './routes/professionalRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
+import servicesRoutes from './routes/servicesRoutes.js';
 
 dotenv.config();
 
@@ -35,6 +36,8 @@ app.use('/api/payments', paymentRoutes)
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api', servicesRoutes);
 
 
 app.get('/', (req, res) => {
