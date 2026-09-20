@@ -15,7 +15,7 @@
 
       <p v-if="globalError" class="error-banner">{{ globalError }}</p>
 
-      <!-- STEP 1: Phone (both) -->
+      <!-- STEP 1 -->
       <div v-if="step === 1">
         <div class="n-headings">
           <h3>VERIFY YOUR EMAIL</h3>
@@ -37,7 +37,7 @@
         </form>
       </div>
 
-      <!-- STEP 2: OTP (both) -->
+      <!-- STEP 2 -->
       <div v-if="step === 2">
         <div class="n-headings">
           <h3>ENTER VERIFICATION CODE</h3>
@@ -77,7 +77,7 @@
         </form>
       </div>
 
-      <!-- STEP 3: ID upload (worker only) -->
+      <!-- STEP 3 -->
       <div v-if="step === 3 && userType === 'worker'">
         <div class="n-headings">
           <h3>VERIFY YOUR IDENTITY</h3>
@@ -90,15 +90,14 @@
             <input
               id="idUpload"
               type="file"
-              accept="image/*"
-              capture="environment"
+              accept="image/jpeg,image/png,application/pdf"
               @change="handleFileUpload($event, 'idFile', 'idFileName')"
               required
             />
             <p v-if="idFileName" class="file-selected">
               Selected: {{ idFileName }}
             </p>
-            <p class="upload-info">Accepted formats: JPG, PNG</p>
+            <p class="upload-info">Accepted formats: JPG, PNG, PDF · Max 5MB</p>
           </div>
 
           <button class="send-otp" type="submit" :disabled="!idFile">
@@ -115,7 +114,7 @@
         </form>
       </div>
 
-      <!-- STEP 4: Address (worker only) -->
+      <!-- STEP 4 -->
       <div v-if="step === 4 && userType === 'worker'">
         <div class="n-headings">
           <h3>VERIFY YOUR ADDRESS</h3>
@@ -128,16 +127,14 @@
             <input
               id="addressUpload"
               type="file"
-              accept="image/*"
-              @change="
-                handleFileUpload($event, 'addressFile', 'addressFileName')
-              "
+              accept="image/jpeg,image/png,application/pdf"
+              @change="handleFileUpload($event, 'addressFile', 'addressFileName')"
               required
             />
             <p v-if="addressFileName" class="file-selected">
               Selected: {{ addressFileName }}
             </p>
-            <p class="upload-info">Accepted formats: JPG, PNG</p>
+            <p class="upload-info">Accepted formats: JPG, PNG, PDF · Max 5MB</p>
           </div>
 
           <button class="send-otp" type="submit" :disabled="!addressFile">
@@ -154,7 +151,7 @@
         </form>
       </div>
 
-      <!-- STEP 5: Background check (worker only) -->
+      <!-- STEP 5 -->
       <div v-if="step === 5 && userType === 'worker'">
         <div class="n-headings">
           <h3>BACKGROUND CHECK</h3>
@@ -168,25 +165,16 @@
             <input
               id="policeClearance"
               type="file"
-              accept="image/*,application/pdf"
-              @change="
-                handleFileUpload(
-                  $event,
-                  'policeClearanceFile',
-                  'policeClearanceFileName',
-                )
-              "
+              accept="image/jpeg,image/png,application/pdf"
+              @change="handleFileUpload($event, 'policeClearanceFile', 'policeClearanceFileName')"
             />
             <p v-if="policeClearanceFileName" class="file-selected">
               Selected: {{ policeClearanceFileName }}
             </p>
+            <p class="upload-info">Accepted formats: JPG, PNG, PDF · Max 5MB</p>
           </div>
 
-          <button
-            class="send-otp"
-            type="submit"
-            :disabled="!policeClearanceFile"
-          >
+          <button class="send-otp" type="submit" :disabled="!policeClearanceFile">
             Continue
           </button>
           <div class="row-actions">
@@ -200,7 +188,7 @@
         </form>
       </div>
 
-      <!-- STEP 6: Experience (worker only) -->
+      <!-- STEP 6 -->
       <div v-if="step === 6 && userType === 'worker'">
         <div class="n-headings">
           <h3>SKILLS &amp; EXPERIENCE</h3>
@@ -229,9 +217,7 @@
             required
           />
 
-          <label for="experienceNotes"
-            >Tell us more about your experience</label
-          >
+          <label for="experienceNotes">Tell us more about your experience</label>
           <textarea
             id="experienceNotes"
             rows="4"
@@ -248,7 +234,7 @@
         </form>
       </div>
 
-      <!-- FINAL STEP: Complete -->
+      <!-- FINAL -->
       <div v-if="step === totalSteps" class="complete-state">
         <div class="success-icon">✓</div>
         <h3 v-if="userType === 'worker'">YOU'RE ALL SET</h3>
@@ -260,26 +246,11 @@
         <p v-else>You're ready to start booking.</p>
 
         <div class="verification-summary" v-if="userType === 'worker'">
-          <div class="summary-item">
-            <span>✓</span>
-            <p>Phone verified</p>
-          </div>
-          <div class="summary-item" v-if="idFile">
-            <span>✓</span>
-            <p>ID submitted</p>
-          </div>
-          <div class="summary-item" v-if="addressFile">
-            <span>✓</span>
-            <p>Address submitted</p>
-          </div>
-          <div class="summary-item" v-if="policeClearanceFile">
-            <span>✓</span>
-            <p>Police Clearance Submitted</p>
-          </div>
-          <div class="summary-item" v-if="service">
-            <span>✓</span>
-            <p>Skills &amp; experience submitted</p>
-          </div>
+          <div class="summary-item"><span>✓</span><p>Phone verified</p></div>
+          <div class="summary-item" v-if="idFile"><span>✓</span><p>ID submitted</p></div>
+          <div class="summary-item" v-if="addressFile"><span>✓</span><p>Address submitted</p></div>
+          <div class="summary-item" v-if="policeClearanceFile"><span>✓</span><p>Police Clearance Submitted</p></div>
+          <div class="summary-item" v-if="service"><span>✓</span><p>Skills &amp; experience submitted</p></div>
         </div>
 
         <button class="send-otp" type="button" @click="finishVerification">
@@ -297,6 +268,7 @@ import {
   verifyOtp,
   uploadDocument,
 } from "@/api/verification";
+
 export default {
   name: "PhoneVerification",
   props: {
@@ -306,7 +278,15 @@ export default {
     },
     userType: {
       type: String,
-      required: true, // 'worker' or 'customer'
+      required: true,
+    },
+    userId: {
+      type: Number,
+      default: 1,
+    },
+    professionalId: {
+      type: Number,
+      default: 1,
     },
   },
   data() {
@@ -314,37 +294,28 @@ export default {
       step: 1,
       globalError: "",
 
-      // Phone / OTP
       email: "",
-      generatedOtp: "",
       otpDigits: ["", "", "", "", "", ""],
       otpError: false,
       resendCooldown: 0,
       resendTimer: null,
       isSubmitting: false,
 
-      // Step 3: ID
       idFile: null,
       idFileName: "",
 
-      // Step 4: Address
       addressFile: null,
       addressFileName: "",
 
-      // Step 5: Background
       policeClearanceFile: null,
       policeClearanceFileName: "",
-      affidavitFile: null,
-      affidavitFileName: "",
 
-      // Step 6: Experience
       service: "",
       yearsExperience: null,
       experienceNotes: "",
     };
   },
   computed: {
-    // Workers go through all 7 steps. Customers only need phone + OTP + done.
     totalSteps() {
       return this.userType === "worker" ? 7 : 3;
     },
@@ -364,7 +335,7 @@ export default {
 
       try {
         await sendOtp({
-          userId: 1,
+          userId: this.userId,
           email: this.email,
         });
 
@@ -383,7 +354,7 @@ export default {
     },
 
     startResendCountdown() {
-      this.resendCooldown = 30;
+      this.resendCooldown = 60;
       clearInterval(this.resendTimer);
       this.resendTimer = setInterval(() => {
         this.resendCooldown--;
@@ -416,7 +387,7 @@ export default {
 
       try {
         await verifyOtp({
-          userId: 1,
+          userId: this.userId,
           code: enteredCode,
         });
 
@@ -431,7 +402,6 @@ export default {
       }
     },
 
-    // Generic file handler used by every upload step
     handleFileUpload(event, fileKey, fileNameKey) {
       const file = event.target.files[0];
       if (file) {
@@ -452,7 +422,7 @@ export default {
       try {
         const formData = new FormData();
         formData.append("file", this.idFile);
-        formData.append("userId", 1);
+        formData.append("userId", this.userId);
         formData.append("documentType", "id");
 
         await uploadDocument(formData);
@@ -468,10 +438,32 @@ export default {
       }
     },
 
-    submitAddress() {
-      // BACKEND: POST /api/verify/submit-address (multipart/form-data)
-      console.log("Address submitted:", this.addressFile);
-      this.step = 5;
+    async submitAddress() {
+      if (!this.addressFile) {
+        this.globalError = "Please select a file first.";
+        return;
+      }
+
+      this.globalError = "";
+      this.isSubmitting = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("file", this.addressFile);
+        formData.append("userId", this.userId);
+        formData.append("documentType", "address");
+
+        await uploadDocument(formData);
+
+        this.step = 5;
+      } catch (err) {
+        console.error("Address upload failed:", err);
+        this.globalError =
+          err.response?.data?.message ||
+          "Failed to upload address document. Please try again.";
+      } finally {
+        this.isSubmitting = false;
+      }
     },
 
     async submitBackground() {
@@ -486,7 +478,7 @@ export default {
       try {
         const formData = new FormData();
         formData.append("file", this.policeClearanceFile);
-        formData.append("userId", 1);
+        formData.append("userId", this.userId);
         formData.append("documentType", "police_clearance");
 
         await uploadDocument(formData);
@@ -511,7 +503,7 @@ export default {
 
       try {
         await submitExperience({
-          professionalId: 1,
+          professionalId: this.professionalId,
           service: this.service,
           yearsExperience: this.yearsExperience,
           experienceNotes: this.experienceNotes,
@@ -659,11 +651,6 @@ export default {
   margin-bottom: 16px;
 }
 
-.phone-row select {
-  flex: 0 0 70px;
-  margin-bottom: 0;
-}
-
 .phone-row input {
   flex: 1;
   padding: 10px;
@@ -734,22 +721,6 @@ textarea:focus {
   font-size: var(--font-xs);
   color: #999;
   margin-bottom: 16px;
-}
-
-.checkbox-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 400;
-  font-size: var(--font-sm);
-  margin-bottom: 0;
 }
 
 .send-otp {
@@ -871,14 +842,12 @@ textarea:focus {
   margin: 0;
 }
 
-/* Tablet and below */
 @media (max-width: 768px) {
   .n-verifyForm {
     padding: 32px;
   }
 }
 
-/* Mobile */
 @media (max-width: 480px) {
   .n-verifyForm {
     padding: 24px;
@@ -902,11 +871,6 @@ textarea:focus {
 
   .phone-row {
     flex-direction: column;
-  }
-
-  .phone-row select {
-    flex: 0 0 auto;
-    width: 100%;
   }
 
   .row-actions {

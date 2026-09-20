@@ -6,12 +6,12 @@ import bookingRoutes from './routes/bookingRoutes.js'
 import reportRoutes from './routes/reportRoutes.js'
 import reviewRoutes from './routes/reviewRoutes.js'
 import verificationRoutes from './routes/verificationRoutes.js'
-import db from './config/db.js';
+
 
 import authRoutes from './routes/authRoutes.js';
 import professionalRoutes from './routes/professionalRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import reviewRoutes from './routes/reviewRoutes.js'
+
 
 dotenv.config();
 
@@ -30,7 +30,6 @@ app.use('/api/bookings', bookingRoutes)
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/reviews', reviewRoutes)
 
 
 app.get('/', (req, res) => {

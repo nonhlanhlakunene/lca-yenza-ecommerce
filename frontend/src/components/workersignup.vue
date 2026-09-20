@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import VerifyIdentity from '../components/VerifyIdentity.vue'
 
 const router = useRouter()
 
@@ -10,6 +11,11 @@ const email = ref('')
 const password = ref('')
 const message = ref('')
 const loading = ref(false)
+
+// Verification popup state
+const showVerification = ref(false)
+const newUserId = ref(1)
+const newProfessionalId = ref(1)
 
 const workerSignup = async () => {
   message.value = ''
@@ -34,17 +40,25 @@ const workerSignup = async () => {
       return
     }
 
+    // Capture the new user's IDs from the response
+    newUserId.value = data.user.user_id
+    newProfessionalId.value = data.professional.professional_id
+
     message.value = 'Signup successful!'
 
-    setTimeout(() => {
-      router.push('/workerlogin')
-    }, 500)
+    // Open verification popup instead of redirecting
+    showVerification.value = true
   } catch (error) {
     console.error(error)
     message.value = 'Unable to connect to the server'
   } finally {
     loading.value = false
   }
+}
+
+const onVerificationComplete = () => {
+  showVerification.value = false
+  router.push('/workerlogin')
 }
 </script>
 
@@ -99,6 +113,17 @@ const workerSignup = async () => {
       </form>
 
     </div>
+
+    <!-- Verification popup -->
+    <VerifyIdentity
+      v-if="showVerification"
+      :showVerification="true"
+      :userType="'worker'"
+      :userId="newUserId"
+      :professionalId="newProfessionalId"
+      @close="onVerificationComplete"
+      @complete="onVerificationComplete"
+    />
 
   </div>
 </template>
@@ -233,4 +258,3 @@ body {
   }
 }
 </style>
-

@@ -3,8 +3,7 @@ import {ref} from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
-import VerifyIdentity from './components/VerifyIdentity.vue';
-const showVerify = ref(false)
+
 
 const route = useRoute()
 </script>
@@ -16,12 +15,6 @@ const route = useRoute()
     
     <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
     
-    <button
-        @click="showVerify = true"
-        style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 12px 20px; background: #136163; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
-         >
-   Test Verification
-    </button>
 
     <VerifyIdentity
        v-if="showVerify"
@@ -30,12 +23,6 @@ const route = useRoute()
        @close="showVerify = false"
        @complete="showVerify = false"
      />
-
-    <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path)" />
-
-    <RouterView />
-
-    <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path)" />
 </template>
 
 
