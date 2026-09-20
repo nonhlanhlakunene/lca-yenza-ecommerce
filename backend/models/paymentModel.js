@@ -1,7 +1,7 @@
 import db from '../config/db.js'
 
 // Create pending payment
-export const createPayment = aync ({
+export const createPayment = async ({
     bookingId,
     userId,
     amount

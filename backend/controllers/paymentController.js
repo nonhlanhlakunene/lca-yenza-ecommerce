@@ -1,6 +1,6 @@
-import  { createPayment, getPaymentByBookingId, updatePaymentStatus } from '../models/paymentModel.js'
+import  { createPayment, getPaymentsByBookingId, updatePaymentStatus } from '../models/paymentModel.js'
 import db from '../config/db.js'
-import { generatePayFastSignature } from '../services/payfastService.js'
+import { generatePayFastSignature, validatePayFastSignature } from '../services/payfastService.js'
 
 
 // CREATE PAYFAST PAYMENT
@@ -79,7 +79,7 @@ export const createPayFastPayment = async (req, res) => {
 
 
         // CHECK FOR EXISTING PAYMENT
-        const existingPayment = await getPaymentByBookingId(Id)
+        const existingPayment = await getPaymentsByBookingId(bookingId)
 
         if (
             existingPayment &&
@@ -221,7 +221,9 @@ export const createPayFastPayment = async (req, res) => {
 
 // HANDLE PAYFAST NOTIFICATIONS
 export const handlePayFastNotify = async (req, res) => {
+
     try {
+
         const data = req.body
 
         console.log('PayFast ITN received:', data)
@@ -229,17 +231,69 @@ export const handlePayFastNotify = async (req, res) => {
         const bookingId = data.custom_str1
         const paymentId = data.custom_str2
 
+        // Check required values
         if (!bookingId || !paymentId) {
             return res
                 .status(400)
                 .send('Payment not found')
         }
 
-        const receivedAmount =
-            Number(data.amount_gross)
+        // PayFast Settings
+        const passphrase = process.env.PAYFAST_PASSPHRASE || null
 
-        const expectedAmount = 
-            Number(paymentId.amount)
+
+        // Validate PayFast signature
+        const validSignature =
+            validatePayFastSignature(
+                data,
+                passphrase
+            )
+
+        if (!validSignature) {
+
+            console.error(
+                'Invalid PayFast ITN signature'
+            )
+
+            return res
+                .status(400)
+                .send('Invalid signature')
+        }
+
+        // Get payment from database
+        const [paymentRows] = await db.execute(
+            `SELECT
+                payment_id,
+                booking_id,
+                amount,
+                payment_status
+            FROM payments
+            WHERE payment_id = ?
+            LIMIT 1`,
+            [paymentId]
+        )
+
+        const payment = paymentRows[0]
+
+        if (!payment) {
+
+            return res
+                .status(404)
+                .send('Payment not found')
+        }
+
+
+        // Make sure the payment belongs to this booking
+        if (String(payment.booking_id) !== String(bookingId)) {
+
+            return res
+                .status(400)
+                .send('Booking mismatch')
+        }
+
+        // Compare the amount PayFast sent with the amount in database
+        const receivedAmount = Number(data.amount_gross)
+        const expectedAmount = Number(payment.amount)
 
         if (receivedAmount !== expectedAmount) {
             console.error('PayFast amount mismatch:', {
@@ -252,16 +306,20 @@ export const handlePayFastNotify = async (req, res) => {
                 .send('Amount mismatch')
         }
 
+        // Check payment status
         if (data.payment_status === 'COMPLETE') {
 
             await updatePaymentStatus({
-                paymentId: paymentId.payment_id,
+                paymentId: payment.payment_id,
                 transactionId: data.pf_payment_id,
                 paymentStatus: 'successful',
                 paidAt: new Date()
             })
 
+
+            // Confirm booking
             await db.execute(
+
                 `UPDATE bookings
                 SET status = 'confirmed'
                 WHERE booking_id = ?`,
@@ -269,7 +327,7 @@ export const handlePayFastNotify = async (req, res) => {
             )
 
             console.log(
-                `Payment ${paymentId.payment_id} marked as successful`
+                `Payment ${payment.payment_id} marked as successful`
             )
         }
 
@@ -278,6 +336,7 @@ export const handlePayFastNotify = async (req, res) => {
             .send('OK')
 
     } catch (error) {
+        
         console.error(
             'PayFast ITN error:',
             error
