@@ -1,5 +1,9 @@
 <script setup>
-// import { ref, computed } from 'vue' 
+// import { ref, computed } from 'vue'
+
+// Added : Imports for the popups
+import ReportPopup from '../components/ReportPopup.vue'
+import ReviewPopup from '../components/ReviewPopup.vue'
 
 
 /* Temporary booking data. Later, this information will come from the backend/database. */
@@ -13,7 +17,8 @@
 //     time: '10:00',
 //     address: '123 Main Street, Cape Town',
 //     notes: 'Kitchen sink needs to be repaired.',
-//     status: 'Confirmed'
+//     status: 'Confirmed',
+    reportedUserId: 3
 //   },
 //   {
 //     id: 2,
@@ -24,7 +29,8 @@
 //     time: '14:00',
 //     address: '45 Long Street, Cape Town',
 //     notes: 'Install two new lights.',
-//     status: 'Completed'
+//     status: 'Completed',
+    reportedUserId: 4
 //   },
 //   {
 //     id: 3,
@@ -35,7 +41,8 @@
 //     time: '09:00',
 //     address: '18 Main Road, Cape Town',
 //     notes: 'Paint the living room and hallway.',
-//     status: 'Completed'
+//     status: 'Completed',
+    reportedUserId: 5
 //   },
 //   {
 //     id: 4,
@@ -46,8 +53,9 @@
 //     time: '11:00',
 //     address: '7 Oak Avenue, Cape Town',
 //     notes: 'Replace the front door lock.',
-//     status: 'Cancelled'
-//   }
+//     status: 'Cancelled',
+    reportedUserId: 6
+//   },
 // ])
 
 /* Finds the customer's current/upcoming booking. */
@@ -253,6 +261,29 @@ const cancelBooking = (bookingId) => {
 onMounted(() => {
     fetchBookings()
 })
+
+// Added: Variables to remember which booking is being reported/reviewed
+const activeReport = ref(null)
+const activeReview = ref(null)
+
+//Added: Called when the user clicks the report professional button and saves the booking
+function openReport(booking) {
+    activeReport.value = booking
+}
+
+// Added :Called when the user clicks cancel inside the report popup, clears the saved booking
+function closeReport () {
+    activeReport.value = null
+}
+
+function openReview(booking) {
+    activeReview.value = booking
+}
+
+function closeReview() {
+    activeReview.value = null
+}
+
 </script>
 
 
@@ -311,12 +342,6 @@ onMounted(() => {
                         Cancel Booking 
                     </button> 
 
-                    <button
-                        class="booking-action-button"
-                        type="button"
-                    >
-                        Report Professional
-                    </button>
                 </div>
 
             </div> 
@@ -357,9 +382,12 @@ onMounted(() => {
                         <div> <span class="detail-label">ADDRESS</span> <span> {{ booking.address }} </span> </div>
                     </div>
                     <div class="history-actions">
+                        <!-- Changed: Report button now only shows on completed and opens the popup -->
                         <button
+                            v-if="booking.status === 'Completed'"
                             class="booking-action-button"
                             type="button"
+                            @click="openReport(booking)"
                         >
                             Report Professional
                         </button>
@@ -368,6 +396,7 @@ onMounted(() => {
                             v-if="booking.status === 'Completed'"
                             class="booking-action-button"
                             type="button"
+                            @click="openReview(booking)"
                         >
                             Leave Review
                         </button>
@@ -380,6 +409,26 @@ onMounted(() => {
             </div>
         </section>
 
+        <!-- Added: report popup that shows only when a booking is selected for reporting -->
+         <ReportPopup
+            v-if="activeReport"
+            :personName="activeReport.professional"
+            :personType="'Worker'"
+            :bookingId="activeReport.id"
+            :reportedUserId="activeReport.reportedUserId"
+            :date="formatDate(activeReport.date)"
+            @close="closeReport"
+         />
+
+          <ReviewPopup
+            v-if="activeReview"
+            :personName="activeReview.professional"
+            :personType="'Worker'"
+            :reviewedUserId="activeReview.reportedUserId"
+            :bookingId="activeReview.id"
+            :date="formatDate(activeReview.date)"
+            @close="closeReview"
+         />
     </main>
 
 </template>

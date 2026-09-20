@@ -1,17 +1,28 @@
 <script setup>
+import {ref} from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
+
 
 const route = useRoute()
 </script>
 
 <template>
     <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
-
+    
     <RouterView />
-
+    
     <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
+    
+
+    <VerifyIdentity
+       v-if="showVerify"
+       :showVerification="true"
+       :userType="'worker'"
+       @close="showVerify = false"
+       @complete="showVerify = false"
+     />
 </template>
 
 
