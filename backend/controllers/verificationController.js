@@ -168,50 +168,50 @@ export const verifyOtpController = async (req, res) => {
 };
 
 export const uploadDocumentController = async (req, res) => {
-  try {
-    const { userId, documentType } = req.body;
+    try {
+        const { userId, documentType } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No file uploaded",
-      });
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "No file was uploaded. Please select a file and try again."
+            });
+        }
+
+        if (!userId || !documentType) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required information. Please try again."
+            });
+        }
+
+        const allowedTypes = ["id", "address", "police_clearance", "affidavit"];
+        if (!allowedTypes.includes(documentType)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid document type. Must be one of: ${allowedTypes.join(", ")}`
+            });
+        }
+
+        const documentId = await saveDocument({
+            userId,
+            documentType,
+            fileName: req.file.originalname,
+            filePath: req.file.path,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "Document uploaded successfully",
+            documentId
+        });
+    } catch (error) {
+        console.error("Upload document error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error while uploading document. Please try again."
+        });
     }
-
-    if (!userId || !documentType) {
-      return res.status(400).json({
-        success: false,
-        message: "userId and documentType are required",
-      });
-    }
-
-    const allowedTypes = ["id", "address", "police_clearance", "affidavit"];
-    if (!allowedTypes.includes(documentType)) {
-      return res.status(400).json({
-        success: false,
-        message: `documentType must be one of: ${allowedTypes.join(", ")}`,
-      });
-    }
-
-    const documentId = await saveDocument({
-      userId,
-      documentType,
-      fileName: req.file.originalname,
-      filePath: req.file.path,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Document uploaded successfully",
-      documentId,
-    });
-  } catch (error) {
-    console.error("Upload document error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to upload document",
-    });
-  }
 };
