@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import painterpicture from '../assets/painterpicture.png'
-
+import VerifyIdentity from './VerifyIdentity.vue'
 const router = useRouter()
 
 const first_name = ref('')
@@ -11,6 +11,10 @@ const email = ref('')
 const password = ref('')
 const message = ref('')
 const loading = ref(false)
+
+// Verification popup state
+const showVerification = ref(false)
+const newUserId = ref(1)
 
 const signup = async () => {
   loading.value = true
@@ -38,11 +42,13 @@ const signup = async () => {
       return
     }
 
+    // Capture the new user's ID
+    newUserId.value = data.user.user_id
+
     message.value = 'Signup successful!'
 
-    setTimeout(() => {
-      router.push('/signup')
-    }, 1000)
+    // Open verification popup instead of redirecting
+    showVerification.value = true
 
   } catch (error) {
     console.error('Signup error:', error)
@@ -52,8 +58,13 @@ const signup = async () => {
   loading.value = false
 }
 
+const onVerificationComplete = () => {
+  showVerification.value = false
+  router.push('/signup')   // ← change to your actual customer login route
+}
+
 const goToLogin = () => {
-  router.push('/signup')
+  router.push('/signup')   
 }
 </script>
 
@@ -103,6 +114,16 @@ const goToLogin = () => {
     <div class="signup-right-side">
       <img :src="painterpicture" alt="Painter">
     </div>
+
+    <!-- Verification popup (customer: email OTP only) -->
+    <VerifyIdentity
+      v-if="showVerification"
+      :showVerification="true"
+      :userType="'customer'"
+      :userId="newUserId"
+      @close="onVerificationComplete"
+      @complete="onVerificationComplete"
+    />
   </div>
 </template>
 
@@ -270,4 +291,3 @@ body {
   }
 }
 </style>
-
