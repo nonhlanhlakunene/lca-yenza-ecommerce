@@ -1,79 +1,62 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import api from '../api/api.js'
+import { computed, ref, watch, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import api from '../api/api'
 
-const categories = ref([])
 const professionals = ref([])
-const activeCategory = ref('')
-const activeFilter = ref('All')
-const search = ref('')
-const currentPage = ref(1)
-const priceFilter = ref('All prices')
-const priceMenuOpen = ref(false)
-const loading = ref(false)
-const errorMessage = ref('')
-const pagination = ref({ page: 1, limit: 3, total: 0, totalPages: 0 })
-
-const filters = ['Reviews', 'Rating']
-const priceOptions = ['All prices', 'Best prices (under R75/hr)', 'R76 – R90/hr', 'R91+/hr']
-
-function addPriceParams(params) {
-  if (priceFilter.value === 'Best prices (under R75/hr)') params.maxPrice = 75
-  if (priceFilter.value === 'R76 – R90/hr') Object.assign(params, { minPrice: 76, maxPrice: 90 })
-  if (priceFilter.value === 'R91+/hr') params.minPrice = 91
-}
-
-async function loadProfessionals() {
-  loading.value = true
-  errorMessage.value = ''
-  try {
-    const params = { page: currentPage.value, limit: 3 }
-    if (activeCategory.value) params.category = activeCategory.value
-    if (search.value.trim()) params.search = search.value.trim()
-    if (priceFilter.value !== 'All prices') params.sort = 'price-asc'
-    if (activeFilter.value === 'Reviews') params.sort = 'reviews'
-    if (activeFilter.value === 'Rating') params.sort = 'rating'
-    addPriceParams(params)
-
-    const { data } = await api.get('/professionals', { params })
-    professionals.value = data.professionals
-    pagination.value = data.pagination
-  } catch (error) {
-    professionals.value = []
-    pagination.value = { page: 1, limit: 3, total: 0, totalPages: 0 }
-    errorMessage.value = error.response?.data?.message || 'Unable to load professionals. Please try again.'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function loadCategories() {
-  try {
-    const { data } = await api.get('/categories')
-    categories.value = data.categories.map((category) => category.name)
-    activeCategory.value = categories.value[0] || ''
-  } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Unable to load categories. Please try again.'
-  }
-}
-
-function changePage(page) {
-  if (page >= 1 && page <= pagination.value.totalPages && page !== currentPage.value) currentPage.value = page
-}
-
-function initials(name) {
-  return name.split(' ').map((part) => part[0]).slice(0, 2).join('')
-}
-
-watch([activeCategory, search, priceFilter, activeFilter], () => {
-  currentPage.value = 1
-  loadProfessionals()
-})
-watch(currentPage, loadProfessionals)
+const loading = ref(true)
+const error = ref('')
 
 onMounted(async () => {
-  await loadCategories()
-  await loadProfessionals()
+    try {
+        const response = await api.get('/professionals', {
+            params: {
+                limit: 50
+            }
+        })
+
+        professionals.value = response.data.professionals
+    } catch (err) {
+        console.error('Failed to load professionals:', err)
+        error.value = 'Failed to load professionals.'
+    } finally {
+        loading.value = false
+    }
+
+    const filteredProfessionals = computed(() => {
+    const term = search.value.trim().toLowerCase()
+
+    return professionals.value.filter((pro) => {
+        const matchesCategory =
+            activeCategory.value === 'All' ||
+            pro.category === activeCategory.value
+
+        const matchesSearch =
+            !term ||
+            `${pro.name} ${pro.job} ${pro.tags.join(' ')}`
+                .toLowerCase()
+                .includes(term)
+
+        return matchesCategory && matchesSearch
+    })
+    const filteredProfessionals = computed(() => {
+    const term = search.value.trim().toLowerCase()
+
+    return professionals.value.filter((pro) => {
+        const matchesCategory =
+            activeCategory.value === 'All' ||
+            pro.category === activeCategory.value
+
+        const matchesSearch =
+            !term ||
+            `${pro.name} ${pro.job} ${pro.tags.join(' ')}`
+                .toLowerCase()
+                .includes(term)
+
+        return matchesCategory && matchesSearch
+    })
+})
+})
 })
 </script>
 
@@ -126,7 +109,13 @@ onMounted(async () => {
         </article>
         <p v-if="!professionals.length" class="state-message">No handymen match your search.</p>
       </div>
+      <div v-if="loading">
+    Loading professionals...
+</div>
 
+<div v-else-if="error">
+    {{ error }}
+</div>
       <nav v-if="pagination.totalPages > 1" class="pagination" aria-label="Results pages">
         <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">← Previous</button>
         <span>Page {{ currentPage }} of {{ pagination.totalPages }}</span>
