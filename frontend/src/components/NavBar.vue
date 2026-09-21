@@ -2,14 +2,8 @@
   <nav class="home-navbar">
     <ul class="navbar-links">
       <li v-for="(link, index) in navLinks" :key="index">
-        <router-link
-          v-if="link.text !== 'Logout'"
-          :to="link.path"
-        >
-          {{ link.text }}
-        </router-link>
-
-        <a v-else href="/login" @click.prevent="logout">Logout</a>
+        <router-link v-if="link.text !== 'Logout'" :to="link.path">{{ link.text }}</router-link>
+        <a v-else href="/login" @click.prevent="logout">{{ link.text }}</a>
       </li>
     </ul>
   </nav>
@@ -33,9 +27,10 @@ const linkList = [
 ]
 
 const loadUser = () => {
+  const storedToken = localStorage.getItem('token')
   const storedUser = localStorage.getItem('user')
 
-  if (!storedUser) {
+  if (!storedToken || !storedUser) {
     currentUser.value = null
     return
   }
@@ -43,15 +38,15 @@ const loadUser = () => {
   try {
     currentUser.value = JSON.parse(storedUser)
   } catch (error) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     currentUser.value = null
   }
 }
 
 watch(
   () => route.path,
-  () => {
-    loadUser()
-  },
+  loadUser,
   { immediate: true }
 )
 
@@ -68,10 +63,17 @@ const navLinks = computed(() => {
     })
   }
 
-  links.push({
-    text: 'Logout',
-    path: '/login'
-  })
+  if (currentUser.value) {
+    links.push({
+      text: 'Logout',
+      path: '/login'
+    })
+  } else {
+    links.push({
+      text: 'Login',
+      path: '/login'
+    })
+  }
 
   return links
 })
@@ -127,7 +129,6 @@ const logout = () => {
   text-underline-offset: 5px;
 }
 
-/* Logout button */
 .navbar-links li:last-child a {
   background-color: #ffffff;
   color: #136163;
