@@ -2,17 +2,27 @@
   <nav class="home-navbar">
     <ul class="navbar-links">
       <li v-for="(link, index) in navLinks" :key="index">
-        <router-link :to="link.path">
+        <router-link
+          v-if="link.text !== 'Logout'"
+          :to="link.path"
+        >
           {{ link.text }}
         </router-link>
+
+        <a v-else href="/login" @click.prevent="logout">Logout</a>
       </li>
     </ul>
   </nav>
 </template>
 
-
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
+const currentUser = ref(null)
 
 const linkList = [
   { text: 'Home', path: '/' },
@@ -22,10 +32,61 @@ const linkList = [
   { text: 'Contact', path: '/contact' }
 ]
 
-const navLinks = ref(linkList)
+const loadUser = () => {
+  const storedUser = localStorage.getItem('user')
 
+  if (!storedUser) {
+    currentUser.value = null
+    return
+  }
+
+  try {
+    currentUser.value = JSON.parse(storedUser)
+  } catch (error) {
+    currentUser.value = null
+  }
+}
+
+watch(
+  () => route.path,
+  () => {
+    loadUser()
+  },
+  { immediate: true }
+)
+
+const navLinks = computed(() => {
+  const links = [...linkList]
+
+  if (
+    currentUser.value?.role === 'professional' ||
+    currentUser.value?.role === 'worker'
+  ) {
+    links.push({
+      text: 'Dashboard',
+      path: '/worker'
+    })
+  }
+
+  links.push({
+    text: 'Logout',
+    path: '/login'
+  })
+
+  return links
+})
+
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('authToken')
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('user')
+
+  currentUser.value = null
+
+  router.push('/login')
+}
 </script>
-
 
 <style scoped>
 .home-navbar {
@@ -53,7 +114,7 @@ const navLinks = ref(linkList)
   color: var(--color-page);
   text-decoration: none;
   font-size: var(--font-sm);
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .navbar-links a:hover {
@@ -61,12 +122,29 @@ const navLinks = ref(linkList)
 }
 
 .navbar-links a.router-link-active {
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 5px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 5px;
 }
 
-/* Mobile Layout Adjustment */
+/* Logout button */
+.navbar-links li:last-child a {
+  background-color: #ffffff;
+  color: #136163;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid #ffffff;
+  transition: all 0.3s ease;
+}
+
+.navbar-links li:last-child a:hover {
+  background-color: transparent;
+  color: #ffffff;
+  opacity: 1;
+}
+
 @media (max-width: 768px) {
   .home-navbar {
     flex-direction: column;

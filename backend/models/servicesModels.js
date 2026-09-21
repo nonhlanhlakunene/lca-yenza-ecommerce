@@ -1,111 +1,194 @@
 import db from '../config/db.js'
 
-const professionalFields = `
-    h.id,
-    h.full_name,
-    h.job_title,
-    c.name AS category,
-    h.rating,
-    h.review_count,
-    h.hourly_rate_zar,
-    GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS services
-`
-
-const professionalJoins = `
-    FROM handymen h
-    INNER JOIN categories c ON c.id = h.category_id
-    LEFT JOIN handyman_services hs ON hs.handyman_id = h.id
-    LEFT JOIN services s ON s.id = hs.service_id
-`
-
-const professionalGroupBy = `
-    GROUP BY h.id, h.full_name, h.job_title, c.name,
-             h.rating, h.review_count, h.hourly_rate_zar
-`
-
 function buildFilters({ category, search, minPrice, maxPrice }) {
     const conditions = []
     const values = []
 
     if (category) {
-        conditions.push('c.name = ?')
-        values.push(category)
+        conditions.push(`
+            (
+                s.name LIKE ?
+                OR p.bio LIKE ?
+            )
+        `)
+
+        const term = `%${category}%`
+        values.push(term, term)
     }
 
     if (search) {
         const term = `%${search}%`
-        conditions.push(`(
-            h.full_name LIKE ?
-            OR h.job_title LIKE ?
-            OR EXISTS (
-                SELECT 1
-                FROM handyman_services search_hs
-                INNER JOIN services search_s ON search_s.id = search_hs.service_id
-                WHERE search_hs.handyman_id = h.id AND search_s.name LIKE ?
+
+        conditions.push(`
+            (
+                u.first_name LIKE ?
+                OR u.last_name LIKE ?
+                OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?
+                OR s.name LIKE ?
+                OR p.bio LIKE ?
             )
-        )`)
-        values.push(term, term, term)
+        `)
+
+        values.push(term, term, term, term, term)
     }
 
     if (minPrice !== undefined) {
-        conditions.push('h.hourly_rate_zar >= ?')
+        conditions.push('p.hourly_rate >= ?')
         values.push(minPrice)
     }
+
     if (maxPrice !== undefined) {
-        conditions.push('h.hourly_rate_zar <= ?')
+        conditions.push('p.hourly_rate <= ?')
         values.push(maxPrice)
     }
 
-    return { where: conditions.length ? `WHERE ${conditions.join(' AND ')}` : '', values }
+    return {
+        where: conditions.length
+            ? `WHERE ${conditions.join(' AND ')}`
+            : '',
+        values
+    }
 }
 
 function orderBy(sort) {
     const options = {
-        'best-match': 'h.rating DESC, h.review_count DESC',
-        'price-asc': 'h.hourly_rate_zar ASC, h.rating DESC',
-        'price-desc': 'h.hourly_rate_zar DESC, h.rating DESC',
-        rating: 'h.rating DESC, h.review_count DESC',
-        reviews: 'h.review_count DESC, h.rating DESC'
+        'best-match': 'p.professional_id ASC',
+        'price-asc': 'p.hourly_rate ASC',
+        'price-desc': 'p.hourly_rate DESC',
+        rating: 'h.rating DESC',
+        reviews: 'h.review_count DESC'
     }
 
     return options[sort] || options['best-match']
 }
 
 export async function findAllCategories() {
-    const [rows] = await db.execute('SELECT id, name FROM categories ORDER BY name ASC')
+    const [rows] = await db.execute(`
+        SELECT
+            id,
+            name
+        FROM categories
+        ORDER BY name ASC
+    `)
+
     return rows
 }
 
-export async function findProfessionals({ category, search, minPrice, maxPrice, sort, page, limit }) {
-    const { where, values } = buildFilters({ category, search, minPrice, maxPrice })
+export async function findProfessionals({
+    category,
+    search,
+    minPrice,
+    maxPrice,
+    sort
+}) {
+    const { where, values } = buildFilters({
+        category,
+        search,
+        minPrice,
+        maxPrice
+    })
 
-    const [countRows] = await db.execute(
-        `SELECT COUNT(DISTINCT h.id) AS total
-         FROM handymen h
-         INNER JOIN categories c ON c.id = h.category_id
-         ${where}`,
+    const [rows] = await db.execute(
+        `
+        SELECT
+            p.professional_id AS id,
+            p.user_id,
+            u.first_name,
+            u.last_name,
+            CONCAT(
+                u.first_name,
+                ' ',
+                u.last_name
+            ) AS full_name,
+            s.name AS service_name,
+            p.bio,
+            p.experience_years,
+            p.hourly_rate,
+            p.address,
+            p.city,
+            p.province,
+            p.postal_code,
+            p.profile_image,
+            p.verification_status,
+            p.availability_status,
+            h.rating,
+            h.review_count
+        FROM professionals p
+        LEFT JOIN users u
+            ON u.user_id = p.user_id
+        LEFT JOIN services s
+            ON s.id = p.service_id
+        LEFT JOIN handymen h
+            ON LOWER(TRIM(h.full_name)) =
+               LOWER(TRIM(
+                   CONCAT(
+                       u.first_name,
+                       ' ',
+                       u.last_name
+                   )
+               ))
+        ${where}
+        ORDER BY ${orderBy(sort)}
+        `,
         values
     )
 
-    const [rows] = await db.execute(
-        `SELECT ${professionalFields}
-         ${professionalJoins}
-         ${where}
-         ${professionalGroupBy}
-         ORDER BY ${orderBy(sort)}
-         LIMIT ? OFFSET ?`,
-        [...values, limit, (page - 1) * limit]
-    )
-
-    return { rows, total: countRows[0].total }
+    return rows
 }
 
 export async function findProfessionalBySlug(slug) {
     const [rows] = await db.execute(
-        `SELECT ${professionalFields}
-         ${professionalJoins}
-         WHERE LOWER(REPLACE(h.full_name, ' ', '-')) = ?
-         ${professionalGroupBy}`,
+        `
+        SELECT
+            p.professional_id AS id,
+            p.user_id,
+            u.first_name,
+            u.last_name,
+            CONCAT(
+                u.first_name,
+                ' ',
+                u.last_name
+            ) AS full_name,
+            s.name AS service_name,
+            p.bio,
+            p.experience_years,
+            p.hourly_rate,
+            p.address,
+            p.city,
+            p.province,
+            p.postal_code,
+            p.profile_image,
+            p.verification_status,
+            p.availability_status,
+            h.rating,
+            h.review_count
+        FROM professionals p
+        LEFT JOIN users u
+            ON u.user_id = p.user_id
+        LEFT JOIN services s
+            ON s.id = p.service_id
+        LEFT JOIN handymen h
+            ON LOWER(TRIM(h.full_name)) =
+               LOWER(TRIM(
+                   CONCAT(
+                       u.first_name,
+                       ' ',
+                       u.last_name
+                   )
+               ))
+        WHERE LOWER(
+            REPLACE(
+                CONCAT(
+                    u.first_name,
+                    ' ',
+                    u.last_name
+                ),
+                ' ',
+                '-'
+            )
+        ) = ?
+        LIMIT 1
+        `,
         [slug.toLowerCase()]
     )
 
