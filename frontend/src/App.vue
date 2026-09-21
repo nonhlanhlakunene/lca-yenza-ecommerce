@@ -1,11 +1,9 @@
 ```vue
 <script setup>
-import {ref} from 'vue'
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
-
 
 const route = useRoute()
 
@@ -28,13 +26,6 @@ const hideLayout = computed(() => {
   <RouterView />
 
   <Footer v-if="!hideLayout" />
-    <VerifyIdentity
-       v-if="showVerify"
-       :showVerification="true"
-       :userType="'worker'"
-       @close="showVerify = false"
-       @complete="showVerify = false"
-     />
 </template>
 
 <style>

@@ -1,12 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import db from './config/db.js'
-import bookingRoutes from './routes/bookingRoutes.js'
-import reportRoutes from './routes/reportRoutes.js'
-import reviewRoutes from './routes/reviewRoutes.js'
-import verificationRoutes from './routes/verificationRoutes.js'
+import db from './config/db.js';
 
+import bookingRoutes from './routes/bookingRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import verificationRoutes from './routes/verificationRoutes.js';
 
 import authRoutes from './routes/authRoutes.js';
 import professionalRoutes from './routes/professionalRoutes.js';
@@ -21,24 +21,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-
 app.use(express.json());
-app.use('/api/reports', reportRoutes)
-app.use('/api/reviews', reviewRoutes)
-app.use('/api/verifications', verificationRoutes)
-app.use('/api/bookings', bookingRoutes)
+
+app.use('/api/reports', reportRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/verifications', verificationRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/reviews', reviewRoutes);
 app.use('/api', servicesRoutes);
-
 
 app.get('/', (req, res) => {
     res.send('Your backend server is running successfully!');
 });
-
 
 app.get('/api/health', async (req, res) => {
     try {
@@ -52,10 +49,7 @@ app.get('/api/health', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(
-            'Database connection failed',
-            error
-        );
+        console.error('Database connection failed', error);
 
         res.status(500).json({
             success: false,
@@ -63,7 +57,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-
 
 app.listen(PORT, () => {
     console.log(
