@@ -1,8 +1,17 @@
-import { createReview } from "../models/reviewModel.js";
+import {
+    createReview,
+    getReviews
+} from "../models/reviewModel.js";
 
 export const createReviewController = async (req, res) => {
     try {
-        const { reviewerId, reviewedUserId, bookingId, rating, comment } = req.body;
+        const {
+            reviewerId,
+            reviewedUserId,
+            bookingId,
+            rating,
+            comment
+        } = req.body;
 
         if (!reviewerId || !reviewedUserId || !bookingId || !rating) {
             return res.status(400).json({
@@ -31,12 +40,32 @@ export const createReviewController = async (req, res) => {
             message: "Review submitted successfully",
             reviewId
         });
+
     } catch (error) {
         console.error("Create review error:", error);
 
         res.status(500).json({
             success: false,
             message: "Failed to submit review"
+        });
+    }
+};
+
+export const getReviewsController = async (req, res) => {
+    try {
+        const reviews = await getReviews();
+
+        res.json({
+            success: true,
+            reviews
+        });
+
+    } catch (error) {
+        console.error("Get reviews error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to load reviews"
         });
     }
 };
