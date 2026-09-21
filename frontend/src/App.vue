@@ -1,11 +1,9 @@
 ```vue
 <script setup>
-import {ref} from 'vue'
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
-
 
 const route = useRoute()
 

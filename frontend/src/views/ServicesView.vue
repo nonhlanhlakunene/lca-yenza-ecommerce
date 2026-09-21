@@ -91,6 +91,9 @@ const geocoding =
 const mapMessage =
     ref('')
 
+const selectedProfessionalId =
+    ref(null)
+
 /*
 |--------------------------------------------------------------------------
 | PROFESSIONAL FILTERING
@@ -287,6 +290,21 @@ async function loadProfessionals() {
     }
 }
 
+async function searchForProfessional() {
+    await loadProfessionals()
+
+    if (!search.value.trim() || !professionals.value.length) return
+
+    await geocodeProfessionals()
+
+    const searchTerm = search.value.trim().toLowerCase()
+    const professional = professionals.value.find(
+        item => item.name.toLowerCase() === searchTerm
+    ) || professionals.value[0]
+
+    focusProfessionalOnMap(professional.id)
+}
+
 /*
 |--------------------------------------------------------------------------
 | LOAD CATEGORIES
@@ -347,7 +365,10 @@ function initialiseMap() {
             attribution:
                 '&copy; OpenStreetMap contributors',
 
-            maxZoom: 19
+            // OpenStreetMap supplies tiles through zoom 19. Allowing Leaflet
+            // to scale those tiles prevents a blank map at our focus zoom of 20.
+            maxNativeZoom: 19,
+            maxZoom: 20
         }
     ).addTo(
         map.value
@@ -623,7 +644,9 @@ function updateMapMarkers() {
                 L.marker([
                     location.latitude,
                     location.longitude
-                ])
+                ], {
+                    professionalId: professional.id
+                })
 
             const popup = `
                 <div class="map-popup">
@@ -669,7 +692,7 @@ function updateMapMarkers() {
             marker.on(
                 'click',
                 () => {
-                    marker.openPopup()
+                    focusProfessionalOnMap(professional.id)
                 }
             )
 
@@ -712,6 +735,32 @@ function updateMapMarkers() {
 | HTML ESCAPE FOR POPUPS
 |--------------------------------------------------------------------------
 */
+
+function focusProfessionalOnMap(professionalId) {
+    if (!map.value || !markersLayer.value) return
+
+    const location = workerLocations.value.find(
+        item => String(item.id) === String(professionalId)
+    )
+
+    if (!location || location.latitude === null || location.longitude === null) {
+        mapMessage.value = 'This professional does not have a mapped location yet.'
+        return
+    }
+
+    selectedProfessionalId.value = professionalId
+
+    map.value.flyTo([location.latitude, location.longitude], 20, {
+        animate: true,
+        duration: 0.8
+    })
+
+    const marker = markersLayer.value.getLayers().find(
+        layer => String(layer.options.professionalId) === String(professionalId)
+    )
+
+    marker?.openPopup()
+}
 
 function escapeHtml(
     value
@@ -979,7 +1028,7 @@ onBeforeUnmount(
       <form
         class="search-bar"
         @submit.prevent="
-          loadProfessionals
+          searchForProfessional
         "
       >
 
@@ -1209,6 +1258,11 @@ onBeforeUnmount(
               "
               :key="pro.id"
               class="professional-card"
+              :class="{
+                selected:
+                  String(selectedProfessionalId) ===
+                  String(pro.id)
+              }"
             >
 
               <div class="pro-top">
@@ -1307,6 +1361,9 @@ onBeforeUnmount(
         </template>
 
       </div>
+      <div v-if="loading">
+    Loading professionals...
+</div>
 
       <nav
         v-if="totalPages > 1"
@@ -1641,6 +1698,12 @@ onBeforeUnmount(
     border: 1px solid #e2e8ea;
     border-radius: 12px;
     background: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.professional-card.selected {
+    border-color: #136163;
+    box-shadow: 0 0 0 2px #13616333;
 }
 
 .pro-top {

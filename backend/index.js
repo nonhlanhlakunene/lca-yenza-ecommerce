@@ -39,11 +39,9 @@ app.use('/api/professionals', professionalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', servicesRoutes);
 
-
 app.get('/', (req, res) => {
     res.send('Your backend server is running successfully!');
 });
-
 
 app.get('/api/health', async (req, res) => {
     try {
@@ -57,10 +55,7 @@ app.get('/api/health', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(
-            'Database connection failed',
-            error
-        );
+        console.error('Database connection failed', error);
 
         res.status(500).json({
             success: false,
@@ -68,7 +63,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-
 
 app.listen(PORT, () => {
     console.log(
