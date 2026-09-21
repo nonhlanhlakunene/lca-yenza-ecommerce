@@ -28,13 +28,6 @@ const hideLayout = computed(() => {
   <RouterView />
 
   <Footer v-if="!hideLayout" />
-    <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
-    
-    <RouterView />
-    
-    <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
-    
-
     <VerifyIdentity
        v-if="showVerify"
        :showVerification="true"
