@@ -83,6 +83,72 @@ const getWorkerActivity = async (req, res) => {
 };
 
 
+const getWorkerServices = async (req, res) => {
+    try {
+        const services = await adminModels.getWorkerServices();
+
+        res.json(
+            services.map((service) => ({
+                service_name: service.service_name,
+                worker_count: Number(service.worker_count) || 0
+            }))
+        );
+
+    } catch (error) {
+        console.error("Get worker services error:", error);
+
+        res.status(500).json({
+            message: "Failed to load worker service statistics",
+            error: error.message
+        });
+    }
+};
+
+
+const getBookingStatus = async (req, res) => {
+    try {
+        const statuses = await adminModels.getBookingStatus();
+
+        res.json(
+            statuses.map((status) => ({
+                status: status.status,
+                booking_count: Number(status.booking_count) || 0
+            }))
+        );
+
+    } catch (error) {
+        console.error("Get booking status error:", error);
+
+        res.status(500).json({
+            message: "Failed to load booking statistics",
+            error: error.message
+        });
+    }
+};
+
+
+const getBookingsByService = async (req, res) => {
+    try {
+        const services = await adminModels.getBookingsByService();
+
+        res.json(
+            services.map((service) => ({
+                service_name: service.service_name,
+                booking_count: Number(service.booking_count) || 0
+            }))
+        );
+
+    } catch (error) {
+        console.error("Get bookings by service error:", error);
+
+        res.status(500).json({
+            message: "Failed to load booking service statistics",
+            error: error.message
+        });
+    }
+};
+
+
 const removeWorker = async (req, res) => {
     try {
         const professionalId = Number(req.params.id);
@@ -119,5 +185,8 @@ export {
     getWorkers,
     getStats,
     getWorkerActivity,
+    getWorkerServices,
+    getBookingStatus,
+    getBookingsByService,
     removeWorker
 };
