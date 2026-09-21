@@ -14,7 +14,7 @@ const getReviews = async () => {
     const data = await response.json()
 
     if (response.ok && data.success) {
-      reviews.value = data.reviews
+      reviews.value = data.reviews.slice(0, 3)
     }
   } catch (error) {
     console.error('Error loading reviews:', error)
