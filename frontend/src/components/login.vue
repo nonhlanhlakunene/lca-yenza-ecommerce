@@ -251,6 +251,8 @@ body {
 }
 
 #message {
+  font-size: 15px;
+  color: crimson;
   text-align: center;
   margin-top: 15px;
 }

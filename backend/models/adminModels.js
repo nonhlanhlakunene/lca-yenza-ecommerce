@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 
+
 const getWorkers = async () => {
     const [rows] = await db.query(`
         SELECT
@@ -83,6 +84,53 @@ const getWorkerActivity = async () => {
 };
 
 
+/*
+|--------------------------------------------------------------------------
+| WORKER SERVICE CHART
+|--------------------------------------------------------------------------
+| Counts how many professionals belong to each service.
+| This uses the existing professionals + services tables.
+*/
+
+const getWorkerServices = async () => {
+    const [rows] = await db.query(`
+        SELECT
+            s.name AS service_name,
+            COUNT(p.professional_id) AS worker_count
+        FROM services s
+        LEFT JOIN professionals p
+            ON p.service_id = s.id
+        GROUP BY s.id, s.name
+        HAVING worker_count > 0
+        ORDER BY worker_count DESC
+    `);
+
+    return rows;
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING STATUS CHART
+|--------------------------------------------------------------------------
+| Gives the chart a breakdown of every booking status
+| that actually exists in the database.
+*/
+
+const getBookingStatus = async () => {
+    const [rows] = await db.query(`
+        SELECT
+            status,
+            COUNT(*) AS booking_count
+        FROM bookings
+        GROUP BY status
+        ORDER BY booking_count DESC
+    `);
+
+    return rows;
+};
+
+
 const deleteWorker = async (professionalId) => {
     const connection = await db.getConnection();
 
@@ -139,5 +187,7 @@ export default {
     getWorkers,
     getAdminStats,
     getWorkerActivity,
+    getWorkerServices,
+    getBookingStatus,
     deleteWorker
 };
