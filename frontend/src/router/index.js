@@ -80,7 +80,6 @@ const routes = [
     path: '/services',
     name: 'services',
     component: ServicesView,
-    component: ServicesView,
   },
 
   {
