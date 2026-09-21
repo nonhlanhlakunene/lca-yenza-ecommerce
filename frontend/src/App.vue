@@ -23,11 +23,11 @@ const hideLayout = computed(() => {
 </script>
 
 <template>
-  <NavBar v-if="!hideLayout" />
+  <!-- <NavBar v-if="!hideLayout" />
 
   <RouterView />
 
-  <Footer v-if="!hideLayout" />
+  <Footer v-if="!hideLayout" /> -->
     <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
     
     <RouterView />
