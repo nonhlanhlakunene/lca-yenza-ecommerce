@@ -85,11 +85,9 @@ const getWorkerActivity = async () => {
 
 
 /*
-|--------------------------------------------------------------------------
-| WORKER SERVICE CHART
-|--------------------------------------------------------------------------
-| Counts how many professionals belong to each service.
-| This uses the existing professionals + services tables.
+|-------------------------------------------------------------------------- 
+| WORKERS BY SERVICE
+|-------------------------------------------------------------------------- 
 */
 
 const getWorkerServices = async () => {
@@ -101,7 +99,7 @@ const getWorkerServices = async () => {
         LEFT JOIN professionals p
             ON p.service_id = s.id
         GROUP BY s.id, s.name
-        HAVING worker_count > 0
+        HAVING COUNT(p.professional_id) > 0
         ORDER BY worker_count DESC
     `);
 
@@ -110,11 +108,9 @@ const getWorkerServices = async () => {
 
 
 /*
-|--------------------------------------------------------------------------
-| BOOKING STATUS CHART
-|--------------------------------------------------------------------------
-| Gives the chart a breakdown of every booking status
-| that actually exists in the database.
+|-------------------------------------------------------------------------- 
+| BOOKING STATUS
+|-------------------------------------------------------------------------- 
 */
 
 const getBookingStatus = async () => {
@@ -130,6 +126,36 @@ const getBookingStatus = async () => {
     return rows;
 };
 
+
+/*
+|-------------------------------------------------------------------------- 
+| BOOKINGS BY SERVICE
+|-------------------------------------------------------------------------- 
+| Shows how many bookings each service has received.
+*/
+
+const getBookingsByService = async () => {
+    const [rows] = await db.query(`
+        SELECT
+            s.name AS service_name,
+            COUNT(b.service_id) AS booking_count
+        FROM services s
+        LEFT JOIN bookings b
+            ON b.service_id = s.id
+        GROUP BY s.id, s.name
+        HAVING COUNT(b.service_id) > 0
+        ORDER BY booking_count DESC
+    `);
+
+    return rows;
+};
+
+
+/*
+|-------------------------------------------------------------------------- 
+| DELETE WORKER
+|-------------------------------------------------------------------------- 
+*/
 
 const deleteWorker = async (professionalId) => {
     const connection = await db.getConnection();
@@ -189,5 +215,6 @@ export default {
     getWorkerActivity,
     getWorkerServices,
     getBookingStatus,
+    getBookingsByService,
     deleteWorker
 };
