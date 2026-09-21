@@ -2,11 +2,10 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { professionals } from '../data/professionals'
-import ReportPopup from '../components/ReportPopup.vue'   // ← ADDED
 
 const route = useRoute()
 const router = useRouter()
-const showReport = ref(false)                 // ← CHANGED (was reportSent)
+
 const pro = computed(() => professionals.find((person) => person.slug === route.params.slug))
 const reviews = computed(() => pro.value ? [
   { name: 'David G.', date: '2 days ago', text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.` },
@@ -66,8 +65,7 @@ const reviews = computed(() => pro.value ? [
               Request Booking
             </RouterLink>
             <button class="question-button">Inquire / Ask a Question</button>
-            <!-- CHANGED: now opens the popup -->
-            <button class="report-button" @click="showReport = true">Report</button>
+          
             <p class="secure">Book safely. No charges are made until job completion.</p>
           </article>
           <article class="profile-card">
@@ -79,15 +77,7 @@ const reviews = computed(() => pro.value ? [
       </div>
     </section>
 
-    <!-- ADDED: Report popup -->
-    <ReportPopup
-      v-if="showReport"
-      :personName="pro.name"
-      :personType="'Worker'"
-      :bookingId="'—'"
-      :date="'—'"
-      @close="showReport = false"
-    />
+  
   </main>
   <main v-else class="profile-not-found">
     <h1>Profile not found</h1><button @click="router.push('/')">Return to handymen</button>
