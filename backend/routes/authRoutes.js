@@ -1,4 +1,5 @@
 import express from "express";
+import adminMiddleware from "../middleware/adminMiddleware.js";
 
 import { login, workerLogin} from "../controllers/authControllers.js";
 

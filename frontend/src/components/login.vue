@@ -3,16 +3,24 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import painterpicture from '../assets/painterpicture.png'
 import VerifyIdentity from './VerifyIdentity.vue'
+
 const router = useRouter()
 
 const first_name = ref('')
 const last_name = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const message = ref('')
 const loading = ref(false)
 
-// Verification popup state
+const passwordRequirements =
+  '8-16 characters, with uppercase, lowercase, number and special character'
+
+const validatePassword = () => {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,16}$/.test(password.value)
+}
+
 const showVerification = ref(false)
 const newUserId = ref(1)
 
@@ -20,51 +28,67 @@ const signup = async () => {
   loading.value = true
   message.value = ''
 
+  if (!validatePassword()) {
+    message.value = passwordRequirements
+    loading.value = false
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    message.value = 'Passwords do not match'
+    loading.value = false
+    return
+  }
+
   try {
-    const response = await fetch('http://localhost:3000/api/auth/signup', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        first_name: first_name.value,
-        last_name: last_name.value,
-        email: email.value,
-        password: password.value
-      })
-    })
+    const response = await fetch(
+      'http://localhost:3000/api/auth/signup',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          first_name: first_name.value,
+          last_name: last_name.value,
+          email: email.value,
+          password: password.value,
+          confirmPassword: confirmPassword.value
+        })
+      }
+    )
 
     const data = await response.json()
 
     if (!response.ok) {
       message.value = data.message || 'Signup failed'
-      loading.value = false
       return
     }
 
-    // Capture the new user's ID
     newUserId.value = data.user.user_id
 
     message.value = 'Signup successful!'
 
-    // Open verification popup instead of redirecting
     showVerification.value = true
 
   } catch (error) {
     console.error('Signup error:', error)
-    message.value = 'Could not connect to the server'
-  }
 
-  loading.value = false
+    message.value =
+      'Could not connect to the server'
+
+  } finally {
+    loading.value = false
+  }
 }
 
 const onVerificationComplete = () => {
   showVerification.value = false
-  router.push('/signup')   // ← change to your actual customer login route
+  router.push('/signup')
 }
 
 const goToLogin = () => {
-  router.push('/signup')   
+  router.push('/signup')
 }
 </script>
 
@@ -72,11 +96,10 @@ const goToLogin = () => {
   <div class="signup-container">
     <div class="signup-left-side">
       <div class="signup-card">
-        <div class="signup-logo-section">
-          <h2>Sign up</h2>
-        </div>
+        <div class="signup-logo-section"><h2>Sign up</h2></div>
 
         <form id="signupForm" @submit.prevent="signup">
+
           <div class="signup-input-group">
             <label for="firstName">First Name</label>
             <input type="text" id="firstName" v-model="first_name" placeholder="First Name" autocomplete="given-name" required>
@@ -97,16 +120,32 @@ const goToLogin = () => {
             <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="new-password" required>
           </div>
 
+          <div class="signup-input-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" v-model="confirmPassword" placeholder="*************" autocomplete="new-password" required>
+
+            <small v-if="password && !validatePassword()" class="password-help">
+              {{ passwordRequirements }}
+            </small>
+
+            <small v-else-if="confirmPassword && password !== confirmPassword" class="password-help">
+              Passwords do not match
+            </small>
+          </div>
+
           <button type="submit" class="signup-button" :disabled="loading">
             {{ loading ? 'Signing up...' : 'Signup' }}
           </button>
 
           <div class="signup-bottom-section">
             <p>Already have an account?</p>
-            <button type="button" class="signup-button-link" @click="goToLogin">login</button>
+            <button type="button" class="signup-button-link" @click="goToLogin">
+              login
+            </button>
           </div>
 
           <p id="message">{{ message }}</p>
+
         </form>
       </div>
     </div>
@@ -115,7 +154,6 @@ const goToLogin = () => {
       <img :src="painterpicture" alt="Painter">
     </div>
 
-    <!-- Verification popup (customer: email OTP only) -->
     <VerifyIdentity
       v-if="showVerification"
       :showVerification="true"
@@ -250,7 +288,16 @@ body {
   text-decoration: underline;
 }
 
+.password-help {
+  display: block;
+  color: crimson;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
 #message {
+  font-size: 15px;
+  color: crimson;
   text-align: center;
   margin-top: 15px;
 }

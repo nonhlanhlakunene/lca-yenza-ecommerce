@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 
+
 const getWorkers = async () => {
     const [rows] = await db.query(`
         SELECT
@@ -83,6 +84,79 @@ const getWorkerActivity = async () => {
 };
 
 
+/*
+|-------------------------------------------------------------------------- 
+| WORKERS BY SERVICE
+|-------------------------------------------------------------------------- 
+*/
+
+const getWorkerServices = async () => {
+    const [rows] = await db.query(`
+        SELECT
+            s.name AS service_name,
+            COUNT(p.professional_id) AS worker_count
+        FROM services s
+        LEFT JOIN professionals p
+            ON p.service_id = s.id
+        GROUP BY s.id, s.name
+        HAVING COUNT(p.professional_id) > 0
+        ORDER BY worker_count DESC
+    `);
+
+    return rows;
+};
+
+
+/*
+|-------------------------------------------------------------------------- 
+| BOOKING STATUS
+|-------------------------------------------------------------------------- 
+*/
+
+const getBookingStatus = async () => {
+    const [rows] = await db.query(`
+        SELECT
+            status,
+            COUNT(*) AS booking_count
+        FROM bookings
+        GROUP BY status
+        ORDER BY booking_count DESC
+    `);
+
+    return rows;
+};
+
+
+/*
+|-------------------------------------------------------------------------- 
+| BOOKINGS BY SERVICE
+|-------------------------------------------------------------------------- 
+| Shows how many bookings each service has received.
+*/
+
+const getBookingsByService = async () => {
+    const [rows] = await db.query(`
+        SELECT
+            s.name AS service_name,
+            COUNT(b.service_id) AS booking_count
+        FROM services s
+        LEFT JOIN bookings b
+            ON b.service_id = s.id
+        GROUP BY s.id, s.name
+        HAVING COUNT(b.service_id) > 0
+        ORDER BY booking_count DESC
+    `);
+
+    return rows;
+};
+
+
+/*
+|-------------------------------------------------------------------------- 
+| DELETE WORKER
+|-------------------------------------------------------------------------- 
+*/
+
 const deleteWorker = async (professionalId) => {
     const connection = await db.getConnection();
 
@@ -139,5 +213,8 @@ export default {
     getWorkers,
     getAdminStats,
     getWorkerActivity,
+    getWorkerServices,
+    getBookingStatus,
+    getBookingsByService,
     deleteWorker
 };

@@ -5,8 +5,20 @@ import Swal from 'sweetalert2'
 
 const router = useRouter()
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}
+
+const bookingsByService = ref([])
+
 const currentPage = ref(1)
 const workersPerPage = 5
+
 const workers = ref([])
 const loading = ref(true)
 const message = ref('')
@@ -24,9 +36,17 @@ const activity = ref({
   pending: 0
 })
 
+const workerServices = ref([])
+const bookingStatuses = ref([])
+
 const loadWorkers = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/admin/workers')
+    const response = await fetch(
+      'http://localhost:3000/api/admin/workers',
+      {
+        headers: getAuthHeaders()
+      }
+    )
 
     const data = await response.json()
 
@@ -35,6 +55,7 @@ const loadWorkers = async () => {
     }
 
     workers.value = data
+
   } catch (error) {
     console.error('Workers error:', error)
     message.value = error.message
@@ -43,7 +64,12 @@ const loadWorkers = async () => {
 
 const loadStats = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/admin/stats')
+    const response = await fetch(
+      'http://localhost:3000/api/admin/stats',
+      {
+        headers: getAuthHeaders()
+      }
+    )
 
     const data = await response.json()
 
@@ -57,14 +83,47 @@ const loadStats = async () => {
       total_bookings: Number(data.total_bookings) || 0,
       total_revenue: Number(data.total_revenue) || 0
     }
+
   } catch (error) {
     console.error('Stats error:', error)
   }
 }
 
+const loadBookingsByService = async () => {
+  try {
+    const response = await fetch(
+      'http://localhost:3000/api/admin/bookings-by-service',
+      {
+        headers: getAuthHeaders()
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Failed to load booking service statistics'
+      )
+    }
+
+    bookingsByService.value = data.map(service => ({
+      service_name: service.service_name,
+      booking_count: Number(service.booking_count) || 0
+    }))
+
+  } catch (error) {
+    console.error('Bookings by service error:', error)
+  }
+}
+
 const loadActivity = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/admin/activity')
+    const response = await fetch(
+      'http://localhost:3000/api/admin/activity',
+      {
+        headers: getAuthHeaders()
+      }
+    )
 
     const data = await response.json()
 
@@ -77,8 +136,63 @@ const loadActivity = async () => {
       completed: Number(data.completed) || 0,
       pending: Number(data.pending) || 0
     }
+
   } catch (error) {
     console.error('Activity error:', error)
+  }
+}
+
+const loadWorkerServices = async () => {
+  try {
+    const response = await fetch(
+      'http://localhost:3000/api/admin/services',
+      {
+        headers: getAuthHeaders()
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Failed to load worker services'
+      )
+    }
+
+    workerServices.value = data.map(service => ({
+      service_name: service.service_name,
+      worker_count: Number(service.worker_count) || 0
+    }))
+
+  } catch (error) {
+    console.error('Worker services error:', error)
+  }
+}
+
+const loadBookingStatuses = async () => {
+  try {
+    const response = await fetch(
+      'http://localhost:3000/api/admin/booking-status',
+      {
+        headers: getAuthHeaders()
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Failed to load booking statuses'
+      )
+    }
+
+    bookingStatuses.value = data.map(status => ({
+      status: status.status,
+      booking_count: Number(status.booking_count) || 0
+    }))
+
+  } catch (error) {
+    console.error('Booking status error:', error)
   }
 }
 
@@ -89,11 +203,34 @@ const loadAdminData = async () => {
   await Promise.all([
     loadWorkers(),
     loadStats(),
-    loadActivity()
+    loadActivity(),
+    loadWorkerServices(),
+    loadBookingStatuses(),
+    loadBookingsByService()
   ])
 
   loading.value = false
 }
+
+const bookingServiceChart = computed(() => {
+  const max = Math.max(
+    ...bookingsByService.value.map(
+      service => Number(service.booking_count) || 0
+    ),
+    1
+  )
+
+  return bookingsByService.value.map(service => ({
+    service_name: service.service_name,
+    value: Number(service.booking_count) || 0,
+    height: Math.max(
+      Math.round(
+        (Number(service.booking_count) / max) * 100
+      ),
+      service.booking_count > 0 ? 8 : 3
+    )
+  }))
+})
 
 const removeWorker = async (professionalId) => {
   const result = await Swal.fire({
@@ -118,14 +255,17 @@ const removeWorker = async (professionalId) => {
     const response = await fetch(
       `http://localhost:3000/api/admin/workers/${professionalId}`,
       {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       }
     )
 
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to delete worker')
+      throw new Error(
+        data.message || 'Failed to delete worker'
+      )
     }
 
     workers.value = workers.value.filter(
@@ -134,8 +274,13 @@ const removeWorker = async (professionalId) => {
 
     await loadStats()
     await loadActivity()
+    await loadWorkerServices()
+    await loadBookingStatuses()
 
-    if (currentPage.value > 1 && paginatedWorkers.value.length === 0) {
+    if (
+      currentPage.value > 1 &&
+      paginatedWorkers.value.length === 0
+    ) {
       currentPage.value--
     }
 
@@ -149,6 +294,7 @@ const removeWorker = async (professionalId) => {
       color: '#222222',
       iconColor: '#136163'
     })
+
   } catch (error) {
     console.error('Delete worker error:', error)
 
@@ -165,7 +311,8 @@ const removeWorker = async (professionalId) => {
 }
 
 const paginatedWorkers = computed(() => {
-  const start = (currentPage.value - 1) * workersPerPage
+  const start =
+    (currentPage.value - 1) * workersPerPage
 
   return workers.value.slice(
     start,
@@ -174,64 +321,190 @@ const paginatedWorkers = computed(() => {
 })
 
 const pages = computed(() => {
-  return Math.ceil(workers.value.length / workersPerPage)
+  return Math.ceil(
+    workers.value.length / workersPerPage
+  )
 })
 
-/*
-  BAR CHART
-
-  These values come directly from:
-  GET /api/admin/activity
-
-  active
-  completed
-  pending
-*/
-
 const chartGroups = computed(() => {
-  const active = Number(activity.value.active) || 0
-  const completed = Number(activity.value.completed) || 0
-  const pending = Number(activity.value.pending) || 0
+  const active =
+    Number(activity.value.active) || 0
 
-  const max = Math.max(active, completed, pending, 1)
+  const completed =
+    Number(activity.value.completed) || 0
+
+  const pending =
+    Number(activity.value.pending) || 0
+
+  const max = Math.max(
+    active,
+    completed,
+    pending,
+    1
+  )
 
   return [
     {
       label: 'Active',
       value: active,
-      height: Math.round((active / max) * 100)
+      height: Math.max(
+        Math.round((active / max) * 100),
+        active > 0 ? 8 : 3
+      )
     },
     {
       label: 'Completed',
       value: completed,
-      height: Math.round((completed / max) * 100)
+      height: Math.max(
+        Math.round((completed / max) * 100),
+        completed > 0 ? 8 : 3
+      )
     },
     {
       label: 'Pending',
       value: pending,
-      height: Math.round((pending / max) * 100)
+      height: Math.max(
+        Math.round((pending / max) * 100),
+        pending > 0 ? 8 : 3
+      )
     }
   ]
 })
 
+const totalServiceWorkers = computed(() => {
+  return workerServices.value.reduce(
+    (total, service) =>
+      total + Number(service.worker_count || 0),
+    0
+  )
+})
+
+const serviceSegments = computed(() => {
+  const total = totalServiceWorkers.value
+
+  if (!total) {
+    return []
+  }
+
+  let currentDegree = 0
+
+  const colours = [
+    '#136163',
+    '#4b8fa0',
+    '#183b56',
+    '#70aeb0',
+    '#245f7a',
+    '#91c4c5',
+    '#31516b',
+    '#b4d8d8'
+  ]
+
+  return workerServices.value.map(
+    (service, index) => {
+      const percentage =
+        Number(service.worker_count) / total
+
+      const degrees =
+        percentage * 360
+
+      const start = currentDegree
+
+      currentDegree += degrees
+
+      return {
+        ...service,
+        percentage: Math.round(
+          percentage * 100
+        ),
+        start,
+        end: currentDegree,
+        colour:
+          colours[index % colours.length]
+      }
+    }
+  )
+})
+
+const donutStyle = computed(() => {
+  if (!serviceSegments.value.length) {
+    return {
+      background: '#e5eeee'
+    }
+  }
+
+  const parts = serviceSegments.value.map(
+    segment =>
+      `${segment.colour} ${segment.start}deg ${segment.end}deg`
+  )
+
+  return {
+    background: `conic-gradient(${parts.join(', ')})`
+  }
+})
+
+const bookingStatusChart = computed(() => {
+  const max = Math.max(
+    ...bookingStatuses.value.map(
+      item => Number(item.booking_count) || 0
+    ),
+    1
+  )
+
+  return bookingStatuses.value.map(
+    (item, index) => ({
+      status: item.status,
+      value: Number(item.booking_count) || 0,
+      height: Math.max(
+        Math.round(
+          (Number(item.booking_count) / max) * 100
+        ),
+        item.booking_count > 0 ? 8 : 3
+      ),
+      colour:
+        index % 3 === 0
+          ? '#136163'
+          : index % 3 === 1
+            ? '#4b8fa0'
+            : '#183b56'
+    })
+  )
+})
+
+const formattedRevenue = computed(() => {
+  return new Intl.NumberFormat(
+    'en-ZA',
+    {
+      style: 'currency',
+      currency: 'ZAR',
+      maximumFractionDigits: 2
+    }
+  ).format(
+    Number(stats.value.total_revenue) || 0
+  )
+})
+
 const today = computed(() => {
-  return new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
+  return new Date().toLocaleDateString(
+    'en-GB',
+    {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }
+  )
 })
 
 const viewProfile = (slug) => {
   router.push({
     name: 'profile',
-    params: { slug },
+    params: {
+      slug
+    },
     query: {
       fromAdmin: 'true'
     }
   })
 }
-
 
 onMounted(() => {
   loadAdminData()
@@ -241,6 +514,7 @@ onMounted(() => {
 <template>
   <main class="admin-page">
 
+    <!-- BACK -->
     <button
       class="back-button"
       type="button"
@@ -251,10 +525,76 @@ onMounted(() => {
       <span>Back</span>
     </button>
 
-    <section
-      class="admin-layout"
-      aria-label="Admin dashboard"
-    >
+    <!-- PAGE HEADER -->
+    <header class="admin-header">
+      <div>
+        <span class="admin-eyebrow">YENZA ADMINISTRATION</span>
+        <br>
+
+        <h1>Admin Dashboard</h1>
+
+        <p>
+          Manage workers and monitor platform activity.
+        </p>
+      </div>
+
+      <div class="header-date">
+        <span>Today</span>
+        <strong>{{ today }}</strong>
+      </div>
+    </header>
+
+    <!-- TOP STATS -->
+    <section class="stat-grid">
+
+      <div class="stat-card">
+        <div class="stat-icon teal-icon">
+          W
+        </div>
+
+        <div>
+          <span>Workers</span>
+          <strong>{{ stats.total_workers }}</strong>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon blue-icon">
+          C
+        </div>
+
+        <div>
+          <span>Customers</span>
+          <strong>{{ stats.total_customers }}</strong>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon navy-icon">
+          B
+        </div>
+
+        <div>
+          <span>Bookings</span>
+          <strong>{{ stats.total_bookings }}</strong>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon revenue-icon">
+          R
+        </div>
+
+        <div>
+          <span>Total Payments</span>
+          <strong>{{ formattedRevenue }}</strong>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- MAIN LAYOUT -->
+    <section class="admin-layout" aria-label="Admin dashboard">
 
       <div class="dashboard-main">
 
@@ -262,16 +602,19 @@ onMounted(() => {
         <section class="dashboard-card workers-section">
 
           <div class="section-heading">
-
             <div>
+              <span class="section-label">MANAGEMENT</span>
+
               <h2>Workers</h2>
-              <p>Manage and view your registered workers</p>
+
+              <p>
+                Manage and view your registered workers.
+              </p>
             </div>
 
             <span class="worker-count">
               {{ workers.length }} workers
             </span>
-
           </div>
 
           <p
@@ -282,7 +625,6 @@ onMounted(() => {
           </p>
 
           <div class="worker-table">
-
             <table>
 
               <thead>
@@ -306,7 +648,9 @@ onMounted(() => {
                   </td>
                 </tr>
 
-                <tr v-else-if="paginatedWorkers.length === 0">
+                <tr
+                  v-else-if="paginatedWorkers.length === 0"
+                >
                   <td
                     colspan="5"
                     class="loading-row"
@@ -319,7 +663,6 @@ onMounted(() => {
                   v-for="worker in paginatedWorkers"
                   :key="worker.professional_id"
                 >
-
                   <td class="worker-name">
                     {{ worker.name }}
                   </td>
@@ -353,21 +696,18 @@ onMounted(() => {
                       Delete
                     </button>
                   </td>
-
                 </tr>
 
               </tbody>
-
             </table>
-
           </div>
 
+          <!-- PAGINATION -->
           <nav
             v-if="pages > 1"
             class="pagination"
             aria-label="Worker pages"
           >
-
             <button
               type="button"
               class="page-arrow"
@@ -395,7 +735,6 @@ onMounted(() => {
             >
               →
             </button>
-
           </nav>
 
         </section>
@@ -404,20 +743,27 @@ onMounted(() => {
         <section class="dashboard-card analytics-section">
 
           <div class="section-heading analytics-heading">
-
             <div>
-              <h2>Statistics</h2>
-              <p>Worker activity and category distribution</p>
-            </div>
+              <span class="section-label">ANALYTICS</span>
 
+              <h2>Platform Activity</h2>
+
+              <p>
+                Live information from your database.
+              </p>
+            </div>
           </div>
 
           <div class="analytics">
 
-            <!-- BAR CHART -->
+            <!-- WORKER ACTIVITY -->
             <div class="chart-container">
 
               <h3>Worker Activity</h3>
+
+              <div class="chart-subtitle">
+                Booking activity
+              </div>
 
               <div class="bar-chart">
 
@@ -430,7 +776,6 @@ onMounted(() => {
                     :key="index"
                     class="bar-group"
                   >
-
                     <i
                       :class="{
                         teal: index === 0,
@@ -446,11 +791,9 @@ onMounted(() => {
                     <span class="bar-value">
                       {{ group.value }}
                     </span>
-
                   </div>
 
                 </div>
-
               </div>
 
               <div class="chart-labels">
@@ -460,7 +803,6 @@ onMounted(() => {
               </div>
 
               <div class="chart-key">
-
                 <span>
                   <i class="teal"></i>
                   Active
@@ -475,32 +817,132 @@ onMounted(() => {
                   <i class="navy"></i>
                   Pending
                 </span>
-
               </div>
 
             </div>
 
-            <!-- DONUT CHART -->
+            <!-- WORKER SERVICES -->
             <div class="donut-container">
 
-              <h3>Worker Categories</h3>
+              <h3>Workers by Service</h3>
 
-              <div class="donut-chart"></div>
+              <div class="chart-subtitle">
+                Current professionals
+              </div>
 
-              <div class="donut-label">
+              <div
+                class="donut-chart"
+                :style="donutStyle"
+              >
+                <div class="donut-hole"></div>
 
-                <strong>
-                  {{ stats.total_workers }}
-                </strong>
+                <div class="donut-label">
+                  <strong>{{ totalServiceWorkers }}</strong>
+                  <span>Workers</span>
+                </div>
+              </div>
 
-                <span>
-                  Total
-                </span>
+              <div
+                v-if="serviceSegments.length"
+                class="service-legend"
+              >
+
+                <div
+                  v-for="service in serviceSegments"
+                  :key="service.service_name"
+                  class="legend-item"
+                >
+                  <span
+                    class="legend-dot"
+                    :style="{
+                      background: service.colour
+                    }"
+                  ></span>
+
+                  <span class="legend-name">
+                    {{ service.service_name }}
+                  </span>
+
+                  <strong>
+                    {{ service.worker_count }}
+                  </strong>
+                </div>
 
               </div>
 
+              <p
+                v-else
+                class="no-chart-data"
+              >
+                No worker service data available.
+              </p>
+
             </div>
 
+          </div>
+        </section>
+
+        <!-- BOOKING STATUS -->
+        <section class="dashboard-card booking-section">
+
+          <div class="section-heading">
+
+            <div>
+              <span class="section-label">BOOKINGS</span>
+
+              <h2>Booking Status</h2>
+
+              <p>
+                Current booking distribution.
+              </p>
+            </div>
+
+            <span class="booking-total">
+              {{ stats.total_bookings }} total
+            </span>
+
+          </div>
+
+          <div
+            v-if="bookingStatusChart.length"
+            class="booking-chart"
+          >
+
+            <div
+              v-for="booking in bookingStatusChart"
+              :key="booking.status"
+              class="booking-bar-group"
+            >
+
+              <div class="booking-bar-area">
+
+                <span class="booking-value">
+                  {{ booking.value }}
+                </span>
+
+                <div
+                  class="booking-bar"
+                  :style="{
+                    height: `${booking.height}%`,
+                    background: booking.colour
+                  }"
+                ></div>
+
+              </div>
+
+              <span class="booking-status">
+                {{ booking.status }}
+              </span>
+
+            </div>
+
+          </div>
+
+          <div
+            v-else
+            class="no-bookings"
+          >
+            No booking data available.
           </div>
 
         </section>
@@ -510,10 +952,10 @@ onMounted(() => {
       <!-- RIGHT PANEL -->
       <aside class="reports-panel">
 
+        <!-- SUMMARY -->
         <div class="summary">
 
           <div class="summary-item">
-
             <span class="summary-title">
               Today
             </span>
@@ -521,32 +963,37 @@ onMounted(() => {
             <strong>
               {{ today }}
             </strong>
-
           </div>
 
           <div class="summary-divider"></div>
 
           <div class="summary-item">
-
             <span class="summary-title">
-              Total Workers
+              Workers
             </span>
 
             <strong>
               {{ stats.total_workers }}
             </strong>
-
           </div>
 
         </div>
 
+        <!-- QUICK INFORMATION -->
         <div class="reports-card">
 
           <div class="reports-header">
 
             <div>
-              <h1>Reports</h1>
-              <p>Recent system reports</p>
+              <span class="section-label">
+                OVERVIEW
+              </span>
+
+              <h1>Dashboard</h1>
+
+              <p>
+                Current platform information.
+              </p>
             </div>
 
             <span class="reports-icon">
@@ -557,20 +1004,66 @@ onMounted(() => {
 
           <div class="reports-rule"></div>
 
-          <div class="empty-reports">
+          <div class="overview-list">
 
-            <div class="empty-icon">
-              ✓
+            <div class="overview-item">
+              <span>
+                Active bookings
+              </span>
+
+              <strong>
+                {{ activity.active }}
+              </strong>
             </div>
 
-            <h3>
-              No reports
-            </h3>
+            <div class="overview-item">
+              <span>
+                Completed bookings
+              </span>
 
-            <p>
-              There are currently no reports available to display.
-            </p>
+              <strong>
+                {{ activity.completed }}
+              </strong>
+            </div>
 
+            <div class="overview-item">
+              <span>
+                Pending bookings
+              </span>
+
+              <strong>
+                {{ activity.pending }}
+              </strong>
+            </div>
+
+            <div class="overview-item">
+              <span>
+                Customers
+              </span>
+
+              <strong>
+                {{ stats.total_customers }}
+              </strong>
+            </div>
+
+            <div class="overview-item">
+              <span>
+                Total Payments
+              </span>
+
+              <strong>
+                {{ formattedRevenue }}
+              </strong>
+            </div>
+
+          </div>
+
+          <div class="system-status">
+            <span class="status-dot"></span>
+
+            <span>
+              System data connected
+            </span>
           </div>
 
         </div>
@@ -583,747 +1076,921 @@ onMounted(() => {
 </template>
 
 <style>
+/* =========================================================
+   ADMIN PAGE
+========================================================= */
+
 .admin-page {
-  width: 100% !important;
-  height: 100vh !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 18px 40px !important;
-  overflow: hidden !important;
-  font-family: Arial, sans-serif !important;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px 40px 35px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #222;
+  background: #f5f8f8;
+}
+
+.admin-page *,
+.admin-page *::before,
+.admin-page *::after {
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .admin-page .back-button {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 7px !important;
-  width: auto !important;
-  height: 24px !important;
-  margin: 0 0 12px 3px !important;
-  padding: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  outline: none !important;
-  background: transparent !important;
-  color: #222 !important;
-  font-family: Arial, sans-serif !important;
-  font-size: 15px !important;
-  font-weight: 400 !important;
-  line-height: 20px !important;
-  box-shadow: none !important;
-  cursor: pointer !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 12px 3px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.admin-page .back-button:hover {
+  color: #136163;
 }
 
 .admin-page .back-button span:first-child {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 18px !important;
-  height: 20px !important;
-  font-size: 22px !important;
-  line-height: 20px !important;
-}
-
-.admin-page .back-button span:last-child {
-  display: inline-flex !important;
-  align-items: center !important;
-  width: auto !important;
-  height: 20px !important;
-  font-size: 15px !important;
-  line-height: 20px !important;
-}
-
-.admin-page .admin-layout {
-  width: 100% !important;
-  max-width: 1600px !important;
-  height: calc(100vh - 65px) !important;
-  min-height: 0 !important;
-  margin: 0 auto !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 300px !important;
-  gap: 25px !important;
-  overflow: hidden !important;
+  font-size: 21px;
 }
 
-.admin-page .dashboard-main {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  display: grid !important;
-  grid-template-rows: minmax(0, 1.55fr) minmax(0, 1fr) !important;
-  gap: 18px !important;
-  overflow: hidden !important;
+.admin-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
 }
 
-.admin-page .dashboard-card {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  padding: 18px !important;
-  border-radius: 16px !important;
-  border: none !important;
-  background: #ffffff !important;
-  overflow: hidden !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07) !important;
+.admin-eyebrow,
+.section-label {
+  display: block;
+  color: #136163;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
 }
 
-.admin-page .section-heading {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 15px !important;
-  margin-bottom: 12px !important;
+.admin-header h1 {
+  margin: 3px 0 4px;
+  color: #183b56;
+  font-size: 27px;
+  line-height: 1.1;
+  font-weight: 700;
 }
 
-.admin-page .section-heading h2 {
-  margin: 0 !important;
-  color: #222 !important;
-  font-size: 20px !important;
-  font-weight: 700 !important;
+.admin-header p {
+  margin: 0;
+  color: #7b8587;
+  font-size: 12px;
 }
 
-.admin-page .section-heading p {
-  margin: 3px 0 0 !important;
-  color: #777 !important;
-  font-size: 12px !important;
+.header-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
 }
 
-.admin-page .worker-count {
-  white-space: nowrap !important;
-  padding: 6px 10px !important;
-  border-radius: 20px !important;
-  background: #eefafa !important;
-  color: #136163 !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-}
+.header-date span {
+  color: #888;
+  font-size: 10px;
+}
+
+.header-date strong {
+  color: #183b56;
+  font-size: 13px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #e8eeee;
+  border-radius: 13px;
+  background: #ffffff;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.045);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 37px;
+  height: 37px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.teal-icon {
+  background: #e8f5f5;
+  color: #136163;
+}
+
+.blue-icon {
+  background: #edf5f7;
+  color: #4b8fa0;
+}
+
+.navy-icon {
+  background: #edf1f5;
+  color: #183b56;
+}
+
+.revenue-icon {
+  background: #eef6f4;
+  color: #136163;
+}
+
+.stat-card div:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stat-card span {
+  color: #7d8587;
+  font-size: 10px;
+}
+
+.stat-card strong {
+  color: #183b56;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.admin-layout {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.dashboard-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dashboard-card,
+.summary,
+.reports-card {
+  border: 1px solid #e8eeee;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-card {
+  min-width: 0;
+  padding: 18px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 13px;
+}
+
+.section-heading h2 {
+  margin: 3px 0 3px;
+  color: #183b56;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #899193;
+  font-size: 11px;
+}
+
+.worker-count,
+.booking-total {
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #eef7f7;
+  color: #136163;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.workers-section {
+  min-height: 330px;
+}
+
+.worker-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.worker-table table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.worker-table th {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e8eeee;
+  color: #80898b;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.worker-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f3f3;
+  color: #303738;
+  font-size: 11px;
+}
+
+.worker-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.worker-name {
+  color: #183b56;
+  font-weight: 700;
+}
+
+.loading-row {
+  height: 120px;
+  text-align: center;
+  color: #888;
+}
+
+.error-message {
+  margin: 0 0 10px;
+  color: #b00020;
+  font-size: 11px;
+}
+
+.role-badge {
+  display: inline-block;
+  max-width: 130px;
+  overflow: hidden;
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: #eef7f7;
+  color: #136163;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-button,
+.delete-button {
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.profile-button {
+  border: 1px solid #136163;
+  background: transparent;
+  color: #136163;
+}
+
+.profile-button:hover {
+  background: #136163;
+  color: #ffffff;
+}
+
+.delete-button {
+  border: 1px solid #e2e2e2;
+  background: crimson;
+  color: white;
+}
+
+.delete-button:hover {
+  border-color: #f1b7b7;
+  background: #f7c6c6;
+  color: #a33;
+}
 
-.admin-page .workers-section {
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 0 !important;
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
 }
 
-.admin-page .worker-table {
-  width: 100% !important;
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
+.pagination button {
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid #dfe5e5;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #333;
+  font-size: 10px;
+  cursor: pointer;
 }
 
-.admin-page .worker-table table {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  table-layout: fixed !important;
+.pagination button.active {
+  border-color: #136163;
+  background: #136163;
+  color: #ffffff;
 }
 
-.admin-page .worker-table th {
-  padding: 7px 10px !important;
-  text-align: left !important;
-  color: #777 !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  border-bottom: 1px solid #eeeeee !important;
+.pagination button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
-.admin-page .worker-table td {
-  padding: 7px 10px !important;
-  color: #222 !important;
-  font-size: 12px !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-  white-space: nowrap !important;
+.analytics-section {
+  min-height: 310px;
 }
 
-.admin-page .worker-table tbody tr {
-  height: 39px !important;
+.analytics-heading {
+  margin-bottom: 10px;
 }
 
-.admin-page .worker-table tbody tr:last-child td {
-  border-bottom: none !important;
+.analytics {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 1fr);
+  gap: 28px;
 }
 
-.admin-page .worker-name {
-  color: #222 !important;
-  font-weight: 600 !important;
+.chart-container,
+.donut-container {
+  min-width: 0;
 }
 
-.admin-page .loading-row,
-.admin-page .error-message {
-  text-align: center !important;
-  color: #777 !important;
+.chart-container h3,
+.donut-container h3 {
+  margin: 0 0 2px;
+  color: #183b56;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.admin-page .error-message {
-  margin: 0 0 10px !important;
-  color: #b00020 !important;
-  font-size: 12px !important;
+.chart-subtitle {
+  margin-bottom: 8px;
+  color: #929a9b;
+  font-size: 9px;
 }
 
-.admin-page .role-badge {
-  display: inline-block !important;
-  padding: 4px 8px !important;
-  border-radius: 12px !important;
-  background: #eef7f7 !important;
-  color: #136163 !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
+.bar-chart {
+  position: relative;
+  height: 135px;
+  border-bottom: 1px solid #dfe5e5;
+  border-left: 1px solid #dfe5e5;
 }
 
-.admin-page .profile-button {
-  padding: 5px 9px !important;
-  border: 1px solid #136163 !important;
-  border-radius: 6px !important;
-  background: transparent !important;
-  color: #136163 !important;
-  font-family: Arial, sans-serif !important;
-  font-size: 10px !important;
-  cursor: pointer !important;
-  box-shadow: none !important;
+.chart-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to bottom, #edf0f0 1px, transparent 1px);
+  background-size: 100% 25%;
 }
 
-.admin-page .profile-button:hover {
-  background: #136163 !important;
-  color: #ffffff !important;
+.chart-bars {
+  position: absolute;
+  inset: 5px 25px 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 25px;
 }
 
-.admin-page .delete-button {
-  padding: 5px 9px !important;
-  border: none !important;
-  border-radius: 6px !important;
-  background: #f3f3f3 !important;
-  color: #555 !important;
-  font-family: Arial, sans-serif !important;
-  font-size: 10px !important;
-  cursor: pointer !important;
-  box-shadow: none !important;
+.bar-group {
+  position: relative;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.admin-page .delete-button:hover {
-  background: #e5e5e5 !important;
+.bar-group i {
+  display: block;
+  width: 34px;
+  min-height: 3px;
+  border-radius: 5px 5px 0 0;
+  transition: height 0.4s ease;
 }
 
-.admin-page .pagination {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 5px !important;
-  margin-top: 8px !important;
+.bar-value {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 4px;
+  color: #183b56;
+  font-size: 10px;
+  font-weight: 700;
 }
 
-.admin-page .pagination button {
-  width: 26px !important;
-  height: 26px !important;
-  padding: 0 !important;
-  border: 1px solid #dddddd !important;
-  border-radius: 6px !important;
-  background: #ffffff !important;
-  color: #333333 !important;
-  font-family: Arial, sans-serif !important;
-  font-size: 11px !important;
-  cursor: pointer !important;
-  box-shadow: none !important;
+.teal {
+  background: #136163;
 }
 
-.admin-page .pagination button.active {
-  background: #136163 !important;
-  border-color: #136163 !important;
-  color: #ffffff !important;
+.blue {
+  background: #4b8fa0;
 }
 
-.admin-page .pagination button:hover:not(.active) {
-  background: #f4f4f4 !important;
+.navy {
+  background: #183b56;
 }
 
-.admin-page .pagination button:disabled {
-  opacity: 0.35 !important;
-  cursor: not-allowed !important;
+.chart-labels {
+  display: flex;
+  justify-content: space-around;
+  gap: 25px;
+  margin-top: 7px;
 }
 
-.admin-page .analytics-section {
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 0 !important;
+.chart-labels span {
+  flex: 1;
+  color: #697274;
+  text-align: center;
+  font-size: 9px;
 }
 
-.admin-page .analytics-heading {
-  margin-bottom: 5px !important;
+.chart-key {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+  margin-top: 9px;
 }
 
-.admin-page .analytics {
-  flex: 1 !important;
-  min-height: 0 !important;
-  display: grid !important;
-  grid-template-columns: 1.5fr 1fr !important;
-  gap: 25px !important;
-  overflow: hidden !important;
+.chart-key span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #7c8586;
+  font-size: 8px;
 }
 
-.admin-page .chart-container {
-  position: relative !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
+.chart-key i {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
 }
 
-.admin-page .chart-container h3,
-.admin-page .donut-container h3 {
-  margin: 0 0 7px !important;
-  color: #222 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
+.donut-container {
+  position: relative;
 }
 
-.admin-page .bar-chart {
-  position: relative !important;
-  flex: 1 !important;
-  min-height: 60px !important;
-  border-left: 1px solid #dddddd !important;
-  border-bottom: 1px solid #dddddd !important;
-  overflow: visible !important;
+.donut-chart {
+  position: relative;
+  width: 125px;
+  height: 125px;
+  margin: 10px auto 8px;
+  border-radius: 50%;
 }
 
-.admin-page .chart-grid {
-  position: absolute !important;
-  inset: 0 !important;
-  background-image: linear-gradient(
-    to bottom,
-    #eeeeee 1px,
-    transparent 1px
-  ) !important;
-  background-size: 100% 25% !important;
+.donut-hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 73px;
+  height: 73px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #ffffff;
 }
 
-.admin-page .chart-bars {
-  position: absolute !important;
-  inset: 5px 20px 0 20px !important;
-  display: flex !important;
-  align-items: flex-end !important;
-  justify-content: space-around !important;
-  gap: 20px !important;
+.donut-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
 }
 
-.admin-page .bar-group {
-  position: relative !important;
-  height: 100% !important;
-  flex: 1 !important;
-  display: flex !important;
-  align-items: flex-end !important;
-  justify-content: center !important;
+.donut-label strong {
+  color: #183b56;
+  font-size: 19px;
+  line-height: 1;
 }
 
-.admin-page .bar-group i {
-  display: block !important;
-  width: 30px !important;
-  min-height: 3px !important;
-  border-radius: 4px 4px 0 0 !important;
-  transition: height 0.4s ease !important;
+.donut-label span {
+  margin-top: 3px;
+  color: #888;
+  font-size: 8px;
 }
 
-.admin-page .bar-value {
-  position: absolute !important;
-  bottom: 100% !important;
-  margin-bottom: 4px !important;
-  color: #333 !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
-  pointer-events: none !important;
+.service-legend {
+  width: 100%;
+  max-height: 85px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+  overflow-y: auto;
+  padding-right: 3px;
 }
 
-.admin-page .teal {
-  background: #136163 !important;
+.legend-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+  color: #60696b;
+  font-size: 8px;
 }
 
-.admin-page .blue {
-  background: #4b8fa0 !important;
+.legend-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
 }
 
-.admin-page .navy {
-  background: #183b56 !important;
+.legend-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.admin-page .chart-labels {
-  display: flex !important;
-  justify-content: space-around !important;
-  gap: 20px !important;
-  margin-top: 6px !important;
-  padding: 0 10px !important;
+.legend-item strong {
+  color: #183b56;
+  font-size: 9px;
 }
 
-.admin-page .chart-labels span {
-  flex: 1 !important;
-  text-align: center !important;
-  color: #666 !important;
-  font-size: 9px !important;
+.no-chart-data {
+  margin: 10px 0;
+  color: #888;
+  text-align: center;
+  font-size: 9px;
 }
 
-.admin-page .chart-key {
-  display: flex !important;
-  justify-content: center !important;
-  gap: 12px !important;
-  margin-top: 7px !important;
+.booking-section {
+  min-height: 245px;
 }
 
-.admin-page .chart-key span {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  color: #666 !important;
-  font-size: 9px !important;
+.booking-chart {
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 15px;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid #dfe5e5;
 }
 
-.admin-page .chart-key i {
-  width: 7px !important;
-  height: 7px !important;
-  border-radius: 2px !important;
+.booking-bar-group {
+  height: 100%;
+  flex: 1;
+  min-width: 45px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
 }
 
-.admin-page .donut-container {
-  position: relative !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
+.booking-bar-area {
+  position: relative;
+  width: 100%;
+  height: 115px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.admin-page .donut-container h3 {
-  align-self: flex-start !important;
+.booking-bar {
+  width: min(48px, 65%);
+  min-height: 3px;
+  border-radius: 5px 5px 0 0;
+  transition: height 0.4s ease;
 }
 
-.admin-page .donut-chart {
-  position: relative !important;
-  width: 105px !important;
-  height: 105px !important;
-  margin: auto !important;
-  border-radius: 50% !important;
-  background: conic-gradient(
-    #136163 0deg 110deg,
-    #4b8fa0 110deg 220deg,
-    #183b56 220deg 290deg,
-    #d7e5e5 290deg 360deg
-  ) !important;
+.booking-value {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 4px;
+  color: #183b56;
+  font-size: 10px;
+  font-weight: 700;
 }
 
-.admin-page .donut-chart::after {
-  content: "" !important;
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  width: 60px !important;
-  height: 60px !important;
-  transform: translate(-50%, -50%) !important;
-  border-radius: 50% !important;
-  background: #ffffff !important;
+.booking-status {
+  margin-top: 7px;
+  color: #697274;
+  font-size: 9px;
+  text-transform: capitalize;
 }
 
-.admin-page .donut-label {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -35%) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  z-index: 2 !important;
+.no-bookings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  color: #888;
+  font-size: 10px;
 }
 
-.admin-page .donut-label strong {
-  color: #222 !important;
-  font-size: 18px !important;
+.reports-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.admin-page .donut-label span {
-  color: #777 !important;
-  font-size: 9px !important;
+.summary {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 15px;
 }
 
-.admin-page .reports-panel {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 15px !important;
-  overflow: hidden !important;
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
 }
 
-.admin-page .summary {
-  display: grid !important;
-  grid-template-columns: 1fr auto 1fr !important;
-  align-items: center !important;
-  padding: 14px !important;
-  border-radius: 14px !important;
-  background: #ffffff !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07) !important;
+.summary-title {
+  color: #8b9495;
+  font-size: 9px;
 }
 
-.admin-page .summary-item {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  text-align: center !important;
+.summary-item strong {
+  color: #183b56;
+  font-size: 12px;
 }
 
-.admin-page .summary-title {
-  color: #888 !important;
-  font-size: 10px !important;
+.summary-divider {
+  width: 1px;
+  height: 32px;
+  background: #e1e7e7;
 }
 
-.admin-page .summary-item strong {
-  color: #222 !important;
-  font-size: 13px !important;
+.reports-card {
+  flex: 1;
+  min-height: 400px;
+  padding: 18px;
 }
 
-.admin-page .summary-divider {
-  width: 1px !important;
-  height: 35px !important;
-  background: #dddddd !important;
+.reports-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
-.admin-page .reports-card {
-  flex: 1 !important;
-  min-height: 0 !important;
-  padding: 18px !important;
-  border-radius: 14px !important;
-  background: #ffffff !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07) !important;
-  overflow: hidden !important;
+.reports-header h1 {
+  margin: 3px 0 3px;
+  color: #183b56;
+  font-size: 20px;
 }
 
-.admin-page .reports-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
+.reports-header p {
+  margin: 0;
+  color: #8b9495;
+  font-size: 10px;
 }
 
-.admin-page .reports-header h1 {
-  margin: 0 !important;
-  color: #222 !important;
-  font-size: 21px !important;
+.reports-icon {
+  color: #136163;
+  font-size: 22px;
 }
 
-.admin-page .reports-header p {
-  margin: 3px 0 0 !important;
-  color: #888 !important;
-  font-size: 11px !important;
+.reports-rule {
+  width: 100%;
+  height: 1px;
+  margin: 15px 0;
+  background: #edf0f0;
 }
 
-.admin-page .reports-icon {
-  color: #136163 !important;
-  font-size: 24px !important;
+.overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.admin-page .reports-rule {
-  width: 100% !important;
-  height: 1px !important;
-  margin: 14px 0 !important;
-  background: #eeeeee !important;
+.overview-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f0f2f2;
 }
 
-.admin-page .empty-reports {
-  height: calc(100% - 80px) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
+.overview-item span {
+  color: #747d7f;
+  font-size: 10px;
 }
 
-.admin-page .empty-icon {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 42px !important;
-  height: 42px !important;
-  margin-bottom: 10px !important;
-  border-radius: 50% !important;
-  background: #eef7f7 !important;
-  color: #136163 !important;
-  font-size: 18px !important;
+.overview-item strong {
+  color: #183b56;
+  font-size: 11px;
 }
 
-.admin-page .empty-reports h3 {
-  margin: 0 0 5px !important;
-  color: #222 !important;
-  font-size: 14px !important;
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #f0f8f6;
+  color: #136163;
+  font-size: 9px;
 }
 
-.admin-page .empty-reports p {
-  max-width: 180px !important;
-  margin: 0 !important;
-  color: #888 !important;
-  font-size: 10px !important;
-  line-height: 1.5 !important;
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #136163;
 }
 
 @media (min-width: 1400px) {
 
   .admin-page {
-    padding: 20px 55px !important;
+    padding-left: 55px;
+    padding-right: 55px;
   }
 
-  .admin-page .admin-layout {
-    grid-template-columns: minmax(0, 1fr) 330px !important;
-    gap: 30px !important;
+  .admin-layout {
+    grid-template-columns: minmax(0, 1fr) 330px;
   }
 
-  .admin-page .worker-table td {
-    padding: 8px 12px !important;
+  .stat-card {
+    padding: 17px;
   }
 
-  .admin-page .worker-table tbody tr {
-    height: 41px !important;
+  .donut-chart {
+    width: 135px;
+    height: 135px;
   }
 
-  .admin-page .donut-chart {
-    width: 115px !important;
-    height: 115px !important;
+  .donut-hole {
+    width: 79px;
+    height: 79px;
   }
-
-  .admin-page .donut-chart::after {
-    width: 66px !important;
-    height: 66px !important;
-  }
-
-  .admin-page .bar-group i {
-    width: 34px !important;
-  }
-
 }
 
-@media (max-width: 1200px) and (min-width: 901px) {
+@media (max-width: 1200px) {
 
   .admin-page {
-    padding: 15px 25px !important;
+    padding-left: 25px;
+    padding-right: 25px;
   }
 
-  .admin-page .admin-layout {
-    grid-template-columns: minmax(0, 1fr) 270px !important;
-    gap: 18px !important;
-    height: calc(100vh - 55px) !important;
+  .admin-layout {
+    grid-template-columns: minmax(0, 1fr) 270px;
   }
 
-  .admin-page .dashboard-card {
-    padding: 14px !important;
+  .stat-grid {
+    gap: 10px;
   }
 
-  .admin-page .worker-table th,
-  .admin-page .worker-table td {
-    padding: 6px 7px !important;
+  .analytics {
+    gap: 18px;
   }
 
-  .admin-page .worker-table tbody tr {
-    height: 36px !important;
+  .donut-chart {
+    width: 105px;
+    height: 105px;
   }
 
-  .admin-page .section-heading h2 {
-    font-size: 18px !important;
+  .donut-hole {
+    width: 62px;
+    height: 62px;
   }
 
-  .admin-page .analytics {
-    gap: 15px !important;
+  .service-legend {
+    grid-template-columns: 1fr;
   }
-
-  .admin-page .donut-chart {
-    width: 90px !important;
-    height: 90px !important;
-  }
-
-  .admin-page .donut-chart::after {
-    width: 52px !important;
-    height: 52px !important;
-  }
-
-  .admin-page .summary {
-    padding: 11px !important;
-  }
-
-  .admin-page .reports-card {
-    padding: 14px !important;
-  }
-
-  .admin-page .bar-group i {
-    width: 25px !important;
-  }
-
 }
 
 @media (max-width: 900px) {
 
   .admin-page {
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow: visible !important;
-    padding: 20px !important;
+    min-height: 100vh;
+    padding: 18px;
   }
 
-  .admin-page .admin-layout {
-    height: auto !important;
-    grid-template-columns: 1fr !important;
-    gap: 20px !important;
-    overflow: visible !important;
+  .admin-header {
+    align-items: flex-start;
   }
 
-  .admin-page .dashboard-main {
-    grid-template-rows: auto auto !important;
-    overflow: visible !important;
+  .admin-layout {
+    grid-template-columns: 1fr;
   }
 
-  .admin-page .dashboard-card {
-    min-height: 400px !important;
+  .reports-panel {
+    min-height: auto;
   }
 
-  .admin-page .reports-panel {
-    min-height: 400px !important;
-    overflow: visible !important;
+  .reports-card {
+    min-height: 350px;
   }
 
+  .analytics {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-container {
+    padding-top: 10px;
+  }
+
+  .service-legend {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 600px) {
 
   .admin-page {
-    padding: 15px !important;
+    padding: 15px;
   }
 
-  .admin-page .admin-layout {
-    gap: 15px !important;
+  .admin-header {
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .admin-page .dashboard-card {
-    padding: 12px !important;
+  .header-date {
+    align-items: flex-start;
   }
 
-  .admin-page .section-heading h2 {
-    font-size: 17px !important;
+  .admin-header h1 {
+    font-size: 23px;
   }
 
-  .admin-page .section-heading p {
-    font-size: 10px !important;
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .admin-page .worker-table th,
-  .admin-page .worker-table td {
-    padding: 6px 4px !important;
-    font-size: 10px !important;
+  .stat-card {
+    padding: 11px;
   }
 
-  .admin-page .worker-table tbody tr {
-    height: 34px !important;
+  .stat-icon {
+    width: 31px;
+    height: 31px;
   }
 
-  .admin-page .profile-button,
-  .admin-page .delete-button {
-    padding: 4px 6px !important;
-    font-size: 9px !important;
+  .stat-card strong {
+    font-size: 14px;
   }
 
-  .admin-page .analytics {
-    grid-template-columns: 1fr !important;
-    overflow: visible !important;
+  .dashboard-card {
+    padding: 13px;
   }
 
-  .admin-page .analytics-section {
-    min-height: 450px !important;
+  .section-heading h2 {
+    font-size: 17px;
   }
 
+  .worker-table table {
+    min-width: 620px;
+  }
+
+  .booking-chart {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .booking-bar {
+    width: 35px;
+  }
+
+  .service-legend {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

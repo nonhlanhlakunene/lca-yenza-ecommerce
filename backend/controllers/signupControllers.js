@@ -1,6 +1,9 @@
 import authModel from "../models/authModels.js";
 import bcrypt from "bcrypt";
 
+const validatePassword = (password) => {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,16}$/.test(password);
+};
 
 const signup = async (req, res) => {
     try {
@@ -8,12 +11,25 @@ const signup = async (req, res) => {
             first_name,
             last_name,
             email,
-            password
+            password,
+            confirmPassword
         } = req.body;
 
-        if (!first_name || !last_name || !email || !password) {
+        if (!first_name || !last_name || !email || !password || !confirmPassword) {
             return res.status(400).json({
                 message: "Please fill in all fields"
+            });
+        }
+
+        if (!validatePassword(password)) {
+            return res.status(400).json({
+                message: "Password must be 8-16 characters and include an uppercase letter, lowercase letter, number and special character"
+            });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                message: "Passwords do not match"
             });
         }
 
@@ -66,12 +82,25 @@ const workerSignup = async (req, res) => {
             first_name,
             last_name,
             email,
-            password
+            password,
+            confirmPassword
         } = req.body;
 
-        if (!first_name || !last_name || !email || !password) {
+        if (!first_name || !last_name || !email || !password || !confirmPassword) {
             return res.status(400).json({
                 message: "Please fill in all fields"
+            });
+        }
+
+        if (!validatePassword(password)) {
+            return res.status(400).json({
+                message: "Password must be 8-16 characters and include an uppercase letter, lowercase letter, number and special character"
+            });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                message: "Passwords do not match"
             });
         }
 
