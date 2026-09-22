@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { professionals } from '../data/professionals'
+import api from '../api/api.js'
 import Swal from 'sweetalert2'
 
 const route = useRoute()
@@ -28,12 +28,14 @@ async function loadProfessional() {
   pro.value = null
 
   try {
-    const { data } = await api.get(
+    const response = await api.get(
       `/professionals/${encodeURIComponent(route.params.slug)}`
     )
 
-    pro.value = data.professional
+    pro.value = response.data.professional
   } catch (error) {
+    console.error('Failed to load professional profile:', error)
+
     errorMessage.value =
       error.response?.data?.message ||
       'Unable to load this profile. Please try again.'

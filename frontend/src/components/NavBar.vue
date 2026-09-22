@@ -1,6 +1,5 @@
 <template>
   <nav class="home-navbar">
-    <!-- Hamburger button (mobile only) -->
     <button
       class="hamburger"
       type="button"
@@ -13,22 +12,6 @@
       <span :class="{ open: menuOpen }"></span>
     </button>
 
-    <!-- Navigation links -->
-    <!-- <ul class="navbar-links" :class="{ open: menuOpen }"> -->
-    <!-- Hamburger button (mobile only) -->
-    <button
-      class="hamburger"
-      type="button"
-      @click="menuOpen = !menuOpen"
-      :aria-expanded="menuOpen"
-      aria-label="Toggle navigation"
-    >
-      <span :class="{ open: menuOpen }"></span>
-      <span :class="{ open: menuOpen }"></span>
-      <span :class="{ open: menuOpen }"></span>
-    </button>
-
-    <!-- Navigation links -->
     <ul class="navbar-links" :class="{ open: menuOpen }">
       <li v-for="(link, index) in navLinks" :key="index">
         <router-link
@@ -38,7 +21,14 @@
         >
           {{ link.text }}
         </router-link>
-        <a v-else href="/login" @click.prevent="logout">{{ link.text }}</a>
+
+        <a
+          v-else
+          href="/login"
+          @click.prevent="logout"
+        >
+          {{ link.text }}
+        </a>
       </li>
     </ul>
   </nav>
@@ -58,7 +48,6 @@ const linkList = [
   { text: 'Home', path: '/' },
   { text: 'Services', path: '/services' },
   { text: 'About Us', path: '/about' },
-  { text: 'Bookings', path: '/bookings' },
   { text: 'Contact', path: '/contact' }
 ]
 
@@ -92,6 +81,15 @@ watch(
 const navLinks = computed(() => {
   const links = [...linkList]
 
+  // Only customers should see Bookings
+  if (currentUser.value?.role === 'customer') {
+    links.splice(3, 0, {
+      text: 'Bookings',
+      path: '/bookings'
+    })
+  }
+
+  // Professionals/workers should see their dashboard
   if (
     currentUser.value?.role === 'professional' ||
     currentUser.value?.role === 'worker'
