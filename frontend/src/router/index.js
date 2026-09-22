@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import ApiTest from '@/components/ApiTest.vue'
-import AboutView from '../components/AboutView.vue'
+import AboutView from '../views/AboutView.vue/index.js'
 import BookFormView from '../views/BookFormView.vue'
 import BookingsView from '../views/BookingsView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
