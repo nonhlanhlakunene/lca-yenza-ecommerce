@@ -349,7 +349,7 @@ function closeReview() {
             <!-- Show message if there is no current booking -->
             <div v-else class="empty-booking">
                 <h3>No Current Booking</h3>
-                <p> You don't have any upcoming bookings at the moment. </p> <router-link to="/book"
+                <p> You don't have any upcoming bookings at the moment. </p> <router-link to="/services"
                     class="book-button"> BOOK A PROFESSIONAL </router-link>
             </div>
         </section> 
