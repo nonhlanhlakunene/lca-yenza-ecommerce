@@ -29,7 +29,13 @@ function buildFilters({ category, search, minPrice, maxPrice }) {
             )
         `)
 
-        values.push(term, term, term, term, term)
+        values.push(
+            term,
+            term,
+            term,
+            term,
+            term
+        )
     }
 
     if (minPrice !== undefined) {
@@ -55,8 +61,8 @@ function orderBy(sort) {
         'best-match': 'p.professional_id ASC',
         'price-asc': 'p.hourly_rate ASC',
         'price-desc': 'p.hourly_rate DESC',
-        rating: 'h.rating DESC',
-        reviews: 'h.review_count DESC'
+        rating: 'rating DESC',
+        reviews: 'review_count DESC'
     }
 
     return options[sort] || options['best-match']
@@ -93,8 +99,6 @@ export async function findProfessionals({
         SELECT
             p.professional_id AS id,
             p.user_id,
-            u.first_name,
-            u.last_name,
             CONCAT(
                 u.first_name,
                 ' ',
@@ -111,23 +115,34 @@ export async function findProfessionals({
             p.profile_image,
             p.verification_status,
             p.availability_status,
-            h.rating,
-            h.review_count
+
+            COALESCE(
+                (
+                    SELECT AVG(r.rating)
+                    FROM reviews r
+                    WHERE r.reviewed_user_id = p.user_id
+                    AND r.status = 'published'
+                ),
+                0
+            ) AS rating,
+
+            (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewed_user_id = p.user_id
+                AND r.status = 'published'
+            ) AS review_count
+
         FROM professionals p
+
         LEFT JOIN users u
             ON u.user_id = p.user_id
+
         LEFT JOIN services s
             ON s.id = p.service_id
-        LEFT JOIN handymen h
-            ON LOWER(TRIM(h.full_name)) =
-               LOWER(TRIM(
-                   CONCAT(
-                       u.first_name,
-                       ' ',
-                       u.last_name
-                   )
-               ))
+
         ${where}
+
         ORDER BY ${orderBy(sort)}
         `,
         values
@@ -142,13 +157,13 @@ export async function findProfessionalBySlug(slug) {
         SELECT
             p.professional_id AS id,
             p.user_id,
-            u.first_name,
-            u.last_name,
+
             CONCAT(
                 u.first_name,
                 ' ',
                 u.last_name
             ) AS full_name,
+
             s.name AS service_name,
             p.bio,
             p.experience_years,
@@ -160,22 +175,32 @@ export async function findProfessionalBySlug(slug) {
             p.profile_image,
             p.verification_status,
             p.availability_status,
-            h.rating,
-            h.review_count
+
+            COALESCE(
+                (
+                    SELECT AVG(r.rating)
+                    FROM reviews r
+                    WHERE r.reviewed_user_id = p.user_id
+                    AND r.status = 'published'
+                ),
+                0
+            ) AS rating,
+
+            (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewed_user_id = p.user_id
+                AND r.status = 'published'
+            ) AS review_count
+
         FROM professionals p
+
         LEFT JOIN users u
             ON u.user_id = p.user_id
+
         LEFT JOIN services s
             ON s.id = p.service_id
-        LEFT JOIN handymen h
-            ON LOWER(TRIM(h.full_name)) =
-               LOWER(TRIM(
-                   CONCAT(
-                       u.first_name,
-                       ' ',
-                       u.last_name
-                   )
-               ))
+
         WHERE LOWER(
             REPLACE(
                 CONCAT(
@@ -187,6 +212,7 @@ export async function findProfessionalBySlug(slug) {
                 '-'
             )
         ) = ?
+
         LIMIT 1
         `,
         [slug.toLowerCase()]

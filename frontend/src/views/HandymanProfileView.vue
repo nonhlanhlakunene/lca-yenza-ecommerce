@@ -1,52 +1,17 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ReportPopup from '../components/ReportPopup.vue'
-import api from '../api/api.js'
+import { professionals } from '../data/professionals'
 
 const route = useRoute()
 const router = useRouter()
 
-const pro = ref(null)
-const loading = ref(true)
-const errorMessage = ref('')
-const showReport = ref(false)
-
-const fromAdmin = computed(() => route.query.fromAdmin === 'true')
-
-function initials(name) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-}
-
-async function loadProfessional() {
-  loading.value = true
-  errorMessage.value = ''
-  pro.value = null
-
-  try {
-    const { data } = await api.get(
-      `/professionals/${encodeURIComponent(route.params.slug)}`
-    )
-
-    pro.value = data.professional
-  } catch (error) {
-    errorMessage.value =
-      error.response?.data?.message ||
-      'Unable to load this profile. Please try again.'
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(
-  () => route.params.slug,
-  loadProfessional,
-  { immediate: true }
-)
+const pro = computed(() => professionals.find((person) => person.slug === route.params.slug))
+const reviews = computed(() => pro.value ? [
+  { name: 'David G.', date: '2 days ago', text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.` },
+  { name: 'Melanie T.', date: '1 week ago', text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.` },
+  { name: 'James L.', date: '3 weeks ago', text: `Great workmanship and clear communication from start to finish.` },
+] : [])
 </script>
 
 <template>
@@ -176,25 +141,20 @@ watch(
               Request Booking
             </RouterLink>
 
+
             <button
               class="report-button"
               @click="showReport = true"
             >
               Report
             </button>
+
           </article>
         </aside>
       </div>
     </section>
 
-    <ReportPopup
-      v-if="showReport"
-      :personName="pro.name"
-      personType="Worker"
-      bookingId="—"
-      date="—"
-      @close="showReport = false"
-    />
+  
   </main>
 </template>
 

@@ -1,4 +1,5 @@
 import express from "express";
+import adminMiddleware from "../middleware/adminMiddleware.js";
 
 import {
     getWorkers,
@@ -12,6 +13,7 @@ import {
 
 const router = express.Router();
 
+router.use(adminMiddleware);
 
 router.get("/workers", getWorkers);
 

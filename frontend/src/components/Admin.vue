@@ -5,6 +5,15 @@ import Swal from 'sweetalert2'
 
 const router = useRouter()
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}
+
 const bookingsByService = ref([])
 
 const currentPage = ref(1)
@@ -33,7 +42,10 @@ const bookingStatuses = ref([])
 const loadWorkers = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/workers'
+      'http://localhost:3000/api/admin/workers',
+      {
+        headers: getAuthHeaders()
+      }
     )
 
     const data = await response.json()
@@ -43,18 +55,19 @@ const loadWorkers = async () => {
     }
 
     workers.value = data
-
   } catch (error) {
     console.error('Workers error:', error)
     message.value = error.message
   }
 }
 
-
 const loadStats = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/stats'
+      'http://localhost:3000/api/admin/stats',
+      {
+        headers: getAuthHeaders()
+      }
     )
 
     const data = await response.json()
@@ -69,7 +82,6 @@ const loadStats = async () => {
       total_bookings: Number(data.total_bookings) || 0,
       total_revenue: Number(data.total_revenue) || 0
     }
-
   } catch (error) {
     console.error('Stats error:', error)
   }
@@ -78,7 +90,10 @@ const loadStats = async () => {
 const loadBookingsByService = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/bookings-by-service'
+      'http://localhost:3000/api/admin/bookings-by-service',
+      {
+        headers: getAuthHeaders()
+      }
     )
 
     const data = await response.json()
@@ -93,17 +108,18 @@ const loadBookingsByService = async () => {
       service_name: service.service_name,
       booking_count: Number(service.booking_count) || 0
     }))
-
   } catch (error) {
     console.error('Bookings by service error:', error)
   }
 }
 
-
 const loadActivity = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/activity'
+      'http://localhost:3000/api/admin/activity',
+      {
+        headers: getAuthHeaders()
+      }
     )
 
     const data = await response.json()
@@ -117,23 +133,18 @@ const loadActivity = async () => {
       completed: Number(data.completed) || 0,
       pending: Number(data.pending) || 0
     }
-
   } catch (error) {
     console.error('Activity error:', error)
   }
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| WORKER SERVICE DATA
-|--------------------------------------------------------------------------
-*/
-
 const loadWorkerServices = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/services'
+      'http://localhost:3000/api/admin/services',
+      {
+        headers: getAuthHeaders()
+      }
     )
 
     const data = await response.json()
@@ -148,23 +159,18 @@ const loadWorkerServices = async () => {
       service_name: service.service_name,
       worker_count: Number(service.worker_count) || 0
     }))
-
   } catch (error) {
     console.error('Worker services error:', error)
   }
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| BOOKING STATUS DATA
-|--------------------------------------------------------------------------
-*/
-
 const loadBookingStatuses = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/booking-status'
+      'http://localhost:3000/api/admin/booking-status',
+      {
+        headers: getAuthHeaders()
+      }
     )
 
     const data = await response.json()
@@ -179,12 +185,10 @@ const loadBookingStatuses = async () => {
       status: status.status,
       booking_count: Number(status.booking_count) || 0
     }))
-
   } catch (error) {
     console.error('Booking status error:', error)
   }
 }
-
 
 const loadAdminData = async () => {
   loading.value = true
@@ -201,8 +205,6 @@ const loadAdminData = async () => {
 
   loading.value = false
 }
-
-
 
 const bookingServiceChart = computed(() => {
   const max = Math.max(
@@ -223,12 +225,6 @@ const bookingServiceChart = computed(() => {
     )
   }))
 })
-
-/*
-|--------------------------------------------------------------------------
-| DELETE WORKER
-|--------------------------------------------------------------------------
-*/
 
 const removeWorker = async (professionalId) => {
   const result = await Swal.fire({
@@ -253,7 +249,8 @@ const removeWorker = async (professionalId) => {
     const response = await fetch(
       `http://localhost:3000/api/admin/workers/${professionalId}`,
       {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       }
     )
 
@@ -291,7 +288,6 @@ const removeWorker = async (professionalId) => {
       color: '#222222',
       iconColor: '#136163'
     })
-
   } catch (error) {
     console.error('Delete worker error:', error)
 
@@ -307,13 +303,6 @@ const removeWorker = async (professionalId) => {
   }
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| PAGINATION
-|--------------------------------------------------------------------------
-*/
-
 const paginatedWorkers = computed(() => {
   const start =
     (currentPage.value - 1) * workersPerPage
@@ -324,19 +313,11 @@ const paginatedWorkers = computed(() => {
   )
 })
 
-
 const pages = computed(() => {
   return Math.ceil(
     workers.value.length / workersPerPage
   )
 })
-
-
-/*
-|--------------------------------------------------------------------------
-| ACTIVITY BAR CHART
-|--------------------------------------------------------------------------
-*/
 
 const chartGroups = computed(() => {
   const active =
@@ -383,13 +364,6 @@ const chartGroups = computed(() => {
   ]
 })
 
-
-/*
-|--------------------------------------------------------------------------
-| SERVICE DONUT CHART
-|--------------------------------------------------------------------------
-*/
-
 const totalServiceWorkers = computed(() => {
   return workerServices.value.reduce(
     (total, service) =>
@@ -397,7 +371,6 @@ const totalServiceWorkers = computed(() => {
     0
   )
 })
-
 
 const serviceSegments = computed(() => {
   const total = totalServiceWorkers.value
@@ -445,7 +418,6 @@ const serviceSegments = computed(() => {
   )
 })
 
-
 const donutStyle = computed(() => {
   if (!serviceSegments.value.length) {
     return {
@@ -462,13 +434,6 @@ const donutStyle = computed(() => {
     background: `conic-gradient(${parts.join(', ')})`
   }
 })
-
-
-/*
-|--------------------------------------------------------------------------
-| BOOKING STATUS CHART
-|--------------------------------------------------------------------------
-*/
 
 const bookingStatusChart = computed(() => {
   const max = Math.max(
@@ -498,13 +463,6 @@ const bookingStatusChart = computed(() => {
   )
 })
 
-
-/*
-|--------------------------------------------------------------------------
-| FORMATTING
-|--------------------------------------------------------------------------
-*/
-
 const formattedRevenue = computed(() => {
   return new Intl.NumberFormat(
     'en-ZA',
@@ -518,7 +476,6 @@ const formattedRevenue = computed(() => {
   )
 })
 
-
 const today = computed(() => {
   return new Date().toLocaleDateString(
     'en-GB',
@@ -529,7 +486,6 @@ const today = computed(() => {
     }
   )
 })
-
 
 const viewProfile = (slug) => {
   router.push({
@@ -543,12 +499,10 @@ const viewProfile = (slug) => {
   })
 }
 
-
 onMounted(() => {
   loadAdminData()
 })
 </script>
-
 
 <template>
   <main class="admin-page">
@@ -569,12 +523,8 @@ onMounted(() => {
       <div>
         <span class="admin-eyebrow">YENZA ADMINISTRATION</span>
         <br>
-
         <h1>Admin Dashboard</h1>
-
-        <p>
-          Manage workers and monitor platform activity.
-        </p>
+        <p>Manage workers and monitor platform activity.</p>
       </div>
 
       <div class="header-date">
@@ -643,12 +593,8 @@ onMounted(() => {
           <div class="section-heading">
             <div>
               <span class="section-label">MANAGEMENT</span>
-
               <h2>Workers</h2>
-
-              <p>
-                Manage and view your registered workers.
-              </p>
+              <p>Manage and view your registered workers.</p>
             </div>
 
             <span class="worker-count">
@@ -784,12 +730,8 @@ onMounted(() => {
           <div class="section-heading analytics-heading">
             <div>
               <span class="section-label">ANALYTICS</span>
-
               <h2>Platform Activity</h2>
-
-              <p>
-                Live information from your database.
-              </p>
+              <p>Live information from your database.</p>
             </div>
           </div>
 
@@ -928,7 +870,6 @@ onMounted(() => {
 
             <div>
               <span class="section-label">BOOKINGS</span>
-
               <h2>Booking Status</h2>
 
               <p>
@@ -1018,7 +959,7 @@ onMounted(() => {
 
         </div>
 
-        <!-- QUICK INFORMATION -->
+        <!-- DASHBOARD OVERVIEW -->
         <div class="reports-card">
 
           <div class="reports-header">
@@ -1107,13 +1048,51 @@ onMounted(() => {
 
         </div>
 
+        <!-- REPORTS -->
+        <div class="reports-card reports-section">
+
+          <div class="reports-header">
+
+            <div>
+              <span class="section-label">
+                REPORTS
+              </span>
+
+              <h1>Reports</h1>
+
+              <p>
+                Platform performance summary.
+              </p>
+            </div>
+
+            <span class="reports-icon">
+              ▤
+            </span>
+
+          </div>
+
+          <div class="reports-rule"></div>
+
+          <div class="report-list">
+
+          </div>
+
+          <div class="report-footer">
+            <span class="status-dot"></span>
+
+            <span>
+              Report generated from live database data
+            </span>
+          </div>
+
+        </div>
+
       </aside>
 
     </section>
 
   </main>
 </template>
-
 
 <style>
 /* =========================================================
@@ -1132,20 +1111,12 @@ onMounted(() => {
   background: #f5f8f8;
 }
 
-
-/* Make EVERYTHING use the same font */
-
 .admin-page *,
 .admin-page *::before,
 .admin-page *::after {
   box-sizing: border-box;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
-
-
-/* =========================================================
-   BACK BUTTON
-========================================================= */
 
 .admin-page .back-button {
   display: inline-flex;
@@ -1168,11 +1139,6 @@ onMounted(() => {
 .admin-page .back-button span:first-child {
   font-size: 21px;
 }
-
-
-/* =========================================================
-   HEADER
-========================================================= */
 
 .admin-header {
   display: flex;
@@ -1222,15 +1188,9 @@ onMounted(() => {
   font-size: 13px;
 }
 
-
-/* =========================================================
-   TOP STAT CARDS
-========================================================= */
-
 .stat-grid {
   display: grid;
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 15px;
   margin-bottom: 18px;
 }
@@ -1244,8 +1204,7 @@ onMounted(() => {
   border: 1px solid #e8eeee;
   border-radius: 13px;
   background: #ffffff;
-  box-shadow:
-    0 3px 14px rgba(0, 0, 0, 0.045);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.045);
 }
 
 .stat-icon {
@@ -1298,18 +1257,12 @@ onMounted(() => {
   font-weight: 700;
 }
 
-
-/* =========================================================
-   MAIN LAYOUT
-========================================================= */
-
 .admin-layout {
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns:
-    minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 20px;
   align-items: stretch;
 }
@@ -1321,30 +1274,19 @@ onMounted(() => {
   gap: 18px;
 }
 
-
-/* =========================================================
-   CARDS
-========================================================= */
-
 .dashboard-card,
 .summary,
 .reports-card {
   border: 1px solid #e8eeee;
   border-radius: 15px;
   background: #ffffff;
-  box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
 }
 
 .dashboard-card {
   min-width: 0;
   padding: 18px;
 }
-
-
-/* =========================================================
-   SECTION HEADINGS
-========================================================= */
 
 .section-heading {
   display: flex;
@@ -1377,11 +1319,6 @@ onMounted(() => {
   font-size: 10px;
   font-weight: 700;
 }
-
-
-/* =========================================================
-   WORKERS
-========================================================= */
 
 .workers-section {
   min-height: 330px;
@@ -1438,11 +1375,6 @@ onMounted(() => {
   font-size: 11px;
 }
 
-
-/* =========================================================
-   BADGES / BUTTONS
-========================================================= */
-
 .role-badge {
   display: inline-block;
   max-width: 130px;
@@ -1488,11 +1420,6 @@ onMounted(() => {
   color: #a33;
 }
 
-
-/* =========================================================
-   PAGINATION
-========================================================= */
-
 .pagination {
   display: flex;
   justify-content: center;
@@ -1524,11 +1451,6 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-
-/* =========================================================
-   ANALYTICS
-========================================================= */
-
 .analytics-section {
   min-height: 310px;
 }
@@ -1539,9 +1461,7 @@ onMounted(() => {
 
 .analytics {
   display: grid;
-  grid-template-columns:
-    minmax(0, 1.4fr)
-    minmax(220px, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 1fr);
   gap: 28px;
 }
 
@@ -1564,11 +1484,6 @@ onMounted(() => {
   font-size: 9px;
 }
 
-
-/* =========================================================
-   BAR CHART
-========================================================= */
-
 .bar-chart {
   position: relative;
   height: 135px;
@@ -1579,12 +1494,7 @@ onMounted(() => {
 .chart-grid {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(
-      to bottom,
-      #edf0f0 1px,
-      transparent 1px
-    );
+  background-image: linear-gradient(to bottom, #edf0f0 1px, transparent 1px);
   background-size: 100% 25%;
 }
 
@@ -1670,11 +1580,6 @@ onMounted(() => {
   border-radius: 2px;
 }
 
-
-/* =========================================================
-   DONUT
-========================================================= */
-
 .donut-container {
   position: relative;
 }
@@ -1722,11 +1627,6 @@ onMounted(() => {
   font-size: 8px;
 }
 
-
-/* =========================================================
-   SERVICE LEGEND
-========================================================= */
-
 .service-legend {
   width: 100%;
   max-height: 85px;
@@ -1771,11 +1671,6 @@ onMounted(() => {
   text-align: center;
   font-size: 9px;
 }
-
-
-/* =========================================================
-   BOOKING STATUS
-========================================================= */
 
 .booking-section {
   min-height: 245px;
@@ -1841,11 +1736,6 @@ onMounted(() => {
   color: #888;
   font-size: 10px;
 }
-
-
-/* =========================================================
-   RIGHT PANEL
-========================================================= */
 
 .reports-panel {
   min-width: 0;
@@ -1921,11 +1811,6 @@ onMounted(() => {
   background: #edf0f0;
 }
 
-
-/* =========================================================
-   OVERVIEW
-========================================================= */
-
 .overview-list {
   display: flex;
   flex-direction: column;
@@ -1970,10 +1855,73 @@ onMounted(() => {
   background: #136163;
 }
 
-
 /* =========================================================
-   LARGE SCREENS
+   REPORTS
 ========================================================= */
+
+.reports-section {
+  min-height: auto;
+}
+
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.report-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f0f2f2;
+}
+
+.report-item:last-child {
+  border-bottom: none;
+}
+
+.report-item > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.report-title {
+  color: #505a5c;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.report-item small {
+  color: #9aa2a3;
+  font-size: 8px;
+}
+
+.report-item strong {
+  color: #183b56;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.report-footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 15px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #f0f8f6;
+  color: #136163;
+  font-size: 8px;
+}
+
+.report-footer .status-dot {
+  flex-shrink: 0;
+}
 
 @media (min-width: 1400px) {
 
@@ -1983,8 +1931,7 @@ onMounted(() => {
   }
 
   .admin-layout {
-    grid-template-columns:
-      minmax(0, 1fr) 330px;
+    grid-template-columns: minmax(0, 1fr) 330px;
   }
 
   .stat-card {
@@ -2002,11 +1949,6 @@ onMounted(() => {
   }
 }
 
-
-/* =========================================================
-   TABLET
-========================================================= */
-
 @media (max-width: 1200px) {
 
   .admin-page {
@@ -2015,8 +1957,7 @@ onMounted(() => {
   }
 
   .admin-layout {
-    grid-template-columns:
-      minmax(0, 1fr) 270px;
+    grid-template-columns: minmax(0, 1fr) 270px;
   }
 
   .stat-grid {
@@ -2041,11 +1982,6 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 }
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
 
 @media (max-width: 900px) {
 
@@ -2082,11 +2018,6 @@ onMounted(() => {
     grid-template-columns: 1fr 1fr;
   }
 }
-
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
 
 @media (max-width: 600px) {
 
