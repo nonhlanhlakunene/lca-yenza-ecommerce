@@ -55,7 +55,6 @@ const loadWorkers = async () => {
     }
 
     workers.value = data
-
   } catch (error) {
     console.error('Workers error:', error)
     message.value = error.message
@@ -83,7 +82,6 @@ const loadStats = async () => {
       total_bookings: Number(data.total_bookings) || 0,
       total_revenue: Number(data.total_revenue) || 0
     }
-
   } catch (error) {
     console.error('Stats error:', error)
   }
@@ -110,7 +108,6 @@ const loadBookingsByService = async () => {
       service_name: service.service_name,
       booking_count: Number(service.booking_count) || 0
     }))
-
   } catch (error) {
     console.error('Bookings by service error:', error)
   }
@@ -136,7 +133,6 @@ const loadActivity = async () => {
       completed: Number(data.completed) || 0,
       pending: Number(data.pending) || 0
     }
-
   } catch (error) {
     console.error('Activity error:', error)
   }
@@ -163,7 +159,6 @@ const loadWorkerServices = async () => {
       service_name: service.service_name,
       worker_count: Number(service.worker_count) || 0
     }))
-
   } catch (error) {
     console.error('Worker services error:', error)
   }
@@ -190,7 +185,6 @@ const loadBookingStatuses = async () => {
       status: status.status,
       booking_count: Number(status.booking_count) || 0
     }))
-
   } catch (error) {
     console.error('Booking status error:', error)
   }
@@ -294,7 +288,6 @@ const removeWorker = async (professionalId) => {
       color: '#222222',
       iconColor: '#136163'
     })
-
   } catch (error) {
     console.error('Delete worker error:', error)
 
@@ -530,12 +523,8 @@ onMounted(() => {
       <div>
         <span class="admin-eyebrow">YENZA ADMINISTRATION</span>
         <br>
-
         <h1>Admin Dashboard</h1>
-
-        <p>
-          Manage workers and monitor platform activity.
-        </p>
+        <p>Manage workers and monitor platform activity.</p>
       </div>
 
       <div class="header-date">
@@ -604,12 +593,8 @@ onMounted(() => {
           <div class="section-heading">
             <div>
               <span class="section-label">MANAGEMENT</span>
-
               <h2>Workers</h2>
-
-              <p>
-                Manage and view your registered workers.
-              </p>
+              <p>Manage and view your registered workers.</p>
             </div>
 
             <span class="worker-count">
@@ -745,12 +730,8 @@ onMounted(() => {
           <div class="section-heading analytics-heading">
             <div>
               <span class="section-label">ANALYTICS</span>
-
               <h2>Platform Activity</h2>
-
-              <p>
-                Live information from your database.
-              </p>
+              <p>Live information from your database.</p>
             </div>
           </div>
 
@@ -889,7 +870,6 @@ onMounted(() => {
 
             <div>
               <span class="section-label">BOOKINGS</span>
-
               <h2>Booking Status</h2>
 
               <p>
@@ -979,7 +959,7 @@ onMounted(() => {
 
         </div>
 
-        <!-- QUICK INFORMATION -->
+        <!-- DASHBOARD OVERVIEW -->
         <div class="reports-card">
 
           <div class="reports-header">
@@ -1063,6 +1043,45 @@ onMounted(() => {
 
             <span>
               System data connected
+            </span>
+          </div>
+
+        </div>
+
+        <!-- REPORTS -->
+        <div class="reports-card reports-section">
+
+          <div class="reports-header">
+
+            <div>
+              <span class="section-label">
+                REPORTS
+              </span>
+
+              <h1>Reports</h1>
+
+              <p>
+                Platform performance summary.
+              </p>
+            </div>
+
+            <span class="reports-icon">
+              ▤
+            </span>
+
+          </div>
+
+          <div class="reports-rule"></div>
+
+          <div class="report-list">
+
+          </div>
+
+          <div class="report-footer">
+            <span class="status-dot"></span>
+
+            <span>
+              Report generated from live database data
             </span>
           </div>
 
@@ -1834,6 +1853,74 @@ onMounted(() => {
   height: 7px;
   border-radius: 50%;
   background: #136163;
+}
+
+/* =========================================================
+   REPORTS
+========================================================= */
+
+.reports-section {
+  min-height: auto;
+}
+
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.report-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f0f2f2;
+}
+
+.report-item:last-child {
+  border-bottom: none;
+}
+
+.report-item > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.report-title {
+  color: #505a5c;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.report-item small {
+  color: #9aa2a3;
+  font-size: 8px;
+}
+
+.report-item strong {
+  color: #183b56;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.report-footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 15px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #f0f8f6;
+  color: #136163;
+  font-size: 8px;
+}
+
+.report-footer .status-dot {
+  flex-shrink: 0;
 }
 
 @media (min-width: 1400px) {
