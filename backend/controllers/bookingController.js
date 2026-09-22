@@ -68,13 +68,23 @@ export const getBookingController = async (req, res) => {
     try {
         const { id } = req.params
 
-        const booking = await getBookingById(id)
+        const booking = await getBookingById(id);
 
         if (!booking) {
-            return res.status(404).json({
-                success: false,
-                message: 'Booking not found'
-            })
+          return res.status(404).json({
+            success: false,
+            message: "Booking not found",
+          });
+        }
+
+        if (
+          booking.customer_id !== req.user.user_id &&
+          req.user.role !== "admin"
+        ) {
+          return res.status(403).json({
+            success: false,
+            message: "You are not allowed to view this booking",
+          });
         }
 
         res.json({
@@ -94,7 +104,7 @@ export const getBookingController = async (req, res) => {
 
 export const getCustomerBookingsController = async (req, res) => {
     try {
-        const { customerId } = req.user.user_id
+        const customerId = req.user.user_id
 
         const bookings = await getBookingsByCustomerId(customerId)
 

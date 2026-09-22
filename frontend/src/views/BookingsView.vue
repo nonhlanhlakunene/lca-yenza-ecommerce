@@ -126,7 +126,7 @@ const fetchBookings = async () => {
         loading.value = true
         error.value = false
 
-        const response = await api.get('/bookings/customer/1')
+        const response = await api.get('/bookings/mine')
 
         if (response.data.success) {
 

@@ -36,6 +36,40 @@ const getProfessionalByUserId = async (userId) => {
     return rows[0];
 };
 
+const getAllProfessionals = async () => {
+    const [rows] = await db.query(
+        `
+        SELECT
+            p.professional_id,
+            p.user_id,
+            p.service_id,
+            p.bio,
+            p.experience_years,
+            p.hourly_rate,
+            p.address,
+            p.city,
+            p.province,
+            p.postal_code,
+            p.profile_image,
+            p.verification_status,
+            p.availability_status,
+            u.first_name,
+            u.last_name,
+            u.email,
+            u.phone,
+            s.name AS service_name
+        FROM professionals p
+        JOIN users u
+            ON p.user_id = u.user_id
+        LEFT JOIN services s
+            ON p.service_id = s.id
+        ORDER BY p.professional_id ASC
+        `
+    );
+
+    return rows;
+};
+
 
 const getDashboardStats = async (professionalId) => {
     const [rows] = await db.query(
@@ -305,6 +339,7 @@ const updateAvailability = async (
 
 export default {
     getProfessionalByUserId,
+    getAllProfessionals,
     getDashboardStats,
     getTotalEarnings,
     getPendingJobs,

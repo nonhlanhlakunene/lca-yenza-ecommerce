@@ -1,5 +1,26 @@
 import professionalModel from "../models/professionalModels.js";
 
+
+const getAllProfessionals = async (req, res) => {
+    try {
+        const professionals =
+            await professionalModel.getAllProfessionals();
+
+        return res.status(200).json({
+            success: true,
+            professionals
+        });
+    } catch (error) {
+        console.error("Get professionals error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to get professionals",
+            error: error.message
+        });
+    }
+};
+
 const getDashboard = async (req, res) => {
     try {
         const userId = req.user.user_id;
@@ -239,6 +260,7 @@ const declineBooking = async (req, res) => {
 
 
 export {
+    getAllProfessionals,
     getDashboard,
     getProfile,
     updateAvailability,
