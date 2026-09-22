@@ -14,7 +14,7 @@
     </button>
 
     <!-- Navigation links -->
-    <ul class="navbar-links" :class="{ open: menuOpen }">
+    <!-- <ul class="navbar-links" :class="{ open: menuOpen }"> -->
     <!-- Hamburger button (mobile only) -->
     <button
       class="hamburger"
