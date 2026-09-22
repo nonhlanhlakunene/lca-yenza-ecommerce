@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/api.js'
+import Swal from 'sweetalert2'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,8 +12,50 @@ const loading = ref(true)
 const errorMessage = ref('')
 const showReport = ref(false)
 
+const fromAdmin = computed(() => route.query.fromAdmin === 'true')
+
+function initials(name) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+}
+
+async function loadProfessional() {
+  loading.value = true
+  errorMessage.value = ''
+  pro.value = null
+
+  try {
+    const response = await api.get(
+      `/professionals/${encodeURIComponent(route.params.slug)}`
+    )
+
+    pro.value = response.data.professional
+  } catch (error) {
+    console.error('Failed to load professional profile:', error)
+
+    errorMessage.value =
+      error.response?.data?.message ||
+      'Unable to load this profile. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(
+  () => route.params.slug,
+  loadProfessional,
+  { immediate: true }
+)
+// const pro = ref(null)
+// const loading = ref(true)
+// const errorMessage = ref('')
+// const showReport = ref(false)
+
 // If we arrived here from the Admin page, show a different back button
-const fromAdmin = computed(() => route.query.from === 'admin')
+// const fromAdmin = computed(() => route.query.from === 'admin')
 
 onMounted(async () => {
     try {
@@ -63,6 +106,7 @@ function initials(name) {
 
   <main v-else-if="!pro" class="profile-state">
     <h1>{{ errorMessage || 'Profile not found' }}</h1>
+
     <button @click="router.push('/services')">
       Return to handymen
     </button>
@@ -101,11 +145,10 @@ function initials(name) {
     <section class="profile-content">
       <button
         class="back-link"
-        @click="fromAdmin ? router.push('/admin') : router.push('/services')">
+        @click="fromAdmin ? router.push('/admin') : router.push('/services')"
+      >
         ← {{ fromAdmin ? 'Back' : 'Back to handymen' }}
       </button>
-
-
 
       <header class="profile-hero">
         <img
@@ -173,15 +216,13 @@ function initials(name) {
           <article class="profile-card">
             <h3>Book this professional</h3>
 
-            <RouterLink
+            <button
               class="request-button"
-              :to="{
-                name: 'book',
-                params: { slug: pro.slug }
-              }"
+              type="button"
+              @click="requestBooking"
             >
               Request Booking
-            </RouterLink>
+            </button>
 
 
             <button
@@ -400,7 +441,11 @@ function initials(name) {
   background: #136163;
   color: #fff;
   font-weight: 700;
-  text-decoration: none;
+}
+
+.request-button {
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .request-button:hover,

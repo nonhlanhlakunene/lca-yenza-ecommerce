@@ -15,6 +15,7 @@ import professionalRoutes from './routes/professionalRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
 import servicesRoutes from './routes/servicesRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', servicesRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/', (req, res) => {
     res.send('Your backend server is running successfully!');

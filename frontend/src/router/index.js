@@ -21,36 +21,43 @@ const routes = [
     name: 'Login',
     component: Login
   },
+
   {
     path: '/signup',
     name: 'Signup',
     component: Signup
   },
+
   {
     path: '/workersignup',
     name: 'workersignup',
     component: workersignup
   },
+
   {
     path: '/workerlogin',
     name: 'workerlogin',
     component: workerlogin
   },
+
   {
     path: '/',
     name: 'home',
     component: Home
   },
+
   {
     path: '/profiles/:slug',
     name: 'profile',
     component: HandymanProfileView
   },
+
   {
     path: '/about',
     name: 'about',
     component: AboutView
   },
+
   {
     path: '/bookings',
     name: 'bookings',
@@ -60,15 +67,13 @@ const routes = [
       roles: ['customer']
     }
   },
+
   {
     path: '/admin',
     name: 'admin',
-    component: Admin,
-    meta: {
-      requiresAuth: true,
-      roles: ['admin']
-    }
+    component: Admin
   },
+
   {
     path: '/book/:slug',
     name: 'book',
@@ -78,6 +83,7 @@ const routes = [
       roles: ['customer']
     }
   },
+
   {
     path: '/checkout',
     name: 'checkout',
@@ -87,11 +93,13 @@ const routes = [
       roles: ['customer']
     }
   },
+
   {
     path: '/services',
     name: 'services',
     component: ServicesView
   },
+
   {
     path: '/worker',
     name: 'workerDashboardView',
@@ -101,21 +109,25 @@ const routes = [
       roles: ['professional', 'worker']
     }
   },
+
   {
     path: '/contact',
     name: 'contact',
     component: () => import('../views/ContactView.vue')
   },
+
   {
     path: '/report-test',
     name: 'report-test',
     component: () => import('../components/ReportPopup.vue')
   },
+
   {
     path: '/review-test',
     name: 'review-test',
     component: () => import('../components/ReviewPopup.vue')
   },
+
   {
     path: '/verification',
     name: 'verification',
@@ -129,6 +141,7 @@ const routes = [
       roles: ['professional', 'worker']
     }
   },
+
   {
     path: '/api-test',
     name: 'api-test',
@@ -153,11 +166,34 @@ router.beforeEach((to) => {
     user = null
   }
 
+  /*
+   * ADMIN ROUTE
+   *
+   * /admin is allowed to open directly.
+   *
+   * This must come BEFORE the normal role checking below.
+   * Otherwise, if a worker is currently logged in, the router
+   * would see their role and send them to /worker.
+   */
+  if (to.path === '/admin') {
+    return true
+  }
+
+  /*
+   * If a token exists without a valid user,
+   * remove the invalid token.
+   */
   if (token && !user) {
     localStorage.removeItem('token')
   }
 
+  /*
+   * Normal protected routes
+   */
   if (to.meta.requiresAuth) {
+    /*
+     * User is not logged in
+     */
     if (!token || !user) {
       return {
         path: '/login',
@@ -167,19 +203,36 @@ router.beforeEach((to) => {
       }
     }
 
+    /*
+     * User is logged in but does not have
+     * permission for this route.
+     */
     if (to.meta.roles && !to.meta.roles.includes(user.role)) {
+
+      /*
+       * Admin users go to admin
+       */
       if (user.role === 'admin') {
         return '/admin'
       }
 
+      /*
+       * Professional / worker users go to worker dashboard
+       */
       if (user.role === 'professional' || user.role === 'worker') {
         return '/worker'
       }
 
+      /*
+       * Customers go home
+       */
       if (user.role === 'customer') {
         return '/'
       }
 
+      /*
+       * Unknown role
+       */
       localStorage.removeItem('token')
       localStorage.removeItem('user')
 
