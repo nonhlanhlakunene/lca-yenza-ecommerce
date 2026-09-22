@@ -1,9 +1,9 @@
-```vue
 <script setup>
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
+import GlobalLoader from './components/GlobalLoader.vue'
 
 const route = useRoute()
 
@@ -26,22 +26,6 @@ const hideLayout = computed(() => {
   <RouterView />
 
   <Footer v-if="!hideLayout" />
+
+  <GlobalLoader />
 </template>
-
-<style>
-html,
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100%;
-  height: auto !important;
-}
-
-#app {
-  width: 100%;
-  min-height: 100vh;
-  height: auto !important;
-}
-</style>
-```
