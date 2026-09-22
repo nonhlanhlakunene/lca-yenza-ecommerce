@@ -1,8 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ReportPopup from '../components/ReportPopup.vue'
-import api from '../api/api.js'
+import { professionals } from '../data/professionals'
 import Swal from 'sweetalert2'
 
 const route = useRoute()
@@ -14,10 +13,6 @@ const errorMessage = ref('')
 const showReport = ref(false)
 
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
-
-const isLoggedIn = computed(() => {
-  return !!localStorage.getItem('token') && !!localStorage.getItem('user')
-})
 
 function initials(name) {
   return name
@@ -45,36 +40,6 @@ async function loadProfessional() {
   } finally {
     loading.value = false
   }
-}
-
-async function requestBooking() {
-  if (!isLoggedIn.value) {
-    const result = await Swal.fire({
-      title: 'Create an account first',
-      text: 'You need to create an account before you can book a service.',
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonText: 'Create Account',
-      cancelButtonText: 'Maybe Later',
-      confirmButtonColor: '#136163',
-      cancelButtonColor: '#183b56',
-      background: '#ffffff',
-      color: '#183b56'
-    })
-
-    if (result.isConfirmed) {
-      router.push('/signup')
-    }
-
-    return
-  }
-
-  router.push({
-    name: 'book',
-    params: {
-      slug: pro.value.slug
-    }
-  })
 }
 
 watch(
@@ -208,6 +173,8 @@ watch(
             >
               Request Booking
             </button>
+            </RouterLink>
+
 
             <button
               class="report-button"
@@ -215,19 +182,13 @@ watch(
             >
               Report
             </button>
+
           </article>
         </aside>
       </div>
     </section>
 
-    <ReportPopup
-      v-if="showReport"
-      :personName="pro.name"
-      personType="Worker"
-      bookingId="—"
-      date="—"
-      @close="showReport = false"
-    />
+  
   </main>
 </template>
 

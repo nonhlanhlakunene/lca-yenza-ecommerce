@@ -15,6 +15,21 @@
 
     <!-- Navigation links -->
     <ul class="navbar-links" :class="{ open: menuOpen }">
+    <!-- Hamburger button (mobile only) -->
+    <button
+      class="hamburger"
+      type="button"
+      @click="menuOpen = !menuOpen"
+      :aria-expanded="menuOpen"
+      aria-label="Toggle navigation"
+    >
+      <span :class="{ open: menuOpen }"></span>
+      <span :class="{ open: menuOpen }"></span>
+      <span :class="{ open: menuOpen }"></span>
+    </button>
+
+    <!-- Navigation links -->
+    <ul class="navbar-links" :class="{ open: menuOpen }">
       <li v-for="(link, index) in navLinks" :key="index">
         <router-link
           v-if="link.text !== 'Logout'"
@@ -182,41 +197,6 @@ const logout = () => {
   opacity: 1;
 }
 
-/* ---------- HAMBURGER (hidden on desktop) ---------- */
-.hamburger {
-  display: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  flex-direction: column;
-  gap: 5px;
-  z-index: 1100;
-}
-
-.hamburger span {
-  display: block;
-  width: 26px;
-  height: 3px;
-  background-color: #ffffff;
-  border-radius: 2px;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-/* Turn into X when open */
-.hamburger span.open:nth-child(1) {
-  transform: translateY(8px) rotate(45deg);
-}
-
-.hamburger span.open:nth-child(2) {
-  opacity: 0;
-}
-
-.hamburger span.open:nth-child(3) {
-  transform: translateY(-8px) rotate(-45deg);
-}
-
-/* ---------- MOBILE ---------- */
 @media (max-width: 768px) {
   .home-navbar {
     flex-direction: row;
