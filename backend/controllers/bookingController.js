@@ -59,7 +59,8 @@ export const createBookingController = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: 'Failed to create booking'
+            message: 'Failed to create booking',
+            error: error.message
         })
     }
 }

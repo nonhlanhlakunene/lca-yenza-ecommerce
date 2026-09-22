@@ -35,8 +35,8 @@ export const createBooking = async ({
             bookingTime,
             serviceAddress,
             city,
-            province,
-            postalCode,
+            province || null,
+            postalCode || null,
             notes || null
         ]
     )

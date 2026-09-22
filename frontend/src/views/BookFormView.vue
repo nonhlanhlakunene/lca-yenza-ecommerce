@@ -75,8 +75,8 @@ const submitBooking = async () => {
     if (
         !booking.value.date ||
         !booking.value.time ||
-        !booking.value.address ||
-        !booking.value.city
+        !booking.value.address.trim() ||
+        !booking.value.city.trim()
     ) {
         Swal.fire({
             icon: 'warning',
@@ -87,33 +87,43 @@ const submitBooking = async () => {
     }
 
     // TEMPORARY: shows exactly what we're about to send
-    console.log('BOOKING PAYLOAD ABOUT TO SEND:', JSON.stringify({
+    const payload = {
         professionalId: professional.value.id,
         serviceId: professional.value.service_id,
         bookingDate: booking.value.date,
         bookingTime: booking.value.time,
-        serviceAddress: booking.value.address,
-        city: booking.value.city
-    }, null, 2))
+        serviceAddress: booking.value.address.trim(),
+        city: booking.value.city.trim(),
+        province: null,
+        postalCode: null,
+        notes: booking.value.notes
+    }
+
+    console.log(
+        'BOOKING PAYLOAD ABOUT TO SEND:',
+        JSON.stringify(payload, null, 2)
+    )
 
     try {
         isSubmitting.value = true
 
-        const bookingResponse = await api.post('/bookings', {
-            professionalId: professional.value.id,
-            serviceId: professional.value.service_id,
-            bookingDate: booking.value.date,
-            bookingTime: booking.value.time,
-            serviceAddress: booking.value.address,
-            city: booking.value.city,
-            notes: booking.value.notes
-        })
+        const bookingResponse = await api.post('/bookings', payload)
+        // {
+        //     professionalId: professional.value.id,
+        //     serviceId: professional.value.service_id,
+        //     bookingDate: booking.value.date,
+        //     bookingTime: booking.value.time,
+        //     serviceAddress: booking.value.address,
+        //     city: booking.value.city,
+        //     notes: booking.value.notes
+        // })
 
         if (!bookingResponse.data.success) {
             throw new Error(bookingResponse.data.message || 'Failed to create booking')
         }
 
         const bookingId = bookingResponse.data.bookingId
+        
         console.log('Booking created:', bookingId)
 
         const paymentResponse = await api.post('/payments/payfast', { bookingId })
