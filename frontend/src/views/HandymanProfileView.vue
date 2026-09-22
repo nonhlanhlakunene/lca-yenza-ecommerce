@@ -173,7 +173,6 @@ watch(
             >
               Request Booking
             </button>
-            </RouterLink>
 
 
             <button
