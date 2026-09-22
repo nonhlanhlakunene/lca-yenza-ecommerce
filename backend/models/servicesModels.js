@@ -158,6 +158,7 @@ export async function findProfessionalBySlug(slug) {
         SELECT
             p.professional_id AS id,
             p.user_id,
+            p.service_id,
 
             CONCAT(
                 u.first_name,

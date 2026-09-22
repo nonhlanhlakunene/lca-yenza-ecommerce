@@ -1,7 +1,6 @@
 import express from "express";
 
 import {
-    getAllProfessionals,
     getDashboard,
     getProfile,
     updateAvailability,
@@ -13,13 +12,6 @@ import authMiddleware from "../middleware/authMiddleware.js";
 
 
 const router = express.Router();
-
-
-router.get(
-    "/",
-    getAllProfessionals
-);
-
 
 router.get(
     "/dashboard",

@@ -1,17 +1,38 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 
 import api from '../api/api.js'
-import { professionals } from '../data/professionals.js'
 
 const route = useRoute()
+const router = useRouter()
 
-const professional = computed(() => {
-    return professionals.find(
-        person => person.slug === route.params.slug
-    )
+const professional = ref(null)
+const loading = ref(true)
+
+onMounted(async () => {
+    if (!localStorage.getItem('token')) {
+        await Swal.fire({
+            icon: 'info',
+            title: 'Please log in',
+            text: 'You need to log in before you can book.'
+        })
+        router.push('/login')
+        return
+    }
+
+    try {
+        const response = await api.get(`/professionals/${route.params.slug}`)
+        professional.value = response.data.professional
+
+        // TEMPORARY: check what we actually got back
+        console.log('LOADED PROFESSIONAL:', JSON.stringify(professional.value, null, 2))
+    } catch (error) {
+        console.error('Could not load professional:', error)
+    } finally {
+        loading.value = false
+    }
 })
 
 const booking = ref({
@@ -24,47 +45,32 @@ const booking = ref({
 
 const isSubmitting = ref(false)
 
-// Submit the PayFast hosted checkout form
 const submitPayFastForm = (paymentUrl, paymentData) => {
-
     const form = document.createElement('form')
-
     form.method = 'POST'
     form.action = paymentUrl
 
     Object.entries(paymentData).forEach(([key, value]) => {
         const input = document.createElement('input')
-
         input.type = 'hidden'
         input.name = key
         input.value = value
-
         form.appendChild(input)
     })
 
     document.body.appendChild(form)
-
     form.submit()
 }
 
 const submitBooking = async () => {
     if (!professional.value) {
-
         Swal.fire({
-            icon:'error',
+            icon: 'error',
             title: 'Professional not found',
             text: 'We could not find the selected professional.'
         })
         return
     }
-
-// Check required booking fields
-    console.log('BOOKING FORM VALUES:', {
-        date: booking.value.date,
-        time: booking.value.time,
-        address: booking.value.address,
-        city: booking.value.city
-    })
 
     if (
         !booking.value.date ||
@@ -72,7 +78,6 @@ const submitBooking = async () => {
         !booking.value.address ||
         !booking.value.city
     ) {
-
         Swal.fire({
             icon: 'warning',
             title: 'Missing information',
@@ -81,67 +86,51 @@ const submitBooking = async () => {
         return
     }
 
+    // TEMPORARY: shows exactly what we're about to send
+    console.log('BOOKING PAYLOAD ABOUT TO SEND:', JSON.stringify({
+        professionalId: professional.value.id,
+        serviceId: professional.value.service_id,
+        bookingDate: booking.value.date,
+        bookingTime: booking.value.time,
+        serviceAddress: booking.value.address,
+        city: booking.value.city
+    }, null, 2))
+
     try {
         isSubmitting.value = true
 
-        // CREATE BOOKING IN DATABASE
         const bookingResponse = await api.post('/bookings', {
-            professionalId: professional.value.professionalId,
-            serviceId: professional.value.serviceId,
+            professionalId: professional.value.id,
+            serviceId: professional.value.service_id,
             bookingDate: booking.value.date,
             bookingTime: booking.value.time,
             serviceAddress: booking.value.address,
             city: booking.value.city,
-            province: null,
-            postalCode: null,
             notes: booking.value.notes
         })
 
-
         if (!bookingResponse.data.success) {
-            throw new Error(
-                bookingResponse.data.message ||
-                'Failed to create booking'
-            )
+            throw new Error(bookingResponse.data.message || 'Failed to create booking')
         }
 
         const bookingId = bookingResponse.data.bookingId
-
         console.log('Booking created:', bookingId)
 
-
-        // Create a pending PayFast payment for booking
-        const paymentResponse = await api.post(
-            '/payments/payfast',
-            {
-                bookingId
-            }
-        )
-
+        const paymentResponse = await api.post('/payments/payfast', { bookingId })
 
         if (!paymentResponse.data.success) {
-            throw new Error(
-                paymentResponse.data.message ||
-                'Failed to create payment'
-            )
+            throw new Error(paymentResponse.data.message || 'Failed to create payment')
         }
 
-        console.log(
-            'Payment created:',
-            paymentResponse.data.payment_id
-        )
+        console.log('Payment created:', paymentResponse.data.payment_id)
 
-        // Send customer to PayFast
         submitPayFastForm(
             paymentResponse.data.payment_url,
             paymentResponse.data.payfast_data
         )
-
     } catch (error) {
-        // console.error('Booking.payment error:', error)
         console.error('BOOKING ERROR STATUS:', error.response?.status)
-        console.error('BOOKING ERROR DATA', error.response?.data)
-        console.error('BOOKING ERROR:', error)
+        console.error('BOOKING ERROR DATA:', JSON.stringify(error.response?.data, null, 2))
 
         Swal.fire({
             icon: 'error',

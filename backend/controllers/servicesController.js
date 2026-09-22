@@ -15,6 +15,7 @@ function formatProfessional(row) {
     return {
         id: row.id,
         user_id: row.user_id,
+        service_id: row.service_id,
 
         name: row.full_name,
 

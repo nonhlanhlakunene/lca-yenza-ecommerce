@@ -1,17 +1,59 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { professionals } from '../data/professionals'
+import api from '../api/api.js'
 
 const route = useRoute()
 const router = useRouter()
 
-const pro = computed(() => professionals.find((person) => person.slug === route.params.slug))
+const pro = ref(null)
+const loading = ref(true)
+const errorMessage = ref('')
+const showReport = ref(false)
+
+// If we arrived here from the Admin page, show a different back button
+const fromAdmin = computed(() => route.query.from === 'admin')
+
+onMounted(async () => {
+    try {
+        const response = await api.get(`/professionals/${route.params.slug}`)
+        pro.value = response.data.professional
+    } catch (error) {
+        console.error('Could not load professional:', error)
+        errorMessage.value =
+            error.response?.data?.message || 'Could not load this profile.'
+    } finally {
+        loading.value = false
+    }
+})
+
 const reviews = computed(() => pro.value ? [
-  { name: 'David G.', date: '2 days ago', text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.` },
-  { name: 'Melanie T.', date: '1 week ago', text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.` },
-  { name: 'James L.', date: '3 weeks ago', text: `Great workmanship and clear communication from start to finish.` },
+    {
+        name: 'David G.',
+        date: '2 days ago',
+        text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.`
+    },
+    {
+        name: 'Melanie T.',
+        date: '1 week ago',
+        text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.`
+    },
+    {
+        name: 'James L.',
+        date: '3 weeks ago',
+        text: `Great workmanship and clear communication from start to finish.`
+    }
 ] : [])
+
+function initials(name) {
+    if (!name) return ''
+    return name
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+}
 </script>
 
 <template>
