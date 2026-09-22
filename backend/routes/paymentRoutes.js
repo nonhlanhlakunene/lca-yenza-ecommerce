@@ -1,4 +1,5 @@
 import express from 'express'
+import authMiddleware from '../middleware.authMiddleware.js'
 import {
     createPayFastPayment,
     handlePayFastNotify
@@ -10,6 +11,7 @@ const router = express.Router()
 // CREATE A PAYFAST PAYMENT
 router.post(
     '/payfast',
+    authMiddleware,
     createPayFastPayment
 )
 

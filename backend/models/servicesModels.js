@@ -99,6 +99,7 @@ export async function findProfessionals({
         SELECT
             p.professional_id AS id,
             p.user_id,
+            p.service_id,
             CONCAT(
                 u.first_name,
                 ' ',

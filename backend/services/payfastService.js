@@ -1,63 +1,48 @@
 import crypto from 'crypto'
 
+
+// Encodes a value exactly the way PayFast expects
+const pfEncode = (value) =>
+    encodeURIComponent(String(value).trim()).replace(/%20/g, '+')
+
+
 // Generates MD5 signature
 export const generatePayFastSignature = (
     data,
-    passphrase = null
+    passphrase = null,
+    keepEmpty = false 
 ) => {
 
 
     // Create parameter string
     let parameterString = Object.entries(data)
         .filter(([key, value]) => {
-            return key !== 'signature' &&
-                value !== undefined &&
-                value !== null &&
-                value !== ''
+            if (key === 'signature') return false
+            if (value === undefined || value === null) return false
+            if (!keepEmpty && String(value).trim() == '') return false
+            return true
         })
-        .map(([key, value]) => {
-            return `${key}=${encodeURIComponent(
-                String(value).trim()
-            )}`    
-        })
+        .map(([key, value]) => `${key}=${pfEncode(value)}`)
         .join('&')
-
-    // Add passphrase if one is configured
+          
     if (passphrase) {
-        parameterString += `&passphrase=${encodeURIComponent(
-            passphrase.trim()    
-        )}`
+        parameterString += `&passphrase=${pfEncode(passphrase)}`
     }
-
-    return crypto
-        .createHash('md5')
-        .update(parameterString)
-        .digest('hex')
+  
+    return crypto.createHash('md5').update(parameterString).digest('hex')
 }
 
-
+    
 // Compares PayFast signature with server generated signature
-export const validatePayFastSignature = (
-    data,
-    passphrase = null
-) => {
+export const validatePayFastSignature = (data, passphrase = null) => {
+    const receivedSignature = data.signature
+    if (!receivedSignature) return false
 
-    const receivedSignature =data.signature
 
-    if (!receivedSignature) {
-        return false
-    }
+    // keepEmpty = true: PayFast's own message can include empty fields, keep them 
+    const generatedSignature = generatePayFastSignature(data, passphrase, true)
 
-    const generatedSignature = 
-        generatePayFastSignature(
-            data,
-            passphrase
-        )
-
-    return (
-        receivedSignature.toLowerCase() ===
-        generatedSignature.toLowerCase()
-    )
+    return receivedSignature.toLowerCase() === generatedSignature.toLowerCase()
 }
 
 

@@ -12,8 +12,8 @@ const router = express.Router()
 
 router.post('/', authMiddleware, createBookingController)
 
-router.get('/customer/:customerId', getCustomerBookingsController)
+router.get('/mine', authMiddleware, getCustomerBookingsController)
 
-router.get('/:id', getBookingController)
+router.get('/:id', authMiddleware, getBookingController)
 
-export default routerp
+export default router

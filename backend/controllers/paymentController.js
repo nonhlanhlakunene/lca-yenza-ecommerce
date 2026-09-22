@@ -65,6 +65,13 @@ export const createPayFastPayment = async (req, res) => {
             })
         }
 
+        // ONLY CUSTOMER WHO MADE BOOKING MAY PAY FOR IT
+        if (booking.customer_id !== req.user.user_id) {
+            return res.status(403).json({
+                success: false,
+                message: 'This booking does not belong to you'
+            })
+        }
 
         // GET PAYMENT AMOUNT
         const amount = Number(booking.hourly_rate)
