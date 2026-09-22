@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ReportPopup from '../components/ReportPopup.vue'
 import api from '../api/api.js'
+import Swal from 'sweetalert2'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +14,10 @@ const errorMessage = ref('')
 const showReport = ref(false)
 
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
+
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('token') && !!localStorage.getItem('user')
+})
 
 function initials(name) {
   return name
@@ -42,6 +47,36 @@ async function loadProfessional() {
   }
 }
 
+async function requestBooking() {
+  if (!isLoggedIn.value) {
+    const result = await Swal.fire({
+      title: 'Create an account first',
+      text: 'You need to create an account before you can book a service.',
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Create Account',
+      cancelButtonText: 'Maybe Later',
+      confirmButtonColor: '#136163',
+      cancelButtonColor: '#183b56',
+      background: '#ffffff',
+      color: '#183b56'
+    })
+
+    if (result.isConfirmed) {
+      router.push('/signup')
+    }
+
+    return
+  }
+
+  router.push({
+    name: 'book',
+    params: {
+      slug: pro.value.slug
+    }
+  })
+}
+
 watch(
   () => route.params.slug,
   loadProfessional,
@@ -56,6 +91,7 @@ watch(
 
   <main v-else-if="!pro" class="profile-state">
     <h1>{{ errorMessage || 'Profile not found' }}</h1>
+
     <button @click="router.push('/services')">
       Return to handymen
     </button>
@@ -94,11 +130,10 @@ watch(
     <section class="profile-content">
       <button
         class="back-link"
-        @click="fromAdmin ? router.push('/admin') : router.push('/services')">
+        @click="fromAdmin ? router.push('/admin') : router.push('/services')"
+      >
         ← {{ fromAdmin ? 'Back' : 'Back to handymen' }}
       </button>
-
-
 
       <header class="profile-hero">
         <img
@@ -166,15 +201,13 @@ watch(
           <article class="profile-card">
             <h3>Book this professional</h3>
 
-            <RouterLink
+            <button
               class="request-button"
-              :to="{
-                name: 'book',
-                params: { slug: pro.slug }
-              }"
+              type="button"
+              @click="requestBooking"
             >
               Request Booking
-            </RouterLink>
+            </button>
 
             <button
               class="report-button"
@@ -398,7 +431,11 @@ watch(
   background: #136163;
   color: #fff;
   font-weight: 700;
-  text-decoration: none;
+}
+
+.request-button {
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .request-button:hover,

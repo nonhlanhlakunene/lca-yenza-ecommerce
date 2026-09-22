@@ -4,7 +4,9 @@ import { useRouter } from 'vue-router'
 import painterpicture from '../assets/painterpicture.png'
 import VerifyIdentity from './VerifyIdentity.vue'
 
+
 const router = useRouter()
+
 
 const first_name = ref('')
 const last_name = ref('')
@@ -14,19 +16,24 @@ const confirmPassword = ref('')
 const message = ref('')
 const loading = ref(false)
 
+
 const passwordRequirements =
   '8-16 characters, with uppercase, lowercase, number and special character'
+
 
 const validatePassword = () => {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,16}$/.test(password.value)
 }
 
+
 const showVerification = ref(false)
 const newUserId = ref(1)
+
 
 const signup = async () => {
   loading.value = true
   message.value = ''
+
 
   if (!validatePassword()) {
     message.value = passwordRequirements
@@ -34,11 +41,13 @@ const signup = async () => {
     return
   }
 
+
   if (password.value !== confirmPassword.value) {
     message.value = 'Passwords do not match'
     loading.value = false
     return
   }
+
 
   try {
     const response = await fetch(
@@ -58,39 +67,55 @@ const signup = async () => {
       }
     )
 
+
     const data = await response.json()
+
 
     if (!response.ok) {
       message.value = data.message || 'Signup failed'
       return
     }
 
+
     newUserId.value = data.user.user_id
+
 
     message.value = 'Signup successful!'
 
+
     showVerification.value = true
+
 
   } catch (error) {
     console.error('Signup error:', error)
 
+
     message.value =
       'Could not connect to the server'
+
 
   } finally {
     loading.value = false
   }
 }
 
+
 const onVerificationComplete = () => {
   showVerification.value = false
   router.push('/signup')
 }
 
+
 const goToLogin = () => {
   router.push('/login')
 }
+
+
+const continueWithoutAccount = () => {
+  router.push('/')
+}
 </script>
+
 
 <template>
   <div class="signup-container">
@@ -98,61 +123,84 @@ const goToLogin = () => {
       <div class="signup-card">
         <div class="signup-logo-section"><h2>Sign up</h2></div>
 
+
         <form id="signupForm" @submit.prevent="signup">
+
 
           <div class="signup-input-group">
             <label for="firstName">First Name</label>
             <input type="text" id="firstName" v-model="first_name" placeholder="First Name" autocomplete="given-name" required>
           </div>
 
+
           <div class="signup-input-group">
             <label for="lastName">Last Name</label>
             <input type="text" id="lastName" v-model="last_name" placeholder="Last Name" autocomplete="family-name" required>
           </div>
+
 
           <div class="signup-input-group">
             <label for="email">Email</label>
             <input type="email" id="email" v-model="email" placeholder="someone@gmail.com" autocomplete="email" required>
           </div>
 
+
           <div class="signup-input-group">
             <label for="password">Password</label>
             <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="new-password" required>
           </div>
 
+
           <div class="signup-input-group">
             <label for="confirmPassword">Confirm Password</label>
             <input type="password" id="confirmPassword" v-model="confirmPassword" placeholder="*************" autocomplete="new-password" required>
 
+
             <small v-if="password && !validatePassword()" class="password-help">
               {{ passwordRequirements }}
             </small>
+
 
             <small v-else-if="confirmPassword && password !== confirmPassword" class="password-help">
               Passwords do not match
             </small>
           </div>
 
+
           <button type="submit" class="signup-button" :disabled="loading">
             {{ loading ? 'Signing up...' : 'Signup' }}
           </button>
+
 
           <div class="signup-bottom-section">
             <p>Already have an account?</p>
             <button type="button" class="signup-button-link" @click="goToLogin">
               login
             </button>
+
+
+            <button
+              type="button"
+              class="guest-button"
+              @click="continueWithoutAccount"
+            >
+              Use without an account
+            </button>
           </div>
 
+
           <p id="message">{{ message }}</p>
+
 
         </form>
       </div>
     </div>
 
+
     <div class="signup-right-side">
       <img :src="painterpicture" alt="Painter">
     </div>
+
 
     <VerifyIdentity
       v-if="showVerification"
@@ -165,12 +213,15 @@ const goToLogin = () => {
   </div>
 </template>
 
+
 <style>
 @import url('https://googleapis.com');
+
 
 body {
   background: white;
 }
+
 
 .signup-container {
   display: flex;
@@ -178,6 +229,7 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+
 
 .signup-left-side {
   width: 50%;
@@ -188,6 +240,7 @@ body {
   box-sizing: border-box;
 }
 
+
 .signup-right-side {
   width: 50%;
   height: 100%;
@@ -197,11 +250,13 @@ body {
   overflow: hidden;
 }
 
+
 .signup-right-side img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 
 .signup-card {
   width: 100%;
@@ -209,10 +264,12 @@ body {
   box-sizing: border-box;
 }
 
+
 .signup-logo-section {
   text-align: center;
   margin-bottom: 35px;
 }
+
 
 .signup-logo-section h2 {
   color: #136163;
@@ -221,9 +278,11 @@ body {
   font-size: 30px;
 }
 
+
 .signup-input-group {
   margin-bottom: 20px;
 }
+
 
 .signup-input-group label {
   display: block;
@@ -231,6 +290,7 @@ body {
   font-weight: 600;
   color: #333;
 }
+
 
 .signup-input-group input {
   width: 100%;
@@ -243,10 +303,12 @@ body {
   font-size: 15px;
 }
 
+
 .signup-input-group input:focus {
   border-color: #136163;
   box-shadow: 0 0 12px rgba(19, 97, 99, 0.18);
 }
+
 
 .signup-button {
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -263,20 +325,24 @@ body {
   transition: 0.3s;
 }
 
+
 .signup-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(19, 97, 99, 0.25);
 }
+
 
 .signup-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
+
 .signup-bottom-section {
   text-align: center;
   margin-top: 20px;
 }
+
 
 .signup-button-link {
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -288,12 +354,32 @@ body {
   text-decoration: underline;
 }
 
+
+.guest-button {
+  display: block;
+  margin: 14px auto 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  color: #136163;
+  font-weight: 600;
+  border: none;
+  background: none;
+  text-decoration: underline;
+}
+
+
+.guest-button:hover {
+  opacity: 0.8;
+}
+
+
 .password-help {
   display: block;
   color: crimson;
   margin-top: 6px;
   font-size: 12px;
 }
+
 
 #message {
   font-size: 15px;
@@ -302,6 +388,7 @@ body {
   margin-top: 15px;
 }
 
+
 @media (max-width: 768px) {
   .signup-container {
     flex-direction: column;
@@ -309,6 +396,7 @@ body {
     min-height: 100vh;
     overflow-y: auto;
   }
+
 
   .signup-right-side {
     width: 100%;
@@ -320,11 +408,13 @@ body {
     background-color: #ffffff;
   }
 
+
   .signup-right-side img {
     max-height: 100%;
     width: auto;
     object-fit: contain;
   }
+
 
   .signup-left-side {
     width: 100%;
@@ -332,6 +422,7 @@ body {
     padding: 20px 20px 60px 20px;
     display: block;
   }
+
 
   .signup-card {
     margin: 0 auto;

@@ -1,8 +1,28 @@
 <template>
   <nav class="home-navbar">
-    <ul class="navbar-links">
+    <!-- Hamburger button (mobile only) -->
+    <button
+      class="hamburger"
+      type="button"
+      @click="menuOpen = !menuOpen"
+      :aria-expanded="menuOpen"
+      aria-label="Toggle navigation"
+    >
+      <span :class="{ open: menuOpen }"></span>
+      <span :class="{ open: menuOpen }"></span>
+      <span :class="{ open: menuOpen }"></span>
+    </button>
+
+    <!-- Navigation links -->
+    <ul class="navbar-links" :class="{ open: menuOpen }">
       <li v-for="(link, index) in navLinks" :key="index">
-        <router-link v-if="link.text !== 'Logout'" :to="link.path">{{ link.text }}</router-link>
+        <router-link
+          v-if="link.text !== 'Logout'"
+          :to="link.path"
+          @click="closeMenu"
+        >
+          {{ link.text }}
+        </router-link>
         <a v-else href="/login" @click.prevent="logout">{{ link.text }}</a>
       </li>
     </ul>
@@ -17,6 +37,7 @@ const router = useRouter()
 const route = useRoute()
 
 const currentUser = ref(null)
+const menuOpen = ref(false)
 
 const linkList = [
   { text: 'Home', path: '/' },
@@ -46,7 +67,10 @@ const loadUser = () => {
 
 watch(
   () => route.path,
-  loadUser,
+  () => {
+    loadUser()
+    menuOpen.value = false
+  },
   { immediate: true }
 )
 
@@ -73,10 +97,19 @@ const navLinks = computed(() => {
       text: 'Login',
       path: '/login'
     })
+
+    links.push({
+      text: 'Sign Up',
+      path: '/signup'
+    })
   }
 
   return links
 })
+
+const closeMenu = () => {
+  menuOpen.value = false
+}
 
 const logout = () => {
   localStorage.removeItem('token')
@@ -85,6 +118,7 @@ const logout = () => {
   localStorage.removeItem('user')
 
   currentUser.value = null
+  menuOpen.value = false
 
   router.push('/login')
 }
@@ -102,8 +136,10 @@ const logout = () => {
   justify-content: flex-end;
   align-items: center;
   padding: var(--spacing-sm) var(--spacing-md);
+  box-sizing: border-box;
 }
 
+/* ---------- DESKTOP LINKS ---------- */
 .navbar-links {
   gap: var(--spacing-md);
   display: flex;
@@ -146,17 +182,108 @@ const logout = () => {
   opacity: 1;
 }
 
+/* ---------- HAMBURGER (hidden on desktop) ---------- */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1100;
+}
+
+.hamburger span {
+  display: block;
+  width: 26px;
+  height: 3px;
+  background-color: #ffffff;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Turn into X when open */
+.hamburger span.open:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger span.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger span.open:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* ---------- MOBILE ---------- */
 @media (max-width: 768px) {
   .home-navbar {
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+  }
+
+  .hamburger {
+    display: flex;
   }
 
   .navbar-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
     flex-direction: column;
-    gap: var(--spacing-xs);
-    margin: var(--spacing-xs) 0;
-    text-align: center;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-primary);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .navbar-links.open {
+    max-height: 500px;
+  }
+
+  .navbar-links li {
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .navbar-links li:first-child {
+    border-top: none;
+  }
+
+  .navbar-links a {
+    display: block;
+    padding: 16px 20px;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .navbar-links a.router-link-active {
+    text-decoration: none;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Override the "Login button" style on mobile so it fills the row */
+  .navbar-links li:last-child a {
+    background-color: transparent;
+    color: #ffffff;
+    border: none;
+    border-radius: 0;
+    padding: 16px 20px;
+    font-weight: 600;
+  }
+
+  .navbar-links li:last-child a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
   }
 }
 </style>
