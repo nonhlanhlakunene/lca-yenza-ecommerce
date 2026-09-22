@@ -14,7 +14,7 @@ const getReviews = async () => {
     const data = await response.json()
 
     if (response.ok && data.success) {
-      reviews.value = data.reviews
+      reviews.value = data.reviews.slice(0, 3)
     }
   } catch (error) {
     console.error('Error loading reviews:', error)
@@ -181,7 +181,7 @@ onMounted(() => {
     </div>
 </template>
 
-<style>
+<style scoped>
 
 @import url('https://db.onlinewebfonts.com/c/2da952d097bffd198ec0f0aa3fdd6804?family=JejuHallasan');
 

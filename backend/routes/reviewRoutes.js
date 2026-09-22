@@ -1,7 +1,13 @@
 import express from "express";
-import { createReviewController } from "../controllers/reviewController.js";
+
+import {
+    createReviewController,
+    getReviewsController
+} from "../controllers/reviewController.js";
 
 const router = express.Router();
+
+router.get("/", getReviewsController);
 
 router.post("/", createReviewController);
 

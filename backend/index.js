@@ -14,6 +14,7 @@ import authRoutes from './routes/authRoutes.js';
 import professionalRoutes from './routes/professionalRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
+import servicesRoutes from './routes/servicesRoutes.js';
 
 dotenv.config();
 
@@ -25,22 +26,22 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.use('/api/payments', paymentRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/verifications', verificationRoutes)
 app.use('/api/bookings', bookingRoutes)
-app.use('/api/payments', paymentRoutes)
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/admin', adminRoutes);
-
+app.use('/api', servicesRoutes);
 
 app.get('/', (req, res) => {
     res.send('Your backend server is running successfully!');
 });
-
 
 app.get('/api/health', async (req, res) => {
     try {
@@ -54,10 +55,7 @@ app.get('/api/health', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(
-            'Database connection failed',
-            error
-        );
+        console.error('Database connection failed', error);
 
         res.status(500).json({
             success: false,
@@ -65,7 +63,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-
 
 app.listen(PORT, () => {
     console.log(

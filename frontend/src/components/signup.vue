@@ -1,203 +1,238 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import plumberImage from '../assets/stickman plumber.png'
+import painterpicture from '../assets/painterpicture.png'
+import VerifyIdentity from './VerifyIdentity.vue'
 
 const router = useRouter()
 
+const first_name = ref('')
+const last_name = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const message = ref('')
 const loading = ref(false)
 
-const login = async () => {
+const passwordRequirements =
+  '8-16 characters, with uppercase, lowercase, number and special character'
+
+const validatePassword = () => {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,16}$/.test(password.value)
+}
+
+const showVerification = ref(false)
+const newUserId = ref(1)
+
+const signup = async () => {
   loading.value = true
   message.value = ''
 
+  if (!validatePassword()) {
+    message.value = passwordRequirements
+    loading.value = false
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    message.value = 'Passwords do not match'
+    loading.value = false
+    return
+  }
+
   try {
-    const response = await fetch('http://localhost:3000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value
-      })
-    })
+    const response = await fetch(
+      'http://localhost:3000/api/auth/signup',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          first_name: first_name.value,
+          last_name: last_name.value,
+          email: email.value,
+          password: password.value,
+          confirmPassword: confirmPassword.value
+        })
+      }
+    )
 
     const data = await response.json()
 
     if (!response.ok) {
-      message.value = data.message || 'Login failed'
-      loading.value = false
+      message.value = data.message || 'Signup failed'
       return
     }
 
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
+    newUserId.value = data.user.user_id
 
-    message.value = 'Login successful!'
+    message.value = 'Signup successful!'
 
-    if (data.user.role === 'admin') {
-      router.push('/admin')
-    } else {
-      router.push('/')
-    }
+    showVerification.value = true
 
   } catch (error) {
-    console.error('Login error:', error)
-    message.value = 'Could not connect to the server'
-  }
+    console.error('Signup error:', error)
 
-  loading.value = false
+    message.value =
+      'Could not connect to the server'
+
+  } finally {
+    loading.value = false
+  }
 }
 
-const goToSignup = () => {
+const onVerificationComplete = () => {
+  showVerification.value = false
+  router.push('/signup')
+}
+
+const goToLogin = () => {
   router.push('/login')
 }
 </script>
 
-```vue
 <template>
-  <div class="login-container">
+  <div class="signup-container">
+    <div class="signup-left-side">
+      <div class="signup-card">
+        <div class="signup-logo-section"><h2>Sign up</h2></div>
 
-    <div class="login-left-side">
-      <img :src="plumberImage" alt="Plumber">
-    </div>
+        <form id="signupForm" @submit.prevent="signup">
 
-    <div class="right-side">
-      <div class="login-card">
-
-        <div class="logo-section">
-          <h2>Login</h2>
-        </div>
-
-        <form id="loginForm" @submit.prevent="login">
-
-          <div class="input-group">
-            <label for="username">Email</label>
-
-            <input
-              type="email"
-              id="username"
-              v-model="email"
-              placeholder="someone@gmail.com"
-              autocomplete="email"
-              required
-            >
+          <div class="signup-input-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" v-model="first_name" placeholder="First Name" autocomplete="given-name" required>
           </div>
 
-          <div class="input-group">
+          <div class="signup-input-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" v-model="last_name" placeholder="Last Name" autocomplete="family-name" required>
+          </div>
+
+          <div class="signup-input-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" v-model="email" placeholder="someone@gmail.com" autocomplete="email" required>
+          </div>
+
+          <div class="signup-input-group">
             <label for="password">Password</label>
-
-            <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="current-password" required>
+            <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="new-password" required>
           </div>
 
-          <button type="submit" class="login-button" :disabled="loading">{{ loading ? 'Logging in...' : 'Login' }}</button>
+          <div class="signup-input-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" v-model="confirmPassword" placeholder="*************" autocomplete="new-password" required>
 
-          <div class="bottom-section">
-            <p>no account?</p>
+            <small v-if="password && !validatePassword()" class="password-help">
+              {{ passwordRequirements }}
+            </small>
 
-            <button type="button" class="signup-button-link" @click="goToSignup">sign up</button>
-          </div><br>
+            <small v-else-if="confirmPassword && password !== confirmPassword" class="password-help">
+              Passwords do not match
+            </small>
+          </div>
 
-          <p id="message" :class="{ success: message === 'Login successful!' }">
-            {{ message }}
-          </p>
+          <button type="submit" class="signup-button" :disabled="loading">
+            {{ loading ? 'Signing up...' : 'Signup' }}
+          </button>
+
+          <div class="signup-bottom-section">
+            <p>Already have an account?</p>
+            <button type="button" class="signup-button-link" @click="goToLogin">
+              login
+            </button>
+          </div>
+
+          <p id="message">{{ message }}</p>
 
         </form>
-
       </div>
     </div>
 
+    <div class="signup-right-side">
+      <img :src="painterpicture" alt="Painter">
+    </div>
+
+    <VerifyIdentity
+      v-if="showVerification"
+      :showVerification="true"
+      :userType="'customer'"
+      :userId="newUserId"
+      @close="onVerificationComplete"
+      @complete="onVerificationComplete"
+    />
   </div>
 </template>
-```
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://googleapis.com');
 
-/* html,
-body,
-#app {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
+body {
   background: white;
-  color: black;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-} */
+}
 
-.login-container {
+.signup-container {
   display: flex;
   width: 100%;
   height: 100vh;
+  overflow: hidden;
 }
 
-/* LEFT SIDE - PLUMBER */
-.login-left-side {
+.signup-left-side {
   width: 50%;
-  height: 100vh;
-  width: 1000px;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.signup-right-side {
+  width: 50%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
 }
 
-.login-left-side img {
+.signup-right-side img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
-/* RIGHT SIDE - LOGIN */
-.right-side {
-  width: 50%;
-  width: 400px;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.login-card {
+.signup-card {
   width: 100%;
   max-width: 420px;
-  padding: 40px;
   box-sizing: border-box;
 }
 
-.logo-section {
+.signup-logo-section {
   text-align: center;
   margin-bottom: 35px;
 }
 
-.logo-section h2 {
+.signup-logo-section h2 {
   color: #136163;
   font-weight: 900;
   margin: 0 0 8px;
   font-size: 30px;
 }
 
-.logo-section p {
-  color: #777;
-  margin: 0;
-}
-
-.input-group {
+.signup-input-group {
   margin-bottom: 20px;
 }
 
-.input-group label {
+.signup-input-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
   color: #333;
 }
 
-.input-group input {
+.signup-input-group input {
   width: 100%;
   padding: 15px;
   box-sizing: border-box;
@@ -208,12 +243,12 @@ body,
   font-size: 15px;
 }
 
-.input-group input:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 12px rgba(13, 110, 253, 0.18);
+.signup-input-group input:focus {
+  border-color: #136163;
+  box-shadow: 0 0 12px rgba(19, 97, 99, 0.18);
 }
 
-.login-button {
+.signup-button {
   font-family: 'Plus Jakarta Sans', sans-serif;
   margin-top: 20px;
   width: 100%;
@@ -228,27 +263,22 @@ body,
   transition: 0.3s;
 }
 
-.login-button:hover {
+.signup-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(13, 110, 253, 0.25);
+  box-shadow: 0 10px 20px rgba(19, 97, 99, 0.25);
 }
 
-.bottom-section{
-    text-align: center;
-    margin-top: 40px;
+.signup-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.signup-button{
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #136163;
-    cursor: pointer;
-    color: gray;
-    border: none;
-    color: white;
-    text-align: center;
+.signup-bottom-section {
+  text-align: center;
+  margin-top: 20px;
 }
 
-.signup-button-link{
+.signup-button-link {
   font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
   color: #136163;
@@ -258,25 +288,54 @@ body,
   text-decoration: underline;
 }
 
-/* MOBILE */
+.password-help {
+  display: block;
+  color: crimson;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+#message {
+  font-size: 15px;
+  color: crimson;
+  text-align: center;
+  margin-top: 15px;
+}
+
 @media (max-width: 768px) {
-  .login-container {
+  .signup-container {
     flex-direction: column;
     height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
   }
 
-  .login-left-side {
+  .signup-right-side {
     width: 100%;
-    height: 40vh;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+    background-color: #ffffff;
   }
 
-  .right-side {
+  .signup-right-side img {
+    max-height: 100%;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .signup-left-side {
     width: 100%;
-    height: 60vh;
+    height: auto;
+    padding: 20px 20px 60px 20px;
+    display: block;
   }
 
-  .login-card {
-    padding: 25px;
+  .signup-card {
+    margin: 0 auto;
   }
 }
 </style>
+

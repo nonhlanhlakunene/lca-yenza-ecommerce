@@ -61,6 +61,12 @@ const submitBooking = async () => {
     }
 
 // Check required booking fields
+    console.log('BOOKING FORM VALUES:', {
+        date: booking.value.date,
+        time: booking.value.time,
+        address: booking.value.city
+    })
+
     if (
         !booking.value.date ||
         !booking.value.time ||
@@ -133,7 +139,10 @@ const submitBooking = async () => {
         )
 
     } catch (error) {
-        console.error('Booking.payment error:', error)
+        // console.error('Booking.payment error:', error)
+        console.error('BOOKING ERROR STATUS:', error.response?.status)
+        console.error('BOOKING ERROR DATA', error.repsonse?.data)
+        console.error('BOOKING ERROR:', error)
 
         Swal.fire({
             icon: 'error',

@@ -9,29 +9,54 @@ const first_name = ref('')
 const last_name = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const message = ref('')
 const loading = ref(false)
 
-// Verification popup state
 const showVerification = ref(false)
 const newUserId = ref(1)
 const newProfessionalId = ref(1)
+
+const passwordRequirements =
+  '8-16 characters, with uppercase, lowercase, number and special character'
+
+const validatePassword = () => {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,16}$/.test(password.value)
+}
 
 const workerSignup = async () => {
   message.value = ''
   loading.value = true
 
+  if (!validatePassword()) {
+    message.value = passwordRequirements
+    loading.value = false
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    message.value = 'Passwords do not match'
+    loading.value = false
+    return
+  }
+
   try {
-    const response = await fetch('http://localhost:3000/api/auth/worker-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        first_name: first_name.value,
-        last_name: last_name.value,
-        email: email.value,
-        password: password.value
-      })
-    })
+    const response = await fetch(
+      'http://localhost:3000/api/auth/worker-signup',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          first_name: first_name.value,
+          last_name: last_name.value,
+          email: email.value,
+          password: password.value,
+          confirmPassword: confirmPassword.value
+        })
+      }
+    )
 
     const data = await response.json()
 
@@ -40,17 +65,16 @@ const workerSignup = async () => {
       return
     }
 
-    // Capture the new user's IDs from the response
     newUserId.value = data.user.user_id
     newProfessionalId.value = data.professional.professional_id
 
     message.value = 'Signup successful!'
-
-    // Open verification popup instead of redirecting
     showVerification.value = true
+
   } catch (error) {
     console.error(error)
     message.value = 'Unable to connect to the server'
+
   } finally {
     loading.value = false
   }
@@ -64,7 +88,6 @@ const onVerificationComplete = () => {
 
 <template>
   <div class="signup-container">
-
     <div class="signup-card">
 
       <button type="button" class="back-button" @click="router.push('/')">
@@ -97,13 +120,31 @@ const onVerificationComplete = () => {
           <input v-model="password" type="password" id="password" placeholder="*************" required>
         </div>
 
+        <div class="signup-input-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input v-model="confirmPassword" type="password" id="confirmPassword" placeholder="*************" required>
+
+          <small v-if="password && !validatePassword()" class="password-help">
+            {{ passwordRequirements }}
+          </small>
+
+          <small v-else-if="confirmPassword && password !== confirmPassword" class="password-help">
+            Passwords do not match
+          </small>
+        </div>
+
         <button type="submit" class="signup-button" :disabled="loading">
           {{ loading ? 'Signing up...' : 'Sign up' }}
         </button>
 
         <div class="signup-bottom-section">
           <p>Already have a account?</p>
-          <button type="button" class="signup-button-link" @click="router.push('/workerlogin')">
+
+          <button
+            type="button"
+            class="signup-button-link"
+            @click="router.push('/workerlogin')"
+          >
             Login
           </button>
         </div>
@@ -111,10 +152,8 @@ const onVerificationComplete = () => {
         <p id="message">{{ message }}</p>
 
       </form>
-
     </div>
 
-    <!-- Verification popup -->
     <VerifyIdentity
       v-if="showVerification"
       :showVerification="true"
@@ -124,7 +163,6 @@ const onVerificationComplete = () => {
       @close="onVerificationComplete"
       @complete="onVerificationComplete"
     />
-
   </div>
 </template>
 
@@ -228,6 +266,11 @@ body {
   box-shadow: 0 10px 20px rgba(19, 97, 99, 0.25);
 }
 
+.signup-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .signup-bottom-section {
   text-align: center;
   margin-top: 20px;
@@ -243,8 +286,16 @@ body {
   text-decoration: underline;
 }
 
+.password-help {
+  display: block;
+  color: crimson;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
 #message {
   text-align: center;
+  color: crimson;
 }
 
 @media (max-width: 768px) {

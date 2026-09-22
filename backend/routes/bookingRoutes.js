@@ -1,4 +1,5 @@
 import express from 'express'
+import authMiddleware from '../middleware/authMiddleware.js'
 
 import {
     createBookingController,
@@ -6,12 +7,13 @@ import {
     getCustomerBookingsController
 } from '../controllers/bookingController.js'
 
+
 const router = express.Router()
 
-router.post('/', createBookingController)
+router.post('/', authMiddleware, createBookingController)
 
-router.get('/customer/:customerId', getCustomerBookingsController)
+router.get('/mine', authMiddleware, getCustomerBookingsController)
 
-router.get('/:id', getBookingController)
+router.get('/:id', authMiddleware, getBookingController)
 
 export default router

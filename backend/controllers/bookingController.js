@@ -7,7 +7,6 @@ import {
 export const createBookingController = async (req, res) => {
     try {
         const {
-            customerId,
             professionalId,
             serviceId,
             bookingDate,
@@ -18,6 +17,8 @@ export const createBookingController = async (req, res) => {
             postalCode,
             notes
         } = req.body
+
+        const customerId = req.user.user_id    //read from login token, not browser
 
         if (
             !customerId ||
@@ -93,7 +94,7 @@ export const getBookingController = async (req, res) => {
 
 export const getCustomerBookingsController = async (req, res) => {
     try {
-        const { customerId } = req.params
+        const { customerId } = req.user.user_id
 
         const bookings = await getBookingsByCustomerId(customerId)
 
