@@ -14,8 +14,6 @@ const professional = computed(() => {
     )
 })
 
-const customerId = 1
-
 const booking = ref({
     date: '',
     time: '',
@@ -64,7 +62,8 @@ const submitBooking = async () => {
     console.log('BOOKING FORM VALUES:', {
         date: booking.value.date,
         time: booking.value.time,
-        address: booking.value.city
+        address: booking.value.address,
+        city: booking.value.city
     })
 
     if (
@@ -87,8 +86,8 @@ const submitBooking = async () => {
 
         // CREATE BOOKING IN DATABASE
         const bookingResponse = await api.post('/bookings', {
-            customerId,
-            professionalName: professional.value.name,
+            professionalId: professional.value.professionalId,
+            serviceId: professional.value.serviceId,
             bookingDate: booking.value.date,
             bookingTime: booking.value.time,
             serviceAddress: booking.value.address,
@@ -106,12 +105,12 @@ const submitBooking = async () => {
             )
         }
 
-        const bookingId = bookingResponse.data.booking_id
+        const bookingId = bookingResponse.data.bookingId
 
         console.log('Booking created:', bookingId)
 
 
-        // Ask backend to create a pending PayFast payment for booking
+        // Create a pending PayFast payment for booking
         const paymentResponse = await api.post(
             '/payments/payfast',
             {
@@ -141,7 +140,7 @@ const submitBooking = async () => {
     } catch (error) {
         // console.error('Booking.payment error:', error)
         console.error('BOOKING ERROR STATUS:', error.response?.status)
-        console.error('BOOKING ERROR DATA', error.repsonse?.data)
+        console.error('BOOKING ERROR DATA', error.response?.data)
         console.error('BOOKING ERROR:', error)
 
         Swal.fire({
