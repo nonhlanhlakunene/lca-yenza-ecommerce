@@ -1,36 +1,75 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { professionals } from '../data/professionals.js'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Swal from 'sweetalert2'
+import api from '../api/api.js'
+// import { professionals } from '../data/professionals.js'
 
 const route = useRoute()
+const router = useRouter()
 
-const professional = computed(() => {
-    return professionals.find(
-        person => person.slug === route.params.slug
-    )
-})
+const professional = ref(null)
+const laoding = ref(true)
 
 const booking = ref({
     date: '',
     time: '',
     address: '',
-    notes: ''
+    city: '',
+    notes: '',
 })
 
-const submitBooking = () => {
-    if (
-        !booking.value.date ||
-        !booking.value.time ||
-        !booking.value.address
-    ) {
-        alert('Please complete all required fields.')
-        return
-    } alert('Your booking request has been submitted!')
+const isSubmitting = ref(false)
 
-    console.log('Booking:', booking.value)
-} 
-</script>
+onMounted(async () => {
+    if (!localStorage.getItem('token')) {
+        await Swal.fire({
+            icon: 'info',
+            title: 'Please log in',
+            text: 'You need to log in before you can book.'
+        })
+        router.push('/login')
+        return
+    }
+
+    try {
+        const response = await api.get('/professionals/${route.params.slug}')
+        professional.value = response.data.professional
+    } catch (error) {
+        console.error('Could not load professional:', error)
+    } finally {
+        loading.value = false
+    }
+})
+
+
+const submitPayFastForm = (paymentUrl, paymentData) => {
+    const form = document.createElement(2)
+}
+
+
+
+
+// //const booking = ref({
+//     date: '',
+//     time: '',
+//     address: '',
+//     notes: ''
+// })//
+
+// const submitBooking = () => {
+//     if (
+//         !booking.value.date ||
+//         !booking.value.time ||
+//         !booking.value.address
+//     ) {
+//         alert('Please complete all required fields.')
+//         return
+//     } alert('Your booking request has been submitted!')
+
+//     console.log('Booking:', booking.value)
+// } 
+// </script>
 
 
 
