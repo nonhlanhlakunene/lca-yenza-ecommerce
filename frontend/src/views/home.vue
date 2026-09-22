@@ -181,7 +181,7 @@ onMounted(() => {
     </div>
 </template>
 
-<style>
+<style scoped>
 
 @import url('https://db.onlinewebfonts.com/c/2da952d097bffd198ec0f0aa3fdd6804?family=JejuHallasan');
 

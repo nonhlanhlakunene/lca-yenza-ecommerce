@@ -165,7 +165,7 @@ const goToLogin = () => {
   </div>
 </template>
 
-<style>
+<style scoped>
 @import url('https://googleapis.com');
 
 body {

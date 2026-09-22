@@ -33,7 +33,9 @@
               required
             />
           </div>
-          <button class="send-otp" type="submit">Send Code</button>
+          <button class="send-otp" type="submit" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Sending...' : 'Send Code' }}
+          </button>
         </form>
       </div>
 
@@ -60,8 +62,8 @@
           <p v-if="otpError" class="error-message">
             Incorrect code, try again.
           </p>
-          <button class="send-otp" type="submit" :disabled="!isOtpComplete">
-            Verify OTP
+          <button class="send-otp" type="submit" :disabled="!isOtpComplete || isSubmitting">
+            {{ isSubmitting ? 'Verifying...' : 'Verify OTP' }}
           </button>
           <p
             class="resend"
@@ -100,8 +102,8 @@
             <p class="upload-info">Accepted formats: JPG, PNG, PDF · Max 5MB</p>
           </div>
 
-          <button class="send-otp" type="submit" :disabled="!idFile">
-            Continue
+          <button class="send-otp" type="submit" :disabled="!idFile || isSubmitting">
+            {{ isSubmitting ? 'Uploading...' : 'Continue' }}
           </button>
           <div class="row-actions">
             <button type="button" class="link-button" @click="goBack">
@@ -137,8 +139,8 @@
             <p class="upload-info">Accepted formats: JPG, PNG, PDF · Max 5MB</p>
           </div>
 
-          <button class="send-otp" type="submit" :disabled="!addressFile">
-            Continue
+          <button class="send-otp" type="submit" :disabled="!addressFile || isSubmitting">
+            {{ isSubmitting ? 'Uploading...' : 'Continue' }}
           </button>
           <div class="row-actions">
             <button type="button" class="link-button" @click="goBack">
@@ -174,8 +176,8 @@
             <p class="upload-info">Accepted formats: JPG, PNG, PDF · Max 5MB</p>
           </div>
 
-          <button class="send-otp" type="submit" :disabled="!policeClearanceFile">
-            Continue
+          <button class="send-otp" type="submit" :disabled="!policeClearanceFile || isSubmitting">
+            {{ isSubmitting ? 'Uploading...' : 'Continue' }}
           </button>
           <div class="row-actions">
             <button type="button" class="link-button" @click="goBack">
@@ -225,7 +227,9 @@
             placeholder="Describe your experience and the type of work you have done..."
           ></textarea>
 
-          <button class="send-otp" type="submit">Submit Information</button>
+          <button class="send-otp" type="submit" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Submitting...' : 'Submit Information' }}
+          </button>
           <div class="row-actions">
             <button type="button" class="link-button" @click="goBack">
               ← Back
@@ -268,6 +272,8 @@ import {
   verifyOtp,
   uploadDocument,
 } from "@/api/verification";
+
+import { showApiError } from "@/utils/apiError";
 
 export default {
   name: "PhoneVerification",
@@ -345,9 +351,7 @@ export default {
         this.startResendCountdown();
       } catch (err) {
         console.error("Send OTP failed:", err);
-        this.globalError =
-          err.response?.data?.message ||
-          "Failed to send code. Please try again.";
+        showApiError(err);
       } finally {
         this.isSubmitting = false;
       }
@@ -394,9 +398,13 @@ export default {
         this.step = this.userType === "worker" ? 3 : this.totalSteps;
       } catch (err) {
         console.error("Verify OTP failed:", err);
-        this.otpError = true;
-        this.globalError =
-          err.response?.data?.message || "Incorrect code. Please try again.";
+
+        // Wrong code → inline message near inputs
+        if (err.response?.status === 400) {
+          this.otpError = true;
+        } else {
+          showApiError(err);
+        }
       } finally {
         this.isSubmitting = false;
       }
@@ -430,9 +438,7 @@ export default {
         this.step = 4;
       } catch (err) {
         console.error("ID upload failed:", err);
-        this.globalError =
-          err.response?.data?.message ||
-          "Failed to upload ID. Please try again.";
+        showApiError(err);
       } finally {
         this.isSubmitting = false;
       }
@@ -458,9 +464,7 @@ export default {
         this.step = 5;
       } catch (err) {
         console.error("Address upload failed:", err);
-        this.globalError =
-          err.response?.data?.message ||
-          "Failed to upload address document. Please try again.";
+        showApiError(err);
       } finally {
         this.isSubmitting = false;
       }
@@ -486,9 +490,7 @@ export default {
         this.step = 6;
       } catch (err) {
         console.error("Police clearance upload failed:", err);
-        this.globalError =
-          err.response?.data?.message ||
-          "Failed to upload police clearance. Please try again.";
+        showApiError(err);
       } finally {
         this.isSubmitting = false;
       }
@@ -500,6 +502,7 @@ export default {
         return;
       }
       this.globalError = "";
+      this.isSubmitting = true;
 
       try {
         await submitExperience({
@@ -512,9 +515,9 @@ export default {
         this.step = this.totalSteps;
       } catch (err) {
         console.error("Experience submission failed:", err);
-        this.globalError =
-          err.response?.data?.message ||
-          "Something went wrong. Please try again.";
+        showApiError(err);
+      } finally {
+        this.isSubmitting = false;
       }
     },
 
