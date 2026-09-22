@@ -14,15 +14,15 @@ const showReport = ref(false)
 
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
 
-function initials(name) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-}
+// function initials(name) {
+//   return name
+//     .split(' ')
+//     .map((part) => part[0])
+//     .slice(0, 2)
+//     .join('')
+// }
 
-async function loadProfessional() {
+const loadProfessional = async () => {
   loading.value = true
   errorMessage.value = ''
   pro.value = null
@@ -33,6 +33,7 @@ async function loadProfessional() {
     )
 
     pro.value = response.data.professional
+    
   } catch (error) {
     console.error('Failed to load professional profile:', error)
 
