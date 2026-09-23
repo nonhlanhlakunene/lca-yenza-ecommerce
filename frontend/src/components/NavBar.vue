@@ -143,13 +143,51 @@ const logout = () => {
   top: 0;
   z-index: 1000;
   width: 100%;
-
   background-color: var(--color-primary);
   display: flex;
   justify-content: flex-end;
   align-items: center;
   padding: var(--spacing-sm) var(--spacing-md);
   box-sizing: border-box;
+}
+
+/* ---------- HAMBURGER BUTTON (hidden on desktop) ---------- */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  z-index: 1001;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: #ffffff;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: center;
+}
+
+/* Turn into X when open */
+.hamburger span.open:nth-child(1) {
+  transform: translateY(9.5px) rotate(45deg);
+}
+
+.hamburger span.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger span.open:nth-child(3) {
+  transform: translateY(-9.5px) rotate(-45deg);
 }
 
 /* ---------- DESKTOP LINKS ---------- */
@@ -194,6 +232,10 @@ const logout = () => {
   color: #ffffff;
   opacity: 1;
 }
+
+/* ========================= */
+/* MOBILE VIEW */
+/* ========================= */
 
 @media (max-width: 768px) {
   .home-navbar {
