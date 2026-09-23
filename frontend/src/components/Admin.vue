@@ -204,6 +204,86 @@ const formatDocumentType = (type) => {
 }
 
 // ============================================================
+// REPORTS
+// ============================================================
+
+const reports = ref([])
+const reportsLoading = ref(false)
+
+const loadReports = async () => {
+  reportsLoading.value = true
+  try {
+    const response = await fetch(
+      'http://localhost:3000/api/admin/reports',
+      { headers: getAuthHeaders() }
+    )
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.message || 'Failed to load reports')
+    reports.value = data.reports || []
+  } catch (error) {
+    console.error('Reports error:', error)
+  } finally {
+    reportsLoading.value = false
+  }
+}
+
+const updateReportStatus = async (reportId, newStatus) => {
+  const result = await Swal.fire({
+    title: 'Update report status?',
+    text: `Set this report to "${newStatus}"?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, update',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#136163',
+    cancelButtonColor: '#183b56',
+    reverseButtons: true
+  })
+
+  if (!result.isConfirmed) return
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/admin/reports/${reportId}`,
+      {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status: newStatus })
+      }
+    )
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.message || 'Update failed')
+
+    const report = reports.value.find(r => r.id === reportId)
+    if (report) report.status = newStatus
+
+    Swal.fire({
+      title: 'Report updated',
+      text: `Status changed to "${newStatus}".`,
+      icon: 'success',
+      confirmButtonColor: '#136163'
+    })
+  } catch (error) {
+    console.error('Update report error:', error)
+    Swal.fire({
+      title: 'Update failed',
+      text: error.message,
+      icon: 'error',
+      confirmButtonColor: '#136163'
+    })
+  }
+}
+
+const formatReportDate = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
+// ============================================================
 
 const loadWorkers = async () => {
   try {
@@ -324,7 +404,8 @@ const loadAdminData = async () => {
     loadWorkerServices(),
     loadBookingStatuses(),
     loadBookingsByService(),
-    loadPendingVerifications()
+    loadPendingVerifications(),
+    loadReports()
   ])
 
   loading.value = false
@@ -983,6 +1064,77 @@ onMounted(() => {
             class="no-bookings"
           >
             No booking data available.
+          </div>
+
+        </section>
+
+        <!-- SUBMITTED REPORTS -->
+        <section class="dashboard-card reports-list-section">
+
+          <div class="section-heading">
+            <div>
+              <span class="section-label">MODERATION</span>
+              <h2>Submitted Reports</h2>
+              <p>Review reports filed by users.</p>
+            </div>
+
+            <span class="reports-count-badge">
+              {{ reports.length }} reports
+            </span>
+          </div>
+
+          <div v-if="reportsLoading" class="loading-row">
+            Loading reports...
+          </div>
+
+          <div v-else-if="reports.length === 0" class="empty-pending">
+            No reports submitted.
+          </div>
+
+          <div v-else class="reports-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Reporter</th>
+                  <th>Reported</th>
+                  <th>Reason</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="r in reports" :key="r.id">
+                  <td class="worker-name">
+                    {{ r.reporter_first_name }} {{ r.reporter_last_name }}
+                  </td>
+                  <td>
+                    {{ r.reported_first_name }} {{ r.reported_last_name }}
+                  </td>
+                  <td>
+                    <span class="reason-badge">{{ r.reason }}</span>
+                  </td>
+                  <td>{{ formatReportDate(r.created_at) }}</td>
+                  <td>
+                    <span class="status-badge" :class="'status-' + r.status">
+                      {{ r.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <select
+                      :value="r.status"
+                      @change="updateReportStatus(r.id, $event.target.value)"
+                      class="status-select"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="under_review">Under Review</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="dismissed">Dismissed</option>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
         </section>
@@ -2271,6 +2423,88 @@ onMounted(() => {
 
 .verify-reject:hover {
   background: #ebd0d0;
+}
+
+/* =========================================================
+   SUBMITTED REPORTS
+========================================================= */
+
+.reports-list-section {
+  min-height: 200px;
+}
+
+.reports-count-badge {
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #e8eaf6;
+  color: #3949ab;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.reports-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.reports-table table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.reports-table th {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e8eeee;
+  color: #80898b;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.reports-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f0f3f3;
+  color: #303738;
+  font-size: 11px;
+}
+
+.reason-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #fff3e0;
+  color: #b26a00;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-pending { background: #fff3e0; color: #b26a00; }
+.status-under_review { background: #e3f2fd; color: #1565c0; }
+.status-resolved { background: #e8f5e9; color: #2e7d32; }
+.status-dismissed { background: #eeeeee; color: #616161; }
+
+.status-select {
+  padding: 4px 8px;
+  border: 1px solid #dfe5e5;
+  border-radius: 6px;
+  font-size: 10px;
+  background: white;
+  cursor: pointer;
 }
 
 @media (min-width: 1400px) {

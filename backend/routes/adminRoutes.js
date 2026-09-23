@@ -15,36 +15,35 @@ import {
   rejectVerificationController,
 } from "../controllers/adminControllers.js";
 
+import {
+  getAllReportsController,
+  updateReportStatusController,
+} from "../controllers/reportController.js";
+
 const router = express.Router();
 
 router.use(adminMiddleware);
 
 router.get("/workers", getWorkers);
-
 router.get("/stats", getStats);
-
 router.get("/activity", getWorkerActivity);
-
 router.get("/services", getWorkerServices);
-
 router.get("/booking-status", getBookingStatus);
-
 router.get("/bookings-by-service", getBookingsByService);
-
 router.delete("/workers/:id", removeWorker);
 
 router.get("/pending-verifications", getPendingVerificationsController);
-
 router.get("/verifications/:professionalId", getVerificationDetailsController);
-
 router.post(
   "/verifications/:professionalId/approve",
   approveVerificationController,
 );
-
 router.post(
   "/verifications/:professionalId/reject",
   rejectVerificationController,
 );
+
+router.get("/reports", getAllReportsController);
+router.patch("/reports/:id", updateReportStatusController);
 
 export default router;
