@@ -16,6 +16,7 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 import api from '../api/api.js'
 
+
 delete L.Icon.Default.prototype._getIconUrl
 
 L.Icon.Default.mergeOptions({
@@ -24,28 +25,17 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow
 })
 
+
 const categories = ref([])
-
 const professionals = ref([])
-
 const activeCategory = ref('')
-
 const activeFilter = ref('All')
-
 const search = ref('')
-
 const currentPage = ref(1)
-
-const priceFilter =
-    ref('All prices')
-
-const priceMenuOpen =
-    ref(false)
-
+const priceFilter = ref('All prices')
+const priceMenuOpen = ref(false)
 const loading = ref(false)
-
-const errorMessage =
-    ref('')
+const errorMessage = ref('')
 
 const workersPerPage = 3
 
@@ -61,140 +51,91 @@ const priceOptions = [
     'R501+/hr'
 ]
 
-/*
-|--------------------------------------------------------------------------
-| MAP
-|--------------------------------------------------------------------------
-*/
 
-const mapElement =
-    ref(null)
+const mapElement = ref(null)
+const map = ref(null)
+const markersLayer = ref(null)
+const mapReady = ref(false)
+const mapFilterEnabled = ref(false)
+const workerLocations = ref([])
+const geocoding = ref(false)
+const mapMessage = ref('')
+const selectedProfessionalId = ref(null)
 
-const map =
-    ref(null)
 
-const markersLayer =
-    ref(null)
+const filteredProfessionals = computed(() => {
+    let result = [...professionals.value]
 
-const mapReady =
-    ref(false)
+    if (
+        mapFilterEnabled.value &&
+        mapReady.value &&
+        map.value
+    ) {
+        const bounds = map.value.getBounds()
 
-const mapFilterEnabled =
-    ref(false)
+        result = result.filter(pro => {
+            const location =
+                workerLocations.value.find(
+                    item =>
+                        String(item.id) ===
+                        String(pro.id)
+                )
 
-const workerLocations =
-    ref([])
+            if (!location) {
+                return false
+            }
 
-const geocoding =
-    ref(false)
+            return bounds.contains([
+                location.latitude,
+                location.longitude
+            ])
+        })
+    }
 
-const mapMessage =
-    ref('')
+    return result
+})
 
-const selectedProfessionalId =
-    ref(null)
 
-/*
-|--------------------------------------------------------------------------
-| PROFESSIONAL FILTERING
-|--------------------------------------------------------------------------
-*/
+const totalPages = computed(() =>
+    Math.ceil(
+        filteredProfessionals.value.length /
+        workersPerPage
+    )
+)
 
-const filteredProfessionals =
-    computed(() => {
-        let result = [
-            ...professionals.value
-        ]
 
-        if (
-            mapFilterEnabled.value &&
-            mapReady.value
-        ) {
-            const bounds =
-                map.value.getBounds()
+const visibleProfessionals = computed(() => {
+    const start =
+        (currentPage.value - 1) *
+        workersPerPage
 
-            result =
-                result.filter(pro => {
-                    const location =
-                        workerLocations.value.find(
-                            item =>
-                                String(
-                                    item.id
-                                ) ===
-                                String(
-                                    pro.id
-                                )
-                        )
+    const end =
+        start + workersPerPage
 
-                    if (
-                        !location ||
-                        location.latitude === null ||
-                        location.longitude === null
-                    ) {
-                        return false
-                    }
+    return filteredProfessionals.value.slice(
+        start,
+        end
+    )
+})
 
-                    return bounds.contains([
-                        location.latitude,
-                        location.longitude
-                    ])
-                })
-        }
 
-        return result
-    })
-
-/*
-|--------------------------------------------------------------------------
-| PAGINATION
-|--------------------------------------------------------------------------
-*/
-
-const totalPages =
-    computed(() => {
-        return Math.ceil(
-            filteredProfessionals.value
-                .length /
-            workersPerPage
-        )
-    })
-
-const visibleProfessionals =
-    computed(() => {
-        const start =
-            (currentPage.value - 1) *
-            workersPerPage
-
-        const end =
-            start + workersPerPage
-
-        return filteredProfessionals.value.slice(
-            start,
-            end
-        )
-    })
-
-/*
-|--------------------------------------------------------------------------
-| PRICE FILTER
-|--------------------------------------------------------------------------
-*/
-
-function addPriceParams(
-    params
-) {
+function addPriceParams(params) {
     if (
         priceFilter.value ===
         'Under R300/hr'
     ) {
         params.maxPrice = 299.99
-    } else if (
+    }
+
+    if (
         priceFilter.value ===
         'R300 – R500/hr'
     ) {
         params.minPrice = 300
         params.maxPrice = 500
-    } else if (
+    }
+
+    if (
         priceFilter.value ===
         'R501+/hr'
     ) {
@@ -202,30 +143,27 @@ function addPriceParams(
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| LOAD PROFESSIONALS
-|--------------------------------------------------------------------------
-*/
+
+function selectPrice(option) {
+    priceFilter.value = option
+    priceMenuOpen.value = false
+    currentPage.value = 1
+}
+
 
 async function loadProfessionals() {
     loading.value = true
-
     errorMessage.value = ''
 
     try {
         const params = {}
 
-        if (
-            activeCategory.value
-        ) {
+        if (activeCategory.value) {
             params.category =
                 activeCategory.value
         }
 
-        if (
-            search.value.trim()
-        ) {
+        if (search.value.trim()) {
             params.search =
                 search.value.trim()
         }
@@ -234,28 +172,22 @@ async function loadProfessionals() {
             activeFilter.value ===
             'Reviews'
         ) {
-            params.sort =
-                'reviews'
+            params.sort = 'reviews'
         } else if (
             activeFilter.value ===
             'Rating'
         ) {
-            params.sort =
-                'rating'
+            params.sort = 'rating'
         } else if (
             priceFilter.value !==
             'All prices'
         ) {
-            params.sort =
-                'price-asc'
+            params.sort = 'price-asc'
         } else {
-            params.sort =
-                'best-match'
+            params.sort = 'best-match'
         }
 
-        addPriceParams(
-            params
-        )
+        addPriceParams(params)
 
         const response =
             await api.get(
@@ -266,76 +198,74 @@ async function loadProfessionals() {
             )
 
         professionals.value =
-            response.data
-                .professionals || []
+            response.data.professionals || []
 
         currentPage.value = 1
 
         await updateMapMarkers()
+
     } catch (error) {
         console.error(
-            'Failed to load professionals:',
+            'Load professionals error:',
             error
         )
 
-        professionals.value = []
-
-        currentPage.value = 1
-
         errorMessage.value =
-            error.response?.data?.message ||
             'Unable to load professionals. Please try again.'
     } finally {
         loading.value = false
     }
 }
 
+
 async function searchForProfessional() {
     await loadProfessionals()
 
-    if (!search.value.trim() || !professionals.value.length) return
+    if (
+        !search.value.trim() ||
+        !professionals.value.length
+    ) {
+        return
+    }
 
     await geocodeProfessionals()
 
-    const searchTerm = search.value.trim().toLowerCase()
-    const professional = professionals.value.find(
-        item => item.name.toLowerCase() === searchTerm
-    ) || professionals.value[0]
+    const searchTerm =
+        search.value
+            .trim()
+            .toLowerCase()
 
-    focusProfessionalOnMap(professional.id)
+    const professional =
+        professionals.value.find(
+            item =>
+                item.name
+                    .toLowerCase() ===
+                searchTerm
+        ) ||
+        professionals.value[0]
+
+    focusProfessionalOnMap(
+        professional.id
+    )
 }
 
-/*
-|--------------------------------------------------------------------------
-| LOAD CATEGORIES
-|--------------------------------------------------------------------------
-*/
 
 async function loadCategories() {
     try {
         const response =
-            await api.get(
-                '/categories'
-            )
+            await api.get('/categories')
 
         categories.value =
-            response.data
-                .categories || []
+            response.data.categories || []
+
     } catch (error) {
         console.error(
-            'Failed to load categories:',
+            'Load categories error:',
             error
         )
-
-        categories.value = []
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| MAP INITIALISATION
-|--------------------------------------------------------------------------
-*/
 
 function initialiseMap() {
     if (
@@ -345,34 +275,25 @@ function initialiseMap() {
         return
     }
 
-    map.value =
-        L.map(
-            mapElement.value,
-            {
-                zoomControl: true
-            }
-        ).setView(
-            [
-                -33.9249,
-                18.4241
-            ],
-            11
-        )
+    map.value = L.map(
+        mapElement.value
+    ).setView(
+        [
+            -33.9249,
+            18.4241
+        ],
+        11
+    )
 
     L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
-            attribution:
-                '&copy; OpenStreetMap contributors',
-
-            // OpenStreetMap supplies tiles through zoom 19. Allowing Leaflet
-            // to scale those tiles prevents a blank map at our focus zoom of 20.
             maxNativeZoom: 19,
-            maxZoom: 20
+            maxZoom: 20,
+            attribution:
+                '&copy; OpenStreetMap contributors'
         }
-    ).addTo(
-        map.value
-    )
+    ).addTo(map.value)
 
     markersLayer.value =
         L.layerGroup().addTo(
@@ -404,38 +325,30 @@ function initialiseMap() {
     mapReady.value = true
 }
 
-/*
-|--------------------------------------------------------------------------
-| CREATE ADDRESS
-|--------------------------------------------------------------------------
-*/
 
-function getProfessionalAddress(
-    professional
-) {
+function getProfessionalAddress(pro) {
     return [
-        professional.address,
-        professional.city,
-        professional.province,
-        professional.postal_code,
+        pro.address,
+        pro.city,
+        pro.province,
+        pro.postal_code,
         'South Africa'
     ]
         .filter(Boolean)
         .join(', ')
 }
 
-/*
-|--------------------------------------------------------------------------
-| GEOCODING
-|--------------------------------------------------------------------------
-*/
 
-async function geocodeAddress(
-    address
-) {
+async function geocodeAddress(address) {
+    if (!address) {
+        return null
+    }
+
     try {
         const url =
-            'https://nominatim.openstreetmap.org/search?' +
+            'https://nominatim.openstreetmap.org/search'
+
+        const params =
             new URLSearchParams({
                 q: address,
                 format: 'json',
@@ -444,42 +357,37 @@ async function geocodeAddress(
             })
 
         const response =
-            await fetch(url, {
-                headers: {
-                    Accept:
-                        'application/json'
+            await fetch(
+                `${url}?${params.toString()}`,
+                {
+                    headers: {
+                        Accept:
+                            'application/json'
+                    }
                 }
-            })
+            )
 
-        if (
-            !response.ok
-        ) {
+        if (!response.ok) {
             return null
         }
 
         const data =
             await response.json()
 
-        if (
-            !data.length
-        ) {
+        if (!data.length) {
             return null
         }
 
         return {
             latitude:
-                Number(
-                    data[0].lat
-                ),
-
+                Number(data[0].lat),
             longitude:
-                Number(
-                    data[0].lon
-                )
+                Number(data[0].lon)
         }
+
     } catch (error) {
         console.error(
-            'Geocoding failed:',
+            'Geocoding error:',
             error
         )
 
@@ -487,25 +395,16 @@ async function geocodeAddress(
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| GEOCODE ALL PROFESSIONALS
-|--------------------------------------------------------------------------
-*/
 
 async function geocodeProfessionals() {
-    if (
-        !professionals.value.length
-    ) {
+    if (!professionals.value.length) {
         workerLocations.value = []
-
         return
     }
 
     geocoding.value = true
-
     mapMessage.value =
-        'Finding worker locations...'
+        'Loading worker locations...'
 
     const locations = []
 
@@ -513,34 +412,17 @@ async function geocodeProfessionals() {
         const professional
         of professionals.value
     ) {
-        const address =
-            getProfessionalAddress(
-                professional
-            )
-
         let coordinates = null
 
-        /*
-         * If the API ever gives us
-         * coordinates in the future,
-         * use them first.
-         */
         if (
-            professional.latitude !==
-                undefined &&
-            professional.longitude !==
-                undefined &&
-            professional.latitude !==
-                null &&
-            professional.longitude !==
-                null
+            professional.latitude &&
+            professional.longitude
         ) {
             coordinates = {
                 latitude:
                     Number(
                         professional.latitude
                     ),
-
                 longitude:
                     Number(
                         professional.longitude
@@ -548,23 +430,17 @@ async function geocodeProfessionals() {
             }
         }
 
-        /*
-         * Otherwise use the existing
-         * database address.
-         */
-        if (
-            !coordinates &&
-            address
-        ) {
+        if (!coordinates) {
+            const address =
+                getProfessionalAddress(
+                    professional
+                )
+
             coordinates =
                 await geocodeAddress(
                     address
                 )
 
-            /*
-             * Small delay between
-             * requests.
-             */
             await new Promise(
                 resolve =>
                     setTimeout(
@@ -574,21 +450,15 @@ async function geocodeProfessionals() {
             )
         }
 
-        locations.push({
-            id: professional.id,
-
-            latitude:
-                coordinates
-                    ? coordinates.latitude
-                    : null,
-
-            longitude:
-                coordinates
-                    ? coordinates.longitude
-                    : null,
-
-            address
-        })
+        if (coordinates) {
+            locations.push({
+                id: professional.id,
+                latitude:
+                    coordinates.latitude,
+                longitude:
+                    coordinates.longitude
+            })
+        }
     }
 
     workerLocations.value =
@@ -596,20 +466,17 @@ async function geocodeProfessionals() {
 
     geocoding.value = false
 
-    mapMessage.value = ''
+    mapMessage.value =
+        `${locations.length} worker location(s) found.`
 
-    updateMapMarkers()
+    await updateMapMarkers()
 }
 
-/*
-|--------------------------------------------------------------------------
-| UPDATE MAP MARKERS
-|--------------------------------------------------------------------------
-*/
 
-function updateMapMarkers() {
+async function updateMapMarkers() {
     if (
         !mapReady.value ||
+        !map.value ||
         !markersLayer.value
     ) {
         return
@@ -617,154 +484,134 @@ function updateMapMarkers() {
 
     markersLayer.value.clearLayers()
 
-    const markerBounds = []
-
-    professionals.value.forEach(
-        professional => {
-            const location =
-                workerLocations.value.find(
-                    item =>
-                        String(
-                            item.id
-                        ) ===
-                        String(
-                            professional.id
-                        )
-                )
-
-            if (
-                !location ||
-                location.latitude === null ||
-                location.longitude === null
-            ) {
-                return
-            }
-
-            const marker =
-                L.marker([
-                    location.latitude,
-                    location.longitude
-                ], {
-                    professionalId: professional.id
-                })
-
-            const popup = `
-                <div class="map-popup">
-                    <strong>
-                        ${escapeHtml(
-                            professional.name ||
-                            'Professional'
-                        )}
-                    </strong>
-
-                    <br>
-
-                    <span>
-                        ${escapeHtml(
-                            professional.job ||
-                            'Professional'
-                        )}
-                    </span>
-
-                    <br>
-
-                    <strong>
-                        R${Number(
-                            professional.price || 0
-                        ).toFixed(2)}/hr
-                    </strong>
-
-                    <br>
-
-                    <span>
-                        ${escapeHtml(
-                            professional.city ||
-                            ''
-                        )}
-                    </span>
-                </div>
-            `
-
-            marker.bindPopup(
-                popup
+    for (
+        const professional
+        of professionals.value
+    ) {
+        const location =
+            workerLocations.value.find(
+                item =>
+                    String(item.id) ===
+                    String(
+                        professional.id
+                    )
             )
 
-            marker.on(
-                'click',
-                () => {
-                    focusProfessionalOnMap(professional.id)
-                }
-            )
+        if (!location) {
+            continue
+        }
 
-            marker.addTo(
-                markersLayer.value
-            )
-
-            markerBounds.push([
+        const marker =
+            L.marker([
                 location.latitude,
                 location.longitude
             ])
-        }
-    )
 
-    /*
-     * Only fit the map to workers
-     * when the map is first populated.
-     */
-    if (
-        markerBounds.length &&
-        !map.value._yenzaInitialFit
-    ) {
-        map.value.fitBounds(
-            markerBounds,
-            {
-                padding: [
-                    30,
-                    30
-                ]
+        const name =
+            escapeHtml(
+                professional.name ||
+                'Professional'
+            )
+
+        const job =
+            escapeHtml(
+                professional.job ||
+                ''
+            )
+
+        const city =
+            escapeHtml(
+                professional.city ||
+                ''
+            )
+
+        marker.bindPopup(`
+            <div>
+                <strong>${name}</strong>
+                <br>
+                ${job}
+                <br>
+                R${professional.price || 0}/hr
+                <br>
+                ${city}
+            </div>
+        `)
+
+        marker.on(
+            'click',
+            () => {
+                focusProfessionalOnMap(
+                    professional.id
+                )
             }
         )
 
-        map.value._yenzaInitialFit =
-            true
+        marker.addTo(
+            markersLayer.value
+        )
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| HTML ESCAPE FOR POPUPS
-|--------------------------------------------------------------------------
-*/
 
-function focusProfessionalOnMap(professionalId) {
-    if (!map.value || !markersLayer.value) return
-
-    const location = workerLocations.value.find(
-        item => String(item.id) === String(professionalId)
-    )
-
-    if (!location || location.latitude === null || location.longitude === null) {
-        mapMessage.value = 'This professional does not have a mapped location yet.'
+function focusProfessionalOnMap(id) {
+    if (
+        !map.value ||
+        !mapReady.value
+    ) {
         return
     }
 
-    selectedProfessionalId.value = professionalId
+    const location =
+        workerLocations.value.find(
+            item =>
+                String(item.id) ===
+                String(id)
+        )
 
-    map.value.flyTo([location.latitude, location.longitude], 20, {
-        animate: true,
-        duration: 0.8
-    })
+    if (!location) {
+        return
+    }
 
-    const marker = markersLayer.value.getLayers().find(
-        layer => String(layer.options.professionalId) === String(professionalId)
+    selectedProfessionalId.value =
+        id
+
+    map.value.flyTo(
+        [
+            location.latitude,
+            location.longitude
+        ],
+        20,
+        {
+            animate: true,
+            duration: 0.8
+        }
     )
 
-    marker?.openPopup()
+    setTimeout(() => {
+        markersLayer.value.eachLayer(
+            marker => {
+                const latLng =
+                    marker.getLatLng()
+
+                if (
+                    Math.abs(
+                        latLng.lat -
+                        location.latitude
+                    ) < 0.000001 &&
+                    Math.abs(
+                        latLng.lng -
+                        location.longitude
+                    ) < 0.000001
+                ) {
+                    marker.openPopup()
+                }
+            }
+        )
+    }, 900)
 }
 
-function escapeHtml(
-    value
-) {
+
+function escapeHtml(value) {
     return String(value)
         .replace(
             /&/g,
@@ -788,11 +635,6 @@ function escapeHtml(
         )
 }
 
-/*
-|--------------------------------------------------------------------------
-| MAP FILTER
-|--------------------------------------------------------------------------
-*/
 
 function toggleMapFilter() {
     mapFilterEnabled.value =
@@ -801,67 +643,42 @@ function toggleMapFilter() {
     currentPage.value = 1
 }
 
-function clearMapFilter() {
-    mapFilterEnabled.value =
-        false
 
+function clearMapFilter() {
+    mapFilterEnabled.value = false
     currentPage.value = 1
 }
 
-/*
-|--------------------------------------------------------------------------
-| RESET MAP VIEW
-|--------------------------------------------------------------------------
-*/
 
 function showAllWorkersOnMap() {
     if (
-        !map.value
+        !map.value ||
+        !workerLocations.value.length
     ) {
         return
     }
 
-    const coordinates =
-        workerLocations.value
-            .filter(
-                location =>
-                    location.latitude !==
-                        null &&
-                    location.longitude !==
-                        null
-            )
-            .map(
+    const bounds =
+        L.latLngBounds(
+            workerLocations.value.map(
                 location => [
                     location.latitude,
                     location.longitude
                 ]
             )
-
-    if (
-        coordinates.length
-    ) {
-        map.value.fitBounds(
-            coordinates,
-            {
-                padding: [
-                    30,
-                    30
-                ]
-            }
         )
-    }
 
-    mapFilterEnabled.value =
-        false
+    map.value.fitBounds(
+        bounds,
+        {
+            padding: [30, 30]
+        }
+    )
 
+    mapFilterEnabled.value = false
     currentPage.value = 1
 }
 
-/*
-|--------------------------------------------------------------------------
-| PAGINATION
-|--------------------------------------------------------------------------
-*/
 
 function nextPage() {
     if (
@@ -872,6 +689,7 @@ function nextPage() {
     }
 }
 
+
 function previousPage() {
     if (
         currentPage.value > 1
@@ -880,33 +698,24 @@ function previousPage() {
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| INITIALS
-|--------------------------------------------------------------------------
-*/
 
-function initials(
-    name
-) {
+function initials(name) {
     if (!name) {
-        return ''
+        return '?'
     }
 
     return name
         .split(' ')
-        .map(
-            part => part[0]
-        )
+        .filter(Boolean)
         .slice(0, 2)
+        .map(
+            part =>
+                part.charAt(0)
+        )
         .join('')
+        .toUpperCase()
 }
 
-/*
-|--------------------------------------------------------------------------
-| WATCHERS
-|--------------------------------------------------------------------------
-*/
 
 watch(
     [
@@ -917,10 +726,10 @@ watch(
     ],
     () => {
         currentPage.value = 1
-
         loadProfessionals()
     }
 )
+
 
 watch(
     mapFilterEnabled,
@@ -929,40 +738,23 @@ watch(
     }
 )
 
-/*
-|--------------------------------------------------------------------------
-| MOUNT
-|--------------------------------------------------------------------------
-*/
 
-onMounted(
-    async () => {
-        initialiseMap()
+onMounted(async () => {
+    initialiseMap()
+    await loadCategories()
+    await loadProfessionals()
+    await geocodeProfessionals()
+})
 
-        await loadCategories()
 
-        await loadProfessionals()
-
-        await geocodeProfessionals()
+onBeforeUnmount(() => {
+    if (map.value) {
+        map.value.remove()
+        map.value = null
     }
-)
-
-/*
-|--------------------------------------------------------------------------
-| CLEANUP
-|--------------------------------------------------------------------------
-*/
-
-onBeforeUnmount(
-    () => {
-        if (map.value) {
-            map.value.remove()
-
-            map.value = null
-        }
-    }
-)
+})
 </script>
+
 
 <template>
   <main class="directory-shell">
@@ -1096,10 +888,7 @@ onBeforeUnmount(
                   priceFilter ===
                   option
               }"
-              @click="
-                priceFilter = option;
-                priceMenuOpen = false
-              "
+              @click="selectPrice(option)"
             >
               {{ option }}
             </button>
@@ -1124,6 +913,7 @@ onBeforeUnmount(
         </button>
 
       </div>
+
 
       <!-- MAP -->
 
@@ -1199,6 +989,7 @@ onBeforeUnmount(
 
       </section>
 
+
       <!-- RESULTS -->
 
       <div class="results-heading">
@@ -1226,6 +1017,7 @@ onBeforeUnmount(
         </span>
 
       </div>
+
 
       <div class="results-area">
 
@@ -1320,6 +1112,7 @@ onBeforeUnmount(
 
               </div>
 
+
               <div class="card-footer">
 
                 <div class="tags">
@@ -1361,9 +1154,7 @@ onBeforeUnmount(
         </template>
 
       </div>
-      <div v-if="loading">
-    Loading professionals...
-</div>
+
 
       <nav
         v-if="totalPages > 1"
