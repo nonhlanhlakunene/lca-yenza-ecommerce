@@ -3,6 +3,7 @@ import express from "express";
 import {
     getDashboard,
     getProfile,
+    updateProfile,
     updateAvailability,
     acceptBooking,
     declineBooking
@@ -25,6 +26,12 @@ router.get(
     "/me",
     authMiddleware,
     getProfile
+);
+
+router.put(
+    "/me",
+    authMiddleware,
+    updateProfile
 );
 
 

@@ -303,6 +303,21 @@ const updateAvailability = async (
 };
 
 
+const updateProfessionalProfile = async (userId, profile) => {
+    await db.query(
+        `UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE user_id = ?`,
+        [profile.first_name, profile.last_name, profile.email, profile.phone || null, userId]
+    );
+    await db.query(
+        `UPDATE professionals SET service_id = ?, bio = ?, experience_years = ?, hourly_rate = ?, address = ?, city = ?,
+         province = ?, postal_code = ?, profile_image = ?, availability_status = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`,
+        [profile.service_id, profile.bio || null, profile.experience_years || 0, profile.hourly_rate,
+            profile.address || null, profile.city || null, profile.province || null, profile.postal_code || null,
+            profile.profile_image || null, profile.availability_status, userId]
+    );
+    return getProfessionalByUserId(userId);
+};
+
 export default {
     getProfessionalByUserId,
     getDashboardStats,
@@ -312,5 +327,6 @@ export default {
     getBookingById,
     acceptBooking,
     declineBooking,
-    updateAvailability
+    updateAvailability,
+    updateProfessionalProfile
 };
