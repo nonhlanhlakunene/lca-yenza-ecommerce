@@ -88,6 +88,7 @@ const navLinks = computed(() => {
   }
 
   if (currentUser.value) {
+    links.push({ text: 'Settings', path: '/settings' })
     links.push({
       text: 'Logout',
       path: '/login'

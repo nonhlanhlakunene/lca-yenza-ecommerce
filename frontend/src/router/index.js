@@ -14,6 +14,8 @@ import HandymanProfileView from '../views/HandymanProfileView.vue'
 import ServicesView from '../views/ServicesView.vue'
 import Admin from '@/components/Admin.vue'
 import workerDashboardView from '../views/workerDashboardView.vue'
+import SettingsView from '../views/SettingsView.vue'
+import WorkerSettingsView from '../views/WorkerSettingsView.vue'
 
 const routes = [
   {
@@ -93,6 +95,12 @@ const routes = [
     component: ServicesView
   },
   {
+    path: '/settings',
+    name: 'settings',
+    component: SettingsView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/worker',
     name: 'workerDashboardView',
     component: workerDashboardView,
@@ -100,6 +108,12 @@ const routes = [
       requiresAuth: true,
       roles: ['professional', 'worker']
     }
+  },
+  {
+    path: '/worker/settings',
+    name: 'worker-settings',
+    component: WorkerSettingsView,
+    meta: { requiresAuth: true, roles: ['professional', 'worker'] }
   },
   {
     path: '/contact',
