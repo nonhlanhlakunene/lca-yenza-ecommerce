@@ -7,31 +7,31 @@ import Footer from './components/Footer.vue'
 
 const route = useRoute()
 
-const hideLayout = computed(() => {
-  return [
-    '/login',
-    '/signup',
-    '/worker',
-    '/workerlogin',
-    '/admin',
-    '/workersignup'
-  ].includes(route.path) ||
-  (route.name === 'profile' && route.query.fromAdmin === 'true')
-})
+// const hideLayout = computed(() => {
+//   return [
+//     '/login',
+//     '/signup',
+//     '/worker',
+//     '/workerlogin',
+//     '/admin',
+//     '/workersignup'
+//   ].includes(route.path) ||
+//   (route.name === 'profile' && route.query.fromAdmin === 'true')
+// })
 </script>
 
 <template>
-  <!-- <NavBar v-if="!hideLayout" />
+  <!-- <NavBar v-if="!hideLayout"
 
   <RouterView />
 
   <Footer v-if="!hideLayout" /> -->
-    <NavBar v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
-    
-    <RouterView />
-    
-    <Footer v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin'].includes(route.path)" />
-    
+  <NavBar
+    v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path) && !(route.name === 'profile' && route.query.fromAdmin === 'true')" />
+  <RouterView />
+  <Footer
+    v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path) && !(route.name === 'profile' && route.query.fromAdmin === 'true')" />
+
 </template>
 
 <style>
