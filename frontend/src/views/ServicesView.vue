@@ -271,7 +271,6 @@ async function loadProfessionals() {
 
         currentPage.value = 1
 
-        await updateMapMarkers()
     } catch (error) {
         console.error(
             'Failed to load professionals:',
@@ -608,6 +607,9 @@ async function geocodeProfessionals() {
 */
 
 function updateMapMarkers() {
+    if (!map.value) {
+        return
+    }
     if (
         !mapReady.value ||
         !markersLayer.value
@@ -713,6 +715,7 @@ function updateMapMarkers() {
      */
     if (
         markerBounds.length &&
+        map.value &&
         !map.value._yenzaInitialFit
     ) {
         map.value.fitBounds(

@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/api.js'
-import Swal from 'sweetalert2'
+import ReportPopup from '../components/ReportPopup.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,86 +11,61 @@ const pro = ref(null)
 const loading = ref(true)
 const errorMessage = ref('')
 const showReport = ref(false)
-
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
 
-// function initials(name) {
-//   return name
-//     .split(' ')
-//     .map((part) => part[0])
-//     .slice(0, 2)
-//     .join('')
-// }
-
 const loadProfessional = async () => {
-  loading.value = true
-  errorMessage.value = ''
-  pro.value = null
+    loading.value = true
+    errorMessage.value = ''
+    pro.value = null
 
-  try {
-    const response = await api.get(
-      `/professionals/${encodeURIComponent(route.params.slug)}`
-    )
-
-    pro.value = response.data.professional
-    
-  } catch (error) {
-    console.error('Failed to load professional profile:', error)
-
-    errorMessage.value =
-      error.response?.data?.message ||
-      'Unable to load this profile. Please try again.'
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(
-  () => route.params.slug,
-  loadProfessional,
-  { immediate: true }
-)
-// const pro = ref(null)
-// const loading = ref(true)
-// const errorMessage = ref('')
-// const showReport = ref(false)
-
-// If we arrived here from the Admin page, show a different back button
-// const fromAdmin = computed(() => route.query.from === 'admin')
-
-onMounted(async () => {
     try {
-        const response = await api.get(`/professionals/${route.params.slug}`)
+        const response = await api.get(
+            `/professionals/${encodeURIComponent(route.params.slug)}`
+        )
+
         pro.value = response.data.professional
     } catch (error) {
-        console.error('Could not load professional:', error)
+        console.error('Failed to load professional profile:', error)
+
         errorMessage.value =
-            error.response?.data?.message || 'Could not load this profile.'
+            error.response?.data?.message ||
+            'Unable to load this profile. Please try again.'
     } finally {
         loading.value = false
     }
-})
+}
 
-const reviews = computed(() => pro.value ? [
-    {
-        name: 'David G.',
-        date: '2 days ago',
-        text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.`
-    },
-    {
-        name: 'Melanie T.',
-        date: '1 week ago',
-        text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.`
-    },
-    {
-        name: 'James L.',
-        date: '3 weeks ago',
-        text: `Great workmanship and clear communication from start to finish.`
-    }
-] : [])
+watch(
+    () => route.params.slug,
+    loadProfessional,
+    { immediate: true }
+)
+
+const reviews = computed(() =>
+    pro.value
+        ? [
+              {
+                  name: 'David G.',
+                  date: '2 days ago',
+                  text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.`
+              },
+              {
+                  name: 'Melanie T.',
+                  date: '1 week ago',
+                  text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.`
+              },
+              {
+                  name: 'James L.',
+                  date: '3 weeks ago',
+                  text: 'Great workmanship and clear communication from start to finish.'
+              }
+          ]
+        : []
+)
 
 function initials(name) {
     if (!name) return ''
+
     return name
         .split(' ')
         .map(part => part[0])
@@ -98,9 +73,24 @@ function initials(name) {
         .toUpperCase()
         .slice(0, 2)
 }
+
+function requestBooking() {
+  if (!pro.value?.slug) {
+    console.error('Professional slug is missing')
+    return
+  }
+
+  router.push({
+    name: 'book',
+    params: {
+      slug: pro.value.slug
+    }
+  })
+}
 </script>
 
 <template>
+
   <main v-if="loading" class="profile-state">
     Loading profile…
   </main>
@@ -114,107 +104,25 @@ function initials(name) {
   </main>
 
   <main v-else class="profile-page">
+
     <aside class="profile-sidebar">
-      <button
-        class="profile-brand"
-        @click="router.push('/')"
-      >
-        YENZA!
-      </button>
-
-      <p>CATEGORIES</p>
-
-      <button
-        class="side-link"
-        @click="router.push('/services')"
-      >
-        ▦ All Craftsmen
-      </button>
-
-      <button class="side-link active">
-        ⌂ {{ pro.job }}
-      </button>
-
-      <button
-        class="side-link"
-        @click="router.push('/bookings')"
-      >
-        ▣ My Bookings
-      </button>
+      ...
     </aside>
 
     <section class="profile-content">
-      <button
-        class="back-link"
-        @click="fromAdmin ? router.push('/admin') : router.push('/services')"
-      >
-        ← {{ fromAdmin ? 'Back' : 'Back to handymen' }}
-      </button>
 
-      <header class="profile-hero">
-        <img
-          v-if="pro.photo"
-          :src="pro.photo"
-          :alt="pro.name"
-        />
-
-        <div
-          v-else
-          class="avatar"
-          aria-hidden="true"
-        >
-          {{ initials(pro.name) }}
-        </div>
-
-        <div>
-          <h1>{{ pro.name }}</h1>
-
-          <h2>{{ pro.job }}</h2>
-
-          <p>
-            <b>★</b>
-            {{ pro.rating }}
-            ({{ pro.reviews }} reviews)
-          </p>
-        </div>
-
-        <div class="hourly">
-          <small>HOURLY RATE</small>
-          <strong>R{{ pro.price }}</strong>/hr
-        </div>
-      </header>
+      ...
 
       <div class="profile-grid">
+
         <article class="profile-card">
-          <h3>Services & Specialties</h3>
-
-          <div class="profile-tags">
-            <span
-              v-for="tag in pro.tags"
-              :key="tag"
-            >
-              {{ tag }}
-            </span>
-          </div>
-
-          <div class="description-section">
-            <h4>Description</h4>
-
-            <p v-if="pro.bio">
-              {{ pro.bio }}
-            </p>
-
-            <p
-              v-else
-              class="no-description"
-            >
-              No description has been provided by this professional.
-            </p>
-          </div>
+          ...
         </article>
 
         <aside class="booking-panel">
+
           <article class="profile-card">
+
             <h3>Book this professional</h3>
 
             <button
@@ -225,21 +133,33 @@ function initials(name) {
               Request Booking
             </button>
 
-
             <button
               class="report-button"
+              type="button"
               @click="showReport = true"
             >
               Report
             </button>
 
           </article>
+
         </aside>
+
       </div>
+
     </section>
 
-  
   </main>
+
+  <!-- REPORT POPUP -->
+  <ReportPopup
+    v-if="showReport && pro"
+    :person-name="pro.name"
+    person-type="Professional"
+    :reported-user-id="pro.user_id"
+    @close="showReport = false"
+  />
+
 </template>
 
 <style scoped>
