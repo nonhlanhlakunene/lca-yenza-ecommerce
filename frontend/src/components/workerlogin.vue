@@ -28,7 +28,14 @@ const workerLogin = async () => {
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
 
-    router.push('/worker')
+    // Redirect based on verification status
+    if (data.user.verification_status === 'verified') {
+      router.push('/worker')
+    } else if (data.user.verification_status === 'rejected') {
+      router.push('/worker-rejected')
+    } else {
+      router.push('/worker-pending')
+    }
   } catch (error) {
     console.error(error)
     message.value = 'Unable to connect to the server'
