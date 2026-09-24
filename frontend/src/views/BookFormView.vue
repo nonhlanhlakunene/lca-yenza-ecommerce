@@ -64,7 +64,7 @@ const submitPayFastForm = (paymentUrl, paymentData) => {
 
 const submitBooking = async () => {
     if (!professional.value) {
-        Swal.fire({
+        await Swal.fire({
             icon: 'error',
             title: 'Professional not found',
             text: 'We could not find the selected professional.'
@@ -75,10 +75,9 @@ const submitBooking = async () => {
     if (
         !booking.value.date ||
         !booking.value.time ||
-        !booking.value.address.trim() ||
-        !booking.value.city.trim()
+        !booking.value.address.trim()
     ) {
-        Swal.fire({
+        await Swal.fire({
             icon: 'warning',
             title: 'Missing information',
             text: 'Please complete all required fields.'
@@ -86,17 +85,48 @@ const submitBooking = async () => {
         return
     }
 
-    // TEMPORARY: shows exactly what we're about to send
+    // Support the field names returned by the backend
+    const professionalId =
+        professional.value.professional_id ||
+        professional.value.id
+
+    const serviceId =
+        professional.value.service_id
+
+    if (!professionalId) {
+        console.error('Professional ID is missing:', professional.value)
+
+        await Swal.fire({
+            icon: 'error',
+            title: 'Professional information missing',
+            text: 'We could not identify this professional. Please go back and try again.'
+        })
+
+        return
+    }
+
+    if (!serviceId) {
+        console.error('Service ID is missing:', professional.value)
+
+        await Swal.fire({
+            icon: 'error',
+            title: 'Service information missing',
+            text: 'We could not identify the service for this professional.'
+        })
+
+        return
+    }
+
     const payload = {
-        professionalId: professional.value.id,
-        serviceId: professional.value.service_id,
+        professionalId,
+        serviceId,
         bookingDate: booking.value.date,
         bookingTime: booking.value.time,
         serviceAddress: booking.value.address.trim(),
-        city: booking.value.city.trim(),
+        city: 'Cape Town',
         province: null,
         postalCode: null,
-        notes: booking.value.notes
+        notes: booking.value.notes.trim()
     }
 
     console.log(
@@ -107,40 +137,67 @@ const submitBooking = async () => {
     try {
         isSubmitting.value = true
 
+        // 1. Create booking
         const bookingResponse = await api.post('/bookings', payload)
-        // {
-        //     professionalId: professional.value.id,
-        //     serviceId: professional.value.service_id,
-        //     bookingDate: booking.value.date,
-        //     bookingTime: booking.value.time,
-        //     serviceAddress: booking.value.address,
-        //     city: booking.value.city,
-        //     notes: booking.value.notes
-        // })
+
+        console.log(
+            'BOOKING RESPONSE:',
+            JSON.stringify(bookingResponse.data, null, 2)
+        )
 
         if (!bookingResponse.data.success) {
-            throw new Error(bookingResponse.data.message || 'Failed to create booking')
+            throw new Error(
+                bookingResponse.data.message ||
+                'Failed to create booking'
+            )
         }
 
         const bookingId = bookingResponse.data.bookingId
-        
-        console.log('Booking created:', bookingId)
 
-        const paymentResponse = await api.post('/payments/payfast', { bookingId })
-
-        if (!paymentResponse.data.success) {
-            throw new Error(paymentResponse.data.message || 'Failed to create payment')
+        if (!bookingId) {
+            throw new Error('Booking was created but no booking ID was returned.')
         }
 
-        console.log('Payment created:', paymentResponse.data.payment_id)
+        console.log('Booking created:', bookingId)
 
+        // 2. Create PayFast payment
+        const paymentResponse = await api.post(
+            '/payments/payfast',
+            { bookingId }
+        )
+
+        console.log(
+            'PAYMENT RESPONSE:',
+            JSON.stringify(paymentResponse.data, null, 2)
+        )
+
+        if (!paymentResponse.data.success) {
+            throw new Error(
+                paymentResponse.data.message ||
+                'Failed to create payment'
+            )
+        }
+
+        console.log(
+            'Payment created:',
+            paymentResponse.data.payment_id
+        )
+
+        // 3. Send customer to PayFast
         submitPayFastForm(
             paymentResponse.data.payment_url,
             paymentResponse.data.payfast_data
         )
+
     } catch (error) {
         console.error('BOOKING ERROR STATUS:', error.response?.status)
-        console.error('BOOKING ERROR DATA:', JSON.stringify(error.response?.data, null, 2))
+
+        console.error(
+            'BOOKING ERROR DATA:',
+            JSON.stringify(error.response?.data, null, 2)
+        )
+
+        console.error('BOOKING ERROR:', error)
 
         Swal.fire({
             icon: 'error',

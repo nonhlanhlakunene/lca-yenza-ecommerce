@@ -183,38 +183,59 @@ const formatStatus = (status) => {
 /*
  * Finds the customer's current/upcoming booking.
  */
-const currentBooking = computed(() => {
-
-    return bookings.value.find(
+const currentBookings = computed(() => {
+    return bookings.value.filter(
         booking => booking.status === 'Confirmed'
     )
-
 })
-
 
 /*
  * Gets all bookings that are not the current booking.
  */
+
 const bookingHistory = computed(() => {
-
     return bookings.value.filter(
-        booking => booking.status !== 'Confirmed'
+        booking =>
+            booking.status === 'Completed' ||
+            booking.status === 'Cancelled'
     )
-
 })
-
 
 /*
  * Converts the date into a more readable format.
  */
 const formatDate = (date) => {
+    if (!date) return ''
 
-    return new Date(date + 'T00:00:00').toLocaleDateString('en-ZA', {
+    const dateString = String(date)
+
+    // If the backend returns YYYY-MM-DD, handle it directly
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        const [year, month, day] = dateString.split('-')
+
+        return new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day)
+        ).toLocaleDateString('en-ZA', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        })
+    }
+
+    // If the backend returns a full date/time value
+    const parsedDate = new Date(dateString)
+
+    if (Number.isNaN(parsedDate.getTime())) {
+        return 'Invalid Date'
+    }
+
+    return parsedDate.toLocaleDateString('en-ZA', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
     })
-
 }
 
 
@@ -222,18 +243,13 @@ const formatDate = (date) => {
  * Converts 24-hour time into a 12-hour format.
  */
 const formatTime = (time) => {
-
     const [hours, minutes] = time.split(':')
-
     const date = new Date()
-
     date.setHours(hours, minutes)
-
     return date.toLocaleTimeString('en-ZA', {
         hour: 'numeric',
         minute: '2-digit'
     })
-
 }
 
 
@@ -299,61 +315,112 @@ function closeReview() {
         </section> 
         
         <!-- CURRENT BOOKING -->
-        <section class="bookings-section">
-            <div class="section-heading">
-                <h2>Current Booking</h2>
-                <p>Your upcoming service appointment.</p>
-            </div> 
-            
-            <!-- Show current booking -->
-            <div v-if="currentBooking" class="current-booking-card">
-                <div class="booking-card-header">
-                    <div> <span class="booking-service"> {{ currentBooking.service }} </span>
-                       <h3>
-                            {{ currentBooking.professional }}
-                        </h3>
+<!-- CURRENT BOOKINGS -->
+<section class="bookings-section">
+    <div class="section-heading">
+        <h2>Current Bookings</h2>
+        <p>Your upcoming service appointments.</p>
+    </div>
 
-                        <p class="professional-job">
-                            {{ currentBooking.job }}
-                        </p>
-                    </div> <span class="booking-status" :class="currentBooking.status.toLowerCase()"> {{
-                        currentBooking.status }} </span>
+    <!-- Show current bookings -->
+    <div v-if="currentBookings.length" class="current-bookings-list">
+
+        <div
+            v-for="booking in currentBookings"
+            :key="booking.id"
+            class="current-booking-card"
+        >
+            <div class="booking-card-header">
+                <div>
+                    <span class="booking-service">
+                        {{ booking.service }}
+                    </span>
+
+                    <h3>
+                        {{ booking.professional }}
+                    </h3>
+
+                    <p class="professional-job">
+                        {{ booking.job }}
+                    </p>
                 </div>
 
-                <div class="booking-details">
-                    <div class="booking-detail"> <span class="detail-label">DATE</span> <span>{{
-                        formatDate(currentBooking.date) }}</span> </div>
-                    <div class="booking-detail"> <span class="detail-label">TIME</span> <span>{{
-                        formatTime(currentBooking.time) }}</span> </div>
-                    <div class="booking-detail"> <span class="detail-label">SERVICE ADDRESS</span> <span>{{
-                            currentBooking.address }}</span> </div>
-                </div>
-
-                <div v-if="currentBooking.notes" class="booking-notes"> <span class="detail-label">ADDITIONAL
-                        INFORMATION</span>
-                    <p>{{ currentBooking.notes }}</p>
-                </div>
-
-                <div class="booking-actions"> 
-                    <button 
-                        class="cancel-button"
-                        type="button"
-                        @click="cancelBooking(currentBooking.id)"
-                    >
-                        Cancel Booking 
-                    </button> 
-
-                </div>
-
-            </div> 
-            
-            <!-- Show message if there is no current booking -->
-            <div v-else class="empty-booking">
-                <h3>No Current Booking</h3>
-                <p> You don't have any upcoming bookings at the moment. </p> <router-link to="/services"
-                    class="book-button"> BOOK A PROFESSIONAL </router-link>
+                <span
+                    class="booking-status"
+                    :class="booking.status.toLowerCase()"
+                >
+                    {{ booking.status }}
+                </span>
             </div>
-        </section> 
+
+            <div class="booking-details">
+                <div class="booking-detail">
+                    <span class="detail-label">DATE</span>
+                    <span>
+                        {{ formatDate(booking.date) }}
+                    </span>
+                </div>
+
+                <div class="booking-detail">
+                    <span class="detail-label">TIME</span>
+                    <span>
+                        {{ formatTime(booking.time) }}
+                    </span>
+                </div>
+
+                <div class="booking-detail">
+                    <span class="detail-label">SERVICE ADDRESS</span>
+                    <span>
+                        {{ booking.address }}
+                    </span>
+                </div>
+            </div>
+
+            <div
+                v-if="booking.notes"
+                class="booking-notes"
+            >
+                <span class="detail-label">
+                    ADDITIONAL INFORMATION
+                </span>
+
+                <p>
+                    {{ booking.notes }}
+                </p>
+            </div>
+
+            <div class="booking-actions">
+                <button
+                    class="cancel-button"
+                    type="button"
+                    @click="cancelBooking(booking.id)"
+                >
+                    Cancel Booking
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- No current bookings -->
+    <div
+        v-else
+        class="empty-booking"
+    >
+        <h3>No Current Bookings</h3>
+
+        <p>
+            You don't have any upcoming bookings at the moment.
+        </p>
+
+        <router-link
+            to="/services"
+            class="book-button"
+        >
+            BOOK A PROFESSIONAL
+        </router-link>
+    </div>
+</section>
         
         <!-- BOOKING HISTORY -->
         <section class="bookings-section history-section">
