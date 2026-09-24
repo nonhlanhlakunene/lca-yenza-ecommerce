@@ -19,6 +19,10 @@
         </h3>
 
         <p>{{ professional.service_name }}</p>
+
+        <RouterLink class="worker-settings-link" :to="{ name: 'worker-settings' }">
+          ⚙ Settings
+        </RouterLink>
       </div>
 
     </aside>
@@ -294,6 +298,7 @@
 <script setup>
 
 import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import Swal from 'sweetalert2'
 
 
@@ -910,6 +915,23 @@ body {
   margin: 0;
 
   opacity: .8;
+}
+
+.worker-settings-link {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.worker-settings-link:hover {
+  background: #ffffff;
+  color: #136163;
 }
 
 

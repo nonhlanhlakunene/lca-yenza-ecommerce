@@ -10,12 +10,15 @@ import workersignup from "@/components/workersignup.vue";
 import Login from "@/components/login.vue";
 import Signup from "@/components/signup.vue";
 import Home from "@/views/home.vue";
-import HandymanProfileView from "../views/HandymanProfileView.vue";
-import ServicesView from "../views/ServicesView.vue";
-import Admin from "@/components/Admin.vue";
-import workerDashboardView from "../views/workerDashboardView.vue";
 import workerPending from "@/components/workerPending.vue";
 import workerRejected from "@/components/workerRejected.vue";
+import HandymanProfileView from '../views/HandymanProfileView.vue'
+import ServicesView from '../views/ServicesView.vue'
+import Admin from '@/components/Admin.vue'
+import workerDashboardView from '../views/workerDashboardView.vue'
+import SettingsView from '../views/SettingsView.vue'
+import WorkerSettingsView from '../views/WorkerSettingsView.vue'
+
 
 const routes = [
   {
@@ -117,8 +120,14 @@ const routes = [
   },
 
   {
-    path: "/worker",
-    name: "workerDashboardView",
+    path: '/settings',
+    name: 'settings',
+    component: SettingsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/worker',
+    name: 'workerDashboardView',
     component: workerDashboardView,
     meta: {
       requiresAuth: true,
@@ -128,9 +137,15 @@ const routes = [
   },
 
   {
-    path: "/contact",
-    name: "contact",
-    component: () => import("../views/ContactView.vue"),
+    path: '/worker/settings',
+    name: 'worker-settings',
+    component: WorkerSettingsView,
+    meta: { requiresAuth: true, roles: ['professional', 'worker'] }
+  },
+  {
+    path: '/contact',
+    name: 'contact',
+    component: () => import('../views/ContactView.vue')
   },
 
   {
