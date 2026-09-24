@@ -1,4 +1,5 @@
 import adminModels from "../models/adminModels.js";
+import { slugify } from "../models/servicesModels.js";
 
 const getWorkers = async (req, res) => {
   try {
@@ -14,9 +15,7 @@ const getWorkers = async (req, res) => {
 
       city: worker.city || "Not provided",
 
-      slug: `${worker.first_name}-${worker.last_name}`
-        .toLowerCase()
-        .replace(/\s+/g, "-"),
+      slug: slugify(`${worker.first_name} ${worker.last_name}`),
 
       email: worker.email,
       phone: worker.phone,

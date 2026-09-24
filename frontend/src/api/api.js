@@ -45,7 +45,11 @@ api.interceptors.response.use(
     },
     (error) => {
         stopLoading()
-        showApiError(error)
+
+        if (!error.config?.silent) {
+            showApiError(error)
+        }
+        
         return Promise.reject(error)
     }
 )

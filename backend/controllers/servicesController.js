@@ -1,15 +1,16 @@
 import {
     findAllCategories,
     findProfessionalBySlug,
-    findProfessionals
+    findProfessionals,
+    slugify
 } from '../models/servicesModels.js'
 
-function slugify(value) {
-    return value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-}
+// function slugify(value) {
+//     return value
+//         .toLowerCase()
+//         .replace(/[^a-z0-9]+/g, '-')
+//         .replace(/(^-|-$)/g, '')
+// }
 
 function formatProfessional(row) {
     return {
@@ -51,7 +52,7 @@ function formatProfessional(row) {
         ),
 
         reviews: Number(
-            row.review_count || 0
+            Number(row.rating || 0).toFixed(1)
         ),
 
         tags: row.service_name

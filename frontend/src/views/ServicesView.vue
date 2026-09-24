@@ -202,6 +202,7 @@ async function loadProfessionals() {
 
         currentPage.value = 1
 
+        await updateMapMarkers()
 
     } catch (error) {
         console.error(
@@ -473,9 +474,6 @@ async function geocodeProfessionals() {
 
 
 async function updateMapMarkers() {
-    if (!map.value) {
-        return
-    }
     if (
         !mapReady.value ||
         !map.value ||
@@ -485,6 +483,9 @@ async function updateMapMarkers() {
     }
 
     markersLayer.value.clearLayers()
+
+    const markerBounds = []
+
 
     for (
         const professional
@@ -588,23 +589,6 @@ async function updateMapMarkers() {
 | HTML ESCAPE FOR POPUPS
 |--------------------------------------------------------------------------
 */
-
-function focusProfessionalOnMap(professionalId) {
-    if (!map.value || !markersLayer.value) return
-
-    const location = workerLocations.value.find(
-        item => String(item.id) === String(professionalId)
-    )
-
-    if (!location || location.latitude === null || location.longitude === null) {
-        mapMessage.value = 'This professional does not have a mapped location yet.'
-        marker.addTo(
-            markersLayer.value
-        )
-    }
-}
-
-
 function focusProfessionalOnMap(id) {
     if (
         !map.value ||
@@ -827,8 +811,8 @@ onBeforeUnmount(() => {
                     active:
                         activeCategory === ''
                 }" @click="
-            activeCategory = ''
-            ">
+                    activeCategory = ''
+                    ">
                     All
 
                     <span>
@@ -841,9 +825,9 @@ onBeforeUnmount(() => {
                         activeCategory ===
                         category.name
                 }" @click="
-            activeCategory =
-            category.name
-            ">
+                    activeCategory =
+                    category.name
+                    ">
                     {{ category.name }}
 
                     <span>
@@ -879,8 +863,8 @@ onBeforeUnmount(() => {
                     selected:
                         activeFilter === 'All'
                 }" @click="
-            activeFilter = 'All'
-            ">
+                    activeFilter = 'All'
+                    ">
                     All
                 </button>
 
@@ -891,9 +875,9 @@ onBeforeUnmount(() => {
                             priceFilter !==
                             'All prices'
                     }" @click="
-                priceMenuOpen =
-                !priceMenuOpen
-                ">
+                        priceMenuOpen =
+                        !priceMenuOpen
+                        ">
                         Prices ▼
                     </button>
 
@@ -915,8 +899,8 @@ onBeforeUnmount(() => {
                     selected:
                         activeFilter === filter
                 }" @click="
-            activeFilter = filter
-            ">
+                    activeFilter = filter
+                    ">
                     {{ filter }}
                 </button>
 
@@ -947,8 +931,8 @@ onBeforeUnmount(() => {
                             enabled:
                                 mapFilterEnabled
                         }" @click="
-                toggleMapFilter
-            ">
+                            toggleMapFilter
+                        ">
                             {{
                                 mapFilterEnabled
                                     ? 'Map Filter On'
@@ -1001,7 +985,7 @@ onBeforeUnmount(() => {
                                 ? 'Best Match'
                                 : activeFilter === 'All'
                                     ? 'Lowest Price'
-                        : activeFilter
+                                    : activeFilter
                         }}
                     </strong>
                 </span>
@@ -1117,8 +1101,8 @@ pro in visibleProfessionals
 
                 <button type="button" :disabled="currentPage === 1
                     " @click="
-            previousPage
-        ">
+                        previousPage
+                    ">
                     ← Back
                 </button>
 
@@ -1132,8 +1116,8 @@ pro in visibleProfessionals
                 <button type="button" :disabled="currentPage ===
                     totalPages
                     " @click="
-            nextPage
-        ">
+                        nextPage
+                    ">
                     View More →
                 </button>
 

@@ -152,7 +152,39 @@ export async function findProfessionals({
     return rows
 }
 
+export function slugify(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+}
+
 export async function findProfessionalBySlug(slug) {
+    const target = slugify(slug)
+
+    if (!target) return null
+
+    const [names] = await db.execute(
+        `
+        SELECT
+            p.professional_id AS id,
+            CONCAT(
+                u.first_name,
+                ' ',
+                u.last_name
+            ) AS full_name
+        FROM professionals p
+        JOIN users u ON u.user_id = p.user_id
+        ORDER BY p.professional_id ASC
+        `
+    )
+
+    const match = names.find(
+        row => slugify(row.full_name) === target
+    )
+    
+    if (!match) return null
+
     const [rows] = await db.execute(
         `
         SELECT
@@ -188,37 +220,24 @@ export async function findProfessionalBySlug(slug) {
                 0
             ) AS rating,
 
-            (
-                SELECT COUNT(*)
-                FROM reviews r
-                WHERE r.reviewed_user_id = p.user_id
-                AND r.status = 'published'
-            ) AS review_count
+            (SELECT COUNT(*)
+            FROM reviews r
+            WHERE r.reviewed_user_id = p.user_id
+            AND r.status = 'published'
+        ) AS review_count
 
         FROM professionals p
-
         LEFT JOIN users u
             ON u.user_id = p.user_id
-
         LEFT JOIN services s
             ON s.id = p.service_id
-
-        WHERE LOWER(
-            REPLACE(
-                CONCAT(
-                    u.first_name,
-                    ' ',
-                    u.last_name
-                ),
-                ' ',
-                '-'
-            )
-        ) = ?
-
+        WHERE p.professional_id = ?
+        
         LIMIT 1
         `,
-        [slug.toLowerCase()]
+        [match.id]
     )
 
     return rows[0] || null
+
 }
