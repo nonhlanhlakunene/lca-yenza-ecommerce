@@ -27,11 +27,14 @@ const goToServices = () => {
     router.push('/services')
 }
 
-const goToSignup = () => {
-    router.push('/signup')
-}
-
 const goToWorkerSignup = () => {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+        router.push('/login')
+        return
+    }
+
     router.push('/workersignup')
 }
 
@@ -340,11 +343,8 @@ onMounted(() => {
                         Find a Professional
                     </button>
 
-                    <button
-                        class="outline-button"
-                        @click="goToSignup"
-                    >
-                        Create an Account
+                  <button class="outline-button" @click="goToWorkerSignup">
+                        Sign up as Worker
                     </button>
 
                 </div>
