@@ -37,6 +37,11 @@ export const getAllReports = async () => {
 
       b.booking_id,
       b.booking_date,
+      b.booking_time,
+      b.service_address,
+      b.city,
+      b.notes AS booking_notes,
+
       s.name AS service_name
 
     FROM reports r

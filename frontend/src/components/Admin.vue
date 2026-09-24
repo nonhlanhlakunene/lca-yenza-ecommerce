@@ -209,6 +209,7 @@ const formatDocumentType = (type) => {
 
 const reports = ref([])
 const reportsLoading = ref(false)
+const selectedReport = ref(null)
 
 const loadReports = async () => {
   reportsLoading.value = true
@@ -225,6 +226,22 @@ const loadReports = async () => {
   } finally {
     reportsLoading.value = false
   }
+}
+
+const openReportDetails = (report) => {
+  selectedReport.value = report
+}
+
+const closeReportDetails = () => {
+  selectedReport.value = null
+}
+
+const updateReportStatusFromModal = async (newStatus) => {
+  if (!selectedReport.value) return
+
+  await updateReportStatus(selectedReport.value.id, newStatus)
+
+  selectedReport.value.status = newStatus
 }
 
 const updateReportStatus = async (reportId, newStatus) => {
@@ -1098,6 +1115,7 @@ onMounted(() => {
                   <th>Reporter</th>
                   <th>Reported</th>
                   <th>Reason</th>
+                  <th>Description</th>
                   <th>Date</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -1114,6 +1132,11 @@ onMounted(() => {
                   <td>
                     <span class="reason-badge">{{ r.reason }}</span>
                   </td>
+                  <td>
+                    <span class="description-text" :title="r.description">
+                      {{ r.description }}
+                    </span>
+                  </td>
                   <td>{{ formatReportDate(r.created_at) }}</td>
                   <td>
                     <span class="status-badge" :class="'status-' + r.status">
@@ -1121,16 +1144,25 @@ onMounted(() => {
                     </span>
                   </td>
                   <td>
-                    <select
-                      :value="r.status"
-                      @change="updateReportStatus(r.id, $event.target.value)"
-                      class="status-select"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="under_review">Under Review</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="dismissed">Dismissed</option>
-                    </select>
+                    <div class="action-cell">
+                      <button
+                        class="view-report-button"
+                        type="button"
+                        @click="openReportDetails(r)"
+                      >
+                        View
+                      </button>
+                      <select
+                        :value="r.status"
+                        @change="updateReportStatus(r.id, $event.target.value)"
+                        class="status-select"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="under_review">Under Review</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="dismissed">Dismissed</option>
+                      </select>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -1372,6 +1404,75 @@ onMounted(() => {
           </div>
 
         </div>
+      </div>
+    </div>
+
+    <!-- REPORT DETAILS MODAL -->
+    <div v-if="selectedReport" class="verify-modal-overlay" @click.self="closeReportDetails">
+      <div class="verify-modal">
+
+        <button class="verify-close" @click="closeReportDetails">×</button>
+
+        <h2>Report #{{ selectedReport.id }}</h2>
+        <p class="verify-subtitle">
+          Filed {{ formatReportDate(selectedReport.created_at) }}
+        </p>
+
+        <div class="verify-section">
+          <h3>Reason</h3>
+          <p class="reason-detail">{{ selectedReport.reason }}</p>
+        </div>
+
+        <div class="verify-section">
+          <h3>Description</h3>
+          <p class="description-detail">{{ selectedReport.description }}</p>
+        </div>
+
+        <div class="verify-section">
+          <h3>Reporter</h3>
+          <div class="verify-info">
+            <div><strong>Name:</strong> {{ selectedReport.reporter_first_name }} {{ selectedReport.reporter_last_name }}</div>
+            <div><strong>Email:</strong> {{ selectedReport.reporter_email }}</div>
+          </div>
+        </div>
+
+        <div class="verify-section">
+          <h3>Reported</h3>
+          <div class="verify-info">
+            <div><strong>Name:</strong> {{ selectedReport.reported_first_name }} {{ selectedReport.reported_last_name }}</div>
+            <div><strong>Email:</strong> {{ selectedReport.reported_email }}</div>
+          </div>
+        </div>
+
+        <div class="verify-section">
+          <h3>Booking Information</h3>
+          <div class="verify-info">
+            <div><strong>Service:</strong> {{ selectedReport.service_name || 'Not provided' }}</div>
+            <div><strong>Booking ID:</strong> #{{ selectedReport.booking_id }}</div>
+            <div><strong>Date:</strong> {{ formatReportDate(selectedReport.booking_date) }}</div>
+            <div><strong>Time:</strong> {{ selectedReport.booking_time || 'Not set' }}</div>
+            <div><strong>Address:</strong> {{ selectedReport.service_address || 'Not provided' }}</div>
+            <div><strong>City:</strong> {{ selectedReport.city || 'Not provided' }}</div>
+          </div>
+          <div v-if="selectedReport.booking_notes" class="booking-notes-block">
+            <strong>Booking notes:</strong>
+            <p>{{ selectedReport.booking_notes }}</p>
+          </div>
+        </div>
+
+        <div class="verify-actions">
+          <select
+            :value="selectedReport.status"
+            @change="updateReportStatusFromModal($event.target.value)"
+            class="status-select-modal"
+          >
+            <option value="pending">Pending</option>
+            <option value="under_review">Under Review</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+        </div>
+
       </div>
     </div>
 
@@ -2503,6 +2604,84 @@ onMounted(() => {
   border: 1px solid #dfe5e5;
   border-radius: 6px;
   font-size: 10px;
+  background: white;
+  cursor: pointer;
+}
+
+.description-text {
+  display: block;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: #555;
+}
+
+/* =========================================================
+   REPORT DETAILS MODAL
+========================================================= */
+
+.action-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.view-report-button {
+  padding: 5px 10px;
+  border: 1px solid #136163;
+  border-radius: 6px;
+  background: transparent;
+  color: #136163;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.view-report-button:hover {
+  background: #136163;
+  color: white;
+}
+
+.reason-detail {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #183b56;
+  text-transform: capitalize;
+}
+
+.description-detail {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f9fbfb;
+  font-size: 12px;
+  color: #303738;
+  line-height: 1.6;
+}
+
+.booking-notes-block {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f9fbfb;
+  font-size: 11px;
+  color: #303738;
+}
+
+.booking-notes-block p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.status-select-modal {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #dfe5e5;
+  border-radius: 8px;
+  font-size: 12px;
   background: white;
   cursor: pointer;
 }

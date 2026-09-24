@@ -43,7 +43,7 @@ const createUser = async (
   return result.insertId;
 };
 
-const createProfessional = async (userId, serviceId = 2) => {
+const createProfessional = async (userId) => {
   const [result] = await db.query(
     `
         INSERT INTO professionals
@@ -53,9 +53,9 @@ const createProfessional = async (userId, serviceId = 2) => {
             verification_status,
             availability_status
         )
-        VALUES (?, ?, 'pending', 'available')
+        VALUES (?, NULL, 'pending', 'available')
         `,
-    [userId, serviceId],
+    [userId],
   );
 
   return result.insertId;
