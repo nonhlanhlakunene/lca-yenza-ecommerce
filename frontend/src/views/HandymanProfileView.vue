@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/api.js'
 import Swal from 'sweetalert2'
@@ -14,12 +14,19 @@ const reviewsLoading = ref(false)
 const loading = ref(true)
 const errorMessage = ref('')
 const showReport = ref(false)
+
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
 
+function initials(name) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+}
 
 function formatDate(date) {
   if (!date) return ''
-
   return new Date(date).toLocaleDateString('en-ZA', {
     day: '2-digit',
     month: 'short',
@@ -29,7 +36,6 @@ function formatDate(date) {
 
 async function loadReviews(userId) {
   reviewsLoading.value = true
-
   try {
     const response = await api.get(`/reviews/professional/${userId}`)
     reviews.value = response.data.reviews || []
@@ -49,13 +55,12 @@ async function loadProfessional() {
 
   try {
     const response = await api.get(
-      `/professionals/${encodeURIComponent(route.params.slug)}`,
-      { silent: true }
+      `/professionals/${encodeURIComponent(route.params.slug)}`
     )
 
     pro.value = response.data.professional
 
-    // Now fetch this professional's reviews
+    // Fetch this professional's reviews
     if (pro.value && pro.value.user_id) {
       await loadReviews(pro.value.user_id)
     }
@@ -76,27 +81,20 @@ watch(
   { immediate: true }
 )
 
-const ratingLabel = computed(() => {
-  const rating = Number(pro.value?.rating || 0)
-  const count = Number(pro.value?.reviews || 0)
+function requestBooking() {
+  if (!pro.value?.slug) {
+    console.error('Professional slug is missing')
+    return
+  }
 
-  if (!count) return 'No reviews yet'
-
-  return `${rating.toFixed(1)} (${count} ${
-    count === 1 ? 'review' : 'reviews'
-  })`
-})
-
-function initials(name) {
-  if (!name) return ''
-
-  return name
-    .split(' ')
-    .map(part => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  router.push({
+    name: 'book',
+    params: {
+      slug: pro.value.slug
+    }
+  })
 }
+
 
 async function openReport() {
   if (!localStorage.getItem('token')) {
@@ -109,36 +107,23 @@ async function openReport() {
 
     router.push({
       path: '/login',
-      query: { redirect: route.fullPath }
+      query: {
+        redirect: route.fullPath
+      }
     })
 
     return
-
   }
 
   showReport.value = true
-
 }
 
-
-function requestBooking() {
-  if (!pro.value?.slug) {
-    console.error('Professional slug is missing')
-    return
-  }
-
-  router.push({
-    name: 'book',
-    params: { slug: pro.value.slug }
-  })
-}
 </script>
 
 
 
 
 <template>
-
   <main v-if="loading" class="profile-state">
     Loading profile…
   </main>
@@ -152,44 +137,67 @@ function requestBooking() {
   </main>
 
   <main v-else class="profile-page">
-
     <aside class="profile-sidebar">
-      <button class="profile-sidebar" type="button" @click="router.push('/')">
+      <button
+        class="profile-brand"
+        @click="router.push('/')"
+      >
         YENZA!
       </button>
 
       <p>CATEGORIES</p>
 
-      <button class="side-link" type="button" @click="router.push('/bookings')">
-        My Bookings
+      <button
+        class="side-link"
+        @click="router.push('/services')"
+      >
+        ▦ All Craftsmen
+      </button>
+
+      <button class="side-link active">
+        ⌂ {{ pro.job }}
+      </button>
+
+      <button
+        class="side-link"
+        @click="router.push('/bookings')"
+      >
+        ▣ My Bookings
       </button>
     </aside>
 
-
     <section class="profile-content">
-
       <button
         class="back-link"
-        type="button"
         @click="fromAdmin ? router.push('/admin') : router.push('/services')"
       >
         ← {{ fromAdmin ? 'Back' : 'Back to handymen' }}
-      </button>  
+      </button>
 
       <header class="profile-hero">
-        <img v-if="pro.photo" :src="pro.photo" :alt="pro.name" />
+        <img
+          v-if="pro.photo"
+          :src="pro.photo"
+          :alt="pro.name"
+        />
 
-        <div v-else class="avatar" aria-hidden="true">
+        <div
+          v-else
+          class="avatar"
+          aria-hidden="true"
+        >
           {{ initials(pro.name) }}
         </div>
 
         <div>
           <h1>{{ pro.name }}</h1>
+
           <h2>{{ pro.job }}</h2>
 
           <p>
             <b>★</b>
-            {{ ratingLabel }}
+            {{ pro.rating }}
+            ({{ pro.reviews }} reviews)
           </p>
         </div>
 
@@ -200,12 +208,14 @@ function requestBooking() {
       </header>
 
       <div class="profile-grid">
-
         <article class="profile-card">
-          <h3>Services &amp; Specialties</h3>
-          
+          <h3>Services & Specialties</h3>
+
           <div class="profile-tags">
-            <span v-for="tag in pro.tags" :key="tag">
+            <span
+              v-for="tag in pro.tags"
+              :key="tag"
+            >
               {{ tag }}
             </span>
           </div>
@@ -213,18 +223,21 @@ function requestBooking() {
           <div class="description-section">
             <h4>Description</h4>
 
-            <p v-if="pro.bio">{{ pro.bio }}</p>
+            <p v-if="pro.bio">
+              {{ pro.bio }}
+            </p>
 
-            <p v-else class="no-description">
+            <p
+              v-else
+              class="no-description"
+            >
               No description has been provided by this professional.
             </p>
           </div>
         </article>
 
         <aside class="booking-panel">
-
           <article class="profile-card">
-
             <h3>Book this professional</h3>
 
             <button
@@ -237,15 +250,12 @@ function requestBooking() {
 
             <button
               class="report-button"
-              type="button"
               @click="openReport"
             >
               Report
             </button>
           </article>
-
         </aside>
-
       </div>
 
       <!-- REVIEWS -->
@@ -294,22 +304,17 @@ function requestBooking() {
           </article>
         </div>
       </section>
+
+      <ReportPopup
+        v-if="showReport && pro"
+        :person-name="pro.name"
+        person-type="Professional"
+        :reported-user-id="pro.user_id"
+        @close="showReport = false"
+      />
     </section>
-
   </main>
-
-  <!-- REPORT POPUP -->
-  <ReportPopup
-    v-if="showReport && pro"
-    :person-name="pro.name"
-    person-type="Professional"
-    :reported-user-id="pro.user_id"
-    @close="showReport = false"
-  />
-
-
 </template>
-
 
 
 
