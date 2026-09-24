@@ -9,23 +9,56 @@ const route = useRoute()
 const router = useRouter()
 
 const pro = ref(null)
+const reviews = ref([])
+const reviewsLoading = ref(false)
 const loading = ref(true)
 const errorMessage = ref('')
 const showReport = ref(false)
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
 
-const loadProfessional = async () => {
+
+function formatDate(date) {
+  if (!date) return ''
+
+  return new Date(date).toLocaleDateString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
+async function loadReviews(userId) {
+  reviewsLoading.value = true
+
+  try {
+    const response = await api.get(`/reviews/professional/${userId}`)
+    reviews.value = response.data.reviews || []
+  } catch (error) {
+    console.error('Failed to load reviews:', error)
+    reviews.value = []
+  } finally {
+    reviewsLoading.value = false
+  }
+}
+
+async function loadProfessional() {
   loading.value = true
   errorMessage.value = ''
   pro.value = null
+  reviews.value = []
 
   try {
     const response = await api.get(
       `/professionals/${encodeURIComponent(route.params.slug)}`,
-      { silient: true }
+      { silent: true }
     )
 
     pro.value = response.data.professional
+
+    // Now fetch this professional's reviews
+    if (pro.value && pro.value.user_id) {
+      await loadReviews(pro.value.user_id)
+    }
   } catch (error) {
     console.error('Failed to load professional profile:', error)
 
@@ -49,7 +82,9 @@ const ratingLabel = computed(() => {
 
   if (!count) return 'No reviews yet'
 
-  return `${rating.toFixed(1)} (${count} ${count === 1 ? 'review' : 'reviews'})`
+  return `${rating.toFixed(1)} (${count} ${
+    count === 1 ? 'review' : 'reviews'
+  })`
 })
 
 function initials(name) {
@@ -72,35 +107,19 @@ async function openReport() {
       confirmButtonColor: '#136163'
     })
 
-    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    router.push({
+      path: '/login',
+      query: { redirect: route.fullPath }
+    })
+
     return
+
   }
 
   showReport.value = true
 
 }
 
-// const reviews = computed(() =>
-//     pro.value
-//         ? [
-//               {
-//                   name: 'David G.',
-//                   date: '2 days ago',
-//                   text: `${pro.value.name.split(' ')[0]} was punctual, professional, and completed the work exactly as promised.`
-//               },
-//               {
-//                   name: 'Melanie T.',
-//                   date: '1 week ago',
-//                   text: `Excellent service. I would happily recommend ${pro.value.name.split(' ')[0]} to friends and family.`
-//               },
-//               {
-//                   name: 'James L.',
-//                   date: '3 weeks ago',
-//                   text: 'Great workmanship and clear communication from start to finish.'
-//               }
-//           ]
-//         : []
-// )
 
 function requestBooking() {
   if (!pro.value?.slug) {
@@ -219,17 +238,62 @@ function requestBooking() {
             <button
               class="report-button"
               type="button"
-              @click="openReport = true"
+              @click="openReport"
             >
               Report
             </button>
-
           </article>
 
         </aside>
 
       </div>
 
+      <!-- REVIEWS -->
+      <section class="reviews-section">
+        <h3>Recent Reviews</h3>
+
+        <div v-if="reviewsLoading" class="reviews-empty">
+          Loading reviews...
+        </div>
+
+        <div v-else-if="reviews.length === 0" class="reviews-empty">
+          No reviews yet. Be the first to review this professional!
+        </div>
+
+        <div v-else class="review-list">
+          <article
+            v-for="review in reviews"
+            :key="review.id"
+            class="review-card"
+          >
+            <div class="review-head">
+              <span class="review-avatar">
+                {{ (review.reviewer_first_name || '?').charAt(0) }}
+              </span>
+
+              <div class="review-meta">
+                <b>
+                  {{ review.reviewer_first_name }}
+                  {{ review.reviewer_last_name }}
+                </b>
+                <small>{{ formatDate(review.created_at) }}</small>
+              </div>
+
+              <span class="review-stars">
+                <span
+                  v-for="n in 5"
+                  :key="n"
+                  :class="{ filled: n <= review.rating }"
+                >★</span>
+              </span>
+            </div>
+
+            <p v-if="review.comment" class="review-comment">
+              {{ review.comment }}
+            </p>
+          </article>
+        </div>
+      </section>
     </section>
 
   </main>
@@ -481,6 +545,93 @@ function requestBooking() {
   background: #136163;
   color: #fff;
   cursor: pointer;
+}
+
+/* REVIEWS */
+.reviews-section {
+  margin-top: 28px;
+}
+
+.reviews-section h3 {
+  margin: 0 0 16px;
+  color: #172033;
+  font-size: 20px;
+}
+
+.reviews-empty {
+  padding: 25px;
+  border-radius: 11px;
+  background: #fff;
+  color: #8a96a5;
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-card {
+  padding: 18px 20px;
+  border: 1px solid #dfe7ed;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.review-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #dff2f1;
+  color: #136163;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.review-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.review-meta b {
+  color: #172033;
+  font-size: 13px;
+}
+
+.review-meta small {
+  color: #8a96a5;
+  font-size: 11px;
+}
+
+.review-stars {
+  margin-left: auto;
+  color: #d5d8dd;
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.review-stars .filled {
+  color: #f2b705;
+}
+
+.review-comment {
+  margin: 0;
+  color: #536276;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 @media (max-width: 760px) {

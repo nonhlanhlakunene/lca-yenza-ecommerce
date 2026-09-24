@@ -1,401 +1,438 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Swal from 'sweetalert2'
+import { computed, ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import Swal from "sweetalert2";
 
-const router = useRouter()
+const router = useRouter();
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem("token");
 
   return {
     Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-}
+    "Content-Type": "application/json",
+  };
+};
 
-const bookingsByService = ref([])
+const bookingsByService = ref([]);
 
-const currentPage = ref(1)
-const workersPerPage = 5
+const currentPage = ref(1);
+const workersPerPage = 5;
 
-const workers = ref([])
-const loading = ref(true)
-const message = ref('')
+const workers = ref([]);
+const loading = ref(true);
+const message = ref("");
 
 const stats = ref({
   total_workers: 0,
   total_customers: 0,
   total_bookings: 0,
-  total_revenue: 0
-})
+  total_revenue: 0,
+});
 
 const activity = ref({
   active: 0,
   completed: 0,
-  pending: 0
-})
+  pending: 0,
+});
 
-const workerServices = ref([])
-const bookingStatuses = ref([])
+const workerServices = ref([]);
+const bookingStatuses = ref([]);
 
 // ============================================================
 // PENDING VERIFICATIONS
 // ============================================================
 
-const pendingVerifications = ref([])
-const pendingLoading = ref(false)
-const selectedWorker = ref(null)
-const selectedDetails = ref(null)
-const detailsLoading = ref(false)
+const pendingVerifications = ref([]);
+const pendingLoading = ref(false);
+const selectedWorker = ref(null);
+const selectedDetails = ref(null);
+const detailsLoading = ref(false);
 
 const loadPendingVerifications = async () => {
-  pendingLoading.value = true
+  pendingLoading.value = true;
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/pending-verifications',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load pending')
-    pendingVerifications.value = data
+      "http://localhost:3000/api/admin/pending-verifications",
+      { headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to load pending");
+    pendingVerifications.value = data;
   } catch (error) {
-    console.error('Pending verifications error:', error)
+    console.error("Pending verifications error:", error);
   } finally {
-    pendingLoading.value = false
+    pendingLoading.value = false;
   }
-}
+};
 
 const openVerificationDetails = async (professionalId) => {
-  selectedWorker.value = professionalId
-  selectedDetails.value = null
-  detailsLoading.value = true
+  selectedWorker.value = professionalId;
+  selectedDetails.value = null;
+  detailsLoading.value = true;
 
   try {
     const response = await fetch(
       `http://localhost:3000/api/admin/verifications/${professionalId}`,
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load details')
-    selectedDetails.value = data
+      { headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to load details");
+    selectedDetails.value = data;
   } catch (error) {
-    console.error('Details error:', error)
+    console.error("Details error:", error);
     Swal.fire({
-      title: 'Could not load details',
+      title: "Could not load details",
       text: error.message,
-      icon: 'error',
-      confirmButtonColor: '#136163'
-    })
+      icon: "error",
+      confirmButtonColor: "#136163",
+    });
   } finally {
-    detailsLoading.value = false
+    detailsLoading.value = false;
   }
-}
+};
 
 const closeVerificationDetails = () => {
-  selectedWorker.value = null
-  selectedDetails.value = null
-}
+  selectedWorker.value = null;
+  selectedDetails.value = null;
+};
 
 const approveWorker = async (professionalId) => {
   const result = await Swal.fire({
-    title: 'Approve this worker?',
-    text: 'They will be able to receive jobs on the platform.',
-    icon: 'question',
+    title: "Approve this worker?",
+    text: "They will be able to receive jobs on the platform.",
+    icon: "question",
     showCancelButton: true,
-    confirmButtonText: 'Yes, approve',
-    cancelButtonText: 'Cancel',
-    confirmButtonColor: '#136163',
-    cancelButtonColor: '#183b56',
-    reverseButtons: true
-  })
+    confirmButtonText: "Yes, approve",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#136163",
+    cancelButtonColor: "#183b56",
+    reverseButtons: true,
+  });
 
-  if (!result.isConfirmed) return
+  if (!result.isConfirmed) return;
 
   try {
     const response = await fetch(
       `http://localhost:3000/api/admin/verifications/${professionalId}/approve`,
-      { method: 'POST', headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Approve failed')
+      { method: "POST", headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Approve failed");
 
     Swal.fire({
-      title: 'Worker approved',
-      text: 'The worker can now receive jobs.',
-      icon: 'success',
-      confirmButtonColor: '#136163'
-    })
+      title: "Worker approved",
+      text: "The worker can now receive jobs.",
+      icon: "success",
+      confirmButtonColor: "#136163",
+    });
 
-    closeVerificationDetails()
-    await loadPendingVerifications()
-    await loadWorkers()
-    await loadStats()
+    closeVerificationDetails();
+    await loadPendingVerifications();
+    await loadWorkers();
+    await loadStats();
   } catch (error) {
-    console.error('Approve error:', error)
+    console.error("Approve error:", error);
     Swal.fire({
-      title: 'Approve failed',
+      title: "Approve failed",
       text: error.message,
-      icon: 'error',
-      confirmButtonColor: '#136163'
-    })
+      icon: "error",
+      confirmButtonColor: "#136163",
+    });
   }
-}
+};
 
 const rejectWorker = async (professionalId) => {
   const result = await Swal.fire({
-    title: 'Reject this worker?',
-    text: 'They will not be able to receive jobs on the platform.',
-    icon: 'warning',
+    title: "Reject this worker?",
+    text: "They will not be able to receive jobs on the platform.",
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonText: 'Yes, reject',
-    cancelButtonText: 'Cancel',
-    confirmButtonColor: '#b00020',
-    cancelButtonColor: '#183b56',
-    reverseButtons: true
-  })
+    confirmButtonText: "Yes, reject",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#b00020",
+    cancelButtonColor: "#183b56",
+    reverseButtons: true,
+  });
 
-  if (!result.isConfirmed) return
+  if (!result.isConfirmed) return;
 
   try {
     const response = await fetch(
       `http://localhost:3000/api/admin/verifications/${professionalId}/reject`,
-      { method: 'POST', headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Reject failed')
+      { method: "POST", headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Reject failed");
 
     Swal.fire({
-      title: 'Worker rejected',
-      text: 'The application has been rejected.',
-      icon: 'info',
-      confirmButtonColor: '#136163'
-    })
+      title: "Worker rejected",
+      text: "The application has been rejected.",
+      icon: "info",
+      confirmButtonColor: "#136163",
+    });
 
-    closeVerificationDetails()
-    await loadPendingVerifications()
-    await loadWorkers()
-    await loadStats()
+    closeVerificationDetails();
+    await loadPendingVerifications();
+    await loadWorkers();
+    await loadStats();
   } catch (error) {
-    console.error('Reject error:', error)
+    console.error("Reject error:", error);
     Swal.fire({
-      title: 'Reject failed',
+      title: "Reject failed",
       text: error.message,
-      icon: 'error',
-      confirmButtonColor: '#136163'
-    })
+      icon: "error",
+      confirmButtonColor: "#136163",
+    });
   }
-}
+};
 
 const openDocument = (documentId) => {
-  const token = localStorage.getItem('token')
-  const url = `http://localhost:3000/api/admin/documents/${documentId}?token=${token}`
-  window.open(url, '_blank')
-}
+  const token = localStorage.getItem("token");
+  const url = `http://localhost:3000/api/admin/documents/${documentId}?token=${token}`;
+  window.open(url, "_blank");
+};
 
 const formatDocumentType = (type) => {
   const labels = {
-    id: 'ID Document',
-    address: 'Proof of Address',
-    police_clearance: 'Police Clearance',
-    affidavit: 'Affidavit'
-  }
-  return labels[type] || type
-}
+    id: "ID Document",
+    address: "Proof of Address",
+    police_clearance: "Police Clearance",
+    affidavit: "Affidavit",
+  };
+  return labels[type] || type;
+};
 
 // ============================================================
 // REPORTS
 // ============================================================
 
-const reports = ref([])
-const reportsLoading = ref(false)
+const reports = ref([]);
+const reportsLoading = ref(false);
+const selectedReport = ref(null);
 
 const loadReports = async () => {
-  reportsLoading.value = true
+  reportsLoading.value = true;
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/admin/reports',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load reports')
-    reports.value = data.reports || []
+    const response = await fetch("http://localhost:3000/api/admin/reports", {
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to load reports");
+    reports.value = data.reports || [];
   } catch (error) {
-    console.error('Reports error:', error)
+    console.error("Reports error:", error);
   } finally {
-    reportsLoading.value = false
+    reportsLoading.value = false;
   }
-}
+};
+
+const openReportDetails = (report) => {
+  selectedReport.value = report;
+};
+
+const closeReportDetails = () => {
+  selectedReport.value = null;
+};
+
+const updateReportStatusFromModal = async (newStatus) => {
+  if (!selectedReport.value) return;
+
+  await updateReportStatus(selectedReport.value.id, newStatus);
+
+  selectedReport.value.status = newStatus;
+};
 
 const updateReportStatus = async (reportId, newStatus) => {
   const result = await Swal.fire({
-    title: 'Update report status?',
+    title: "Update report status?",
     text: `Set this report to "${newStatus}"?`,
-    icon: 'question',
+    icon: "question",
     showCancelButton: true,
-    confirmButtonText: 'Yes, update',
-    cancelButtonText: 'Cancel',
-    confirmButtonColor: '#136163',
-    cancelButtonColor: '#183b56',
-    reverseButtons: true
-  })
+    confirmButtonText: "Yes, update",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#136163",
+    cancelButtonColor: "#183b56",
+    reverseButtons: true,
+  });
 
-  if (!result.isConfirmed) return
+  if (!result.isConfirmed) return;
 
   try {
     const response = await fetch(
       `http://localhost:3000/api/admin/reports/${reportId}`,
       {
-        method: 'PATCH',
+        method: "PATCH",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ status: newStatus })
-      }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Update failed')
+        body: JSON.stringify({ status: newStatus }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Update failed");
 
-    const report = reports.value.find(r => r.id === reportId)
-    if (report) report.status = newStatus
+    const report = reports.value.find((r) => r.id === reportId);
+    if (report) report.status = newStatus;
 
     Swal.fire({
-      title: 'Report updated',
+      title: "Report updated",
       text: `Status changed to "${newStatus}".`,
-      icon: 'success',
-      confirmButtonColor: '#136163'
-    })
+      icon: "success",
+      confirmButtonColor: "#136163",
+    });
   } catch (error) {
-    console.error('Update report error:', error)
+    console.error("Update report error:", error);
     Swal.fire({
-      title: 'Update failed',
+      title: "Update failed",
       text: error.message,
-      icon: 'error',
-      confirmButtonColor: '#136163'
-    })
+      icon: "error",
+      confirmButtonColor: "#136163",
+    });
   }
-}
+};
 
 const formatReportDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('en-ZA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-}
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("en-ZA", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const reportsSummary = computed(() => {
+  const summary = {
+    total: reports.value.length,
+    pending: 0,
+    under_review: 0,
+    resolved: 0,
+    dismissed: 0,
+  };
+
+  reports.value.forEach((r) => {
+    if (summary[r.status] !== undefined) {
+      summary[r.status]++;
+    }
+  });
+
+  return summary;
+});
 
 // ============================================================
 
 const loadWorkers = async () => {
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/admin/workers',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load workers')
-    workers.value = data
+    const response = await fetch("http://localhost:3000/api/admin/workers", {
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to load workers");
+    workers.value = data;
   } catch (error) {
-    console.error('Workers error:', error)
-    message.value = error.message
+    console.error("Workers error:", error);
+    message.value = error.message;
   }
-}
+};
 
 const loadStats = async () => {
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/admin/stats',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load statistics')
+    const response = await fetch("http://localhost:3000/api/admin/stats", {
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.message || "Failed to load statistics");
 
     stats.value = {
       total_workers: Number(data.total_workers) || 0,
       total_customers: Number(data.total_customers) || 0,
       total_bookings: Number(data.total_bookings) || 0,
-      total_revenue: Number(data.total_revenue) || 0
-    }
+      total_revenue: Number(data.total_revenue) || 0,
+    };
   } catch (error) {
-    console.error('Stats error:', error)
+    console.error("Stats error:", error);
   }
-}
+};
 
 const loadBookingsByService = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/bookings-by-service',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load booking service statistics')
+      "http://localhost:3000/api/admin/bookings-by-service",
+      { headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(
+        data.message || "Failed to load booking service statistics",
+      );
 
-    bookingsByService.value = data.map(service => ({
+    bookingsByService.value = data.map((service) => ({
       service_name: service.service_name,
-      booking_count: Number(service.booking_count) || 0
-    }))
+      booking_count: Number(service.booking_count) || 0,
+    }));
   } catch (error) {
-    console.error('Bookings by service error:', error)
+    console.error("Bookings by service error:", error);
   }
-}
+};
 
 const loadActivity = async () => {
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/admin/activity',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load activity')
+    const response = await fetch("http://localhost:3000/api/admin/activity", {
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.message || "Failed to load activity");
 
     activity.value = {
       active: Number(data.active) || 0,
       completed: Number(data.completed) || 0,
-      pending: Number(data.pending) || 0
-    }
+      pending: Number(data.pending) || 0,
+    };
   } catch (error) {
-    console.error('Activity error:', error)
+    console.error("Activity error:", error);
   }
-}
+};
 
 const loadWorkerServices = async () => {
   try {
-    const response = await fetch(
-      'http://localhost:3000/api/admin/services',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load worker services')
+    const response = await fetch("http://localhost:3000/api/admin/services", {
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.message || "Failed to load worker services");
 
-    workerServices.value = data.map(service => ({
+    workerServices.value = data.map((service) => ({
       service_name: service.service_name,
-      worker_count: Number(service.worker_count) || 0
-    }))
+      worker_count: Number(service.worker_count) || 0,
+    }));
   } catch (error) {
-    console.error('Worker services error:', error)
+    console.error("Worker services error:", error);
   }
-}
+};
 
 const loadBookingStatuses = async () => {
   try {
     const response = await fetch(
-      'http://localhost:3000/api/admin/booking-status',
-      { headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to load booking statuses')
+      "http://localhost:3000/api/admin/booking-status",
+      { headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.message || "Failed to load booking statuses");
 
-    bookingStatuses.value = data.map(status => ({
+    bookingStatuses.value = data.map((status) => ({
       status: status.status,
-      booking_count: Number(status.booking_count) || 0
-    }))
+      booking_count: Number(status.booking_count) || 0,
+    }));
   } catch (error) {
-    console.error('Booking status error:', error)
+    console.error("Booking status error:", error);
   }
-}
+};
 
 const loadAdminData = async () => {
-  loading.value = true
-  message.value = ''
+  loading.value = true;
+  message.value = "";
 
   await Promise.all([
     loadWorkers(),
@@ -405,192 +442,218 @@ const loadAdminData = async () => {
     loadBookingStatuses(),
     loadBookingsByService(),
     loadPendingVerifications(),
-    loadReports()
-  ])
+    loadReports(),
+  ]);
 
-  loading.value = false
-}
+  loading.value = false;
+};
 
 const bookingServiceChart = computed(() => {
   const max = Math.max(
     ...bookingsByService.value.map(
-      service => Number(service.booking_count) || 0
+      (service) => Number(service.booking_count) || 0,
     ),
-    1
-  )
+    1,
+  );
 
-  return bookingsByService.value.map(service => ({
+  return bookingsByService.value.map((service) => ({
     service_name: service.service_name,
     value: Number(service.booking_count) || 0,
     height: Math.max(
-      Math.round(
-        (Number(service.booking_count) / max) * 100
-      ),
-      service.booking_count > 0 ? 8 : 3
-    )
-  }))
-})
+      Math.round((Number(service.booking_count) / max) * 100),
+      service.booking_count > 0 ? 8 : 3,
+    ),
+  }));
+});
 
 const removeWorker = async (professionalId) => {
   const result = await Swal.fire({
-    title: 'Delete worker?',
-    text: 'Are you sure you want to delete this worker? This action cannot be undone.',
-    icon: 'warning',
+    title: "Delete worker?",
+    text: "Are you sure you want to delete this worker? This action cannot be undone.",
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonText: 'Yes, delete',
-    cancelButtonText: 'Cancel',
-    confirmButtonColor: '#136163',
-    cancelButtonColor: '#183b56',
-    reverseButtons: true
-  })
+    confirmButtonText: "Yes, delete",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#136163",
+    cancelButtonColor: "#183b56",
+    reverseButtons: true,
+  });
 
-  if (!result.isConfirmed) return
+  if (!result.isConfirmed) return;
 
   try {
     const response = await fetch(
       `http://localhost:3000/api/admin/workers/${professionalId}`,
-      { method: 'DELETE', headers: getAuthHeaders() }
-    )
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Failed to delete worker')
+      { method: "DELETE", headers: getAuthHeaders() },
+    );
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.message || "Failed to delete worker");
 
     workers.value = workers.value.filter(
-      worker => worker.professional_id !== professionalId
-    )
+      (worker) => worker.professional_id !== professionalId,
+    );
 
-    await loadStats()
-    await loadActivity()
-    await loadWorkerServices()
-    await loadBookingStatuses()
+    await loadStats();
+    await loadActivity();
+    await loadWorkerServices();
+    await loadBookingStatuses();
 
     if (currentPage.value > 1 && paginatedWorkers.value.length === 0) {
-      currentPage.value--
+      currentPage.value--;
     }
 
     Swal.fire({
-      title: 'Worker deleted',
-      text: 'The worker was successfully removed.',
-      icon: 'success',
-      confirmButtonColor: '#136163'
-    })
+      title: "Worker deleted",
+      text: "The worker was successfully removed.",
+      icon: "success",
+      confirmButtonColor: "#136163",
+    });
   } catch (error) {
-    console.error('Delete worker error:', error)
+    console.error("Delete worker error:", error);
     Swal.fire({
-      title: 'Delete failed',
+      title: "Delete failed",
       text: error.message,
-      icon: 'error',
-      confirmButtonColor: '#136163'
-    })
+      icon: "error",
+      confirmButtonColor: "#136163",
+    });
   }
-}
+};
 
 const paginatedWorkers = computed(() => {
-  const start = (currentPage.value - 1) * workersPerPage
-  return workers.value.slice(start, start + workersPerPage)
-})
+  const start = (currentPage.value - 1) * workersPerPage;
+  return workers.value.slice(start, start + workersPerPage);
+});
 
 const pages = computed(() => {
-  return Math.ceil(workers.value.length / workersPerPage)
-})
+  return Math.ceil(workers.value.length / workersPerPage);
+});
 
 const chartGroups = computed(() => {
-  const active = Number(activity.value.active) || 0
-  const completed = Number(activity.value.completed) || 0
-  const pending = Number(activity.value.pending) || 0
+  const active = Number(activity.value.active) || 0;
+  const completed = Number(activity.value.completed) || 0;
+  const pending = Number(activity.value.pending) || 0;
 
-  const max = Math.max(active, completed, pending, 1)
+  const max = Math.max(active, completed, pending, 1);
 
   return [
-    { label: 'Active', value: active, height: Math.max(Math.round((active / max) * 100), active > 0 ? 8 : 3) },
-    { label: 'Completed', value: completed, height: Math.max(Math.round((completed / max) * 100), completed > 0 ? 8 : 3) },
-    { label: 'Pending', value: pending, height: Math.max(Math.round((pending / max) * 100), pending > 0 ? 8 : 3) }
-  ]
-})
+    {
+      label: "Active",
+      value: active,
+      height: Math.max(Math.round((active / max) * 100), active > 0 ? 8 : 3),
+    },
+    {
+      label: "Completed",
+      value: completed,
+      height: Math.max(
+        Math.round((completed / max) * 100),
+        completed > 0 ? 8 : 3,
+      ),
+    },
+    {
+      label: "Pending",
+      value: pending,
+      height: Math.max(Math.round((pending / max) * 100), pending > 0 ? 8 : 3),
+    },
+  ];
+});
 
 const totalServiceWorkers = computed(() => {
   return workerServices.value.reduce(
     (total, service) => total + Number(service.worker_count || 0),
-    0
-  )
-})
+    0,
+  );
+});
 
 const serviceSegments = computed(() => {
-  const total = totalServiceWorkers.value
-  if (!total) return []
+  const total = totalServiceWorkers.value;
+  if (!total) return [];
 
-  let currentDegree = 0
-  const colours = ['#136163', '#4b8fa0', '#183b56', '#70aeb0', '#245f7a', '#91c4c5', '#31516b', '#b4d8d8']
+  let currentDegree = 0;
+  const colours = [
+    "#136163",
+    "#4b8fa0",
+    "#183b56",
+    "#70aeb0",
+    "#245f7a",
+    "#91c4c5",
+    "#31516b",
+    "#b4d8d8",
+  ];
 
   return workerServices.value.map((service, index) => {
-    const percentage = Number(service.worker_count) / total
-    const degrees = percentage * 360
-    const start = currentDegree
-    currentDegree += degrees
+    const percentage = Number(service.worker_count) / total;
+    const degrees = percentage * 360;
+    const start = currentDegree;
+    currentDegree += degrees;
 
     return {
       ...service,
       percentage: Math.round(percentage * 100),
       start,
       end: currentDegree,
-      colour: colours[index % colours.length]
-    }
-  })
-})
+      colour: colours[index % colours.length],
+    };
+  });
+});
 
 const donutStyle = computed(() => {
-  if (!serviceSegments.value.length) return { background: '#e5eeee' }
+  if (!serviceSegments.value.length) return { background: "#e5eeee" };
   const parts = serviceSegments.value.map(
-    segment => `${segment.colour} ${segment.start}deg ${segment.end}deg`
-  )
-  return { background: `conic-gradient(${parts.join(', ')})` }
-})
+    (segment) => `${segment.colour} ${segment.start}deg ${segment.end}deg`,
+  );
+  return { background: `conic-gradient(${parts.join(", ")})` };
+});
 
 const bookingStatusChart = computed(() => {
   const max = Math.max(
-    ...bookingStatuses.value.map(item => Number(item.booking_count) || 0),
-    1
-  )
+    ...bookingStatuses.value.map((item) => Number(item.booking_count) || 0),
+    1,
+  );
 
   return bookingStatuses.value.map((item, index) => ({
     status: item.status,
     value: Number(item.booking_count) || 0,
-    height: Math.max(Math.round((Number(item.booking_count) / max) * 100), item.booking_count > 0 ? 8 : 3),
-    colour: index % 3 === 0 ? '#136163' : index % 3 === 1 ? '#4b8fa0' : '#183b56'
-  }))
-})
+    height: Math.max(
+      Math.round((Number(item.booking_count) / max) * 100),
+      item.booking_count > 0 ? 8 : 3,
+    ),
+    colour:
+      index % 3 === 0 ? "#136163" : index % 3 === 1 ? "#4b8fa0" : "#183b56",
+  }));
+});
 
 const formattedRevenue = computed(() => {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 2
-  }).format(Number(stats.value.total_revenue) || 0)
-})
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+    maximumFractionDigits: 2,
+  }).format(Number(stats.value.total_revenue) || 0);
+});
 
 const today = computed(() => {
-  return new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-})
+  return new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+});
 
 const viewProfile = (slug) => {
   router.push({
-    name: 'profile',
+    name: "profile",
     params: { slug },
-    query: { fromAdmin: 'true' }
-  })
-}
+    query: { fromAdmin: "true" },
+  });
+};
 
 onMounted(() => {
-  loadAdminData()
-})
+  loadAdminData();
+});
 </script>
 
 <template>
   <main class="admin-page">
-
     <!-- BACK -->
     <button
       class="back-button"
@@ -606,7 +669,7 @@ onMounted(() => {
     <header class="admin-header">
       <div>
         <span class="admin-eyebrow">YENZA ADMINISTRATION</span>
-        <br>
+        <br />
         <h1>Admin Dashboard</h1>
         <p>Manage workers and monitor platform activity.</p>
       </div>
@@ -619,11 +682,8 @@ onMounted(() => {
 
     <!-- TOP STATS -->
     <section class="stat-grid">
-
       <div class="stat-card">
-        <div class="stat-icon teal-icon">
-          W
-        </div>
+        <div class="stat-icon teal-icon">W</div>
 
         <div>
           <span>Workers</span>
@@ -632,9 +692,7 @@ onMounted(() => {
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon blue-icon">
-          C
-        </div>
+        <div class="stat-icon blue-icon">C</div>
 
         <div>
           <span>Customers</span>
@@ -643,9 +701,7 @@ onMounted(() => {
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon navy-icon">
-          B
-        </div>
+        <div class="stat-icon navy-icon">B</div>
 
         <div>
           <span>Bookings</span>
@@ -654,26 +710,20 @@ onMounted(() => {
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon revenue-icon">
-          R
-        </div>
+        <div class="stat-icon revenue-icon">R</div>
 
         <div>
           <span>Total Payments</span>
           <strong>{{ formattedRevenue }}</strong>
         </div>
       </div>
-
     </section>
 
     <!-- MAIN LAYOUT -->
     <section class="admin-layout" aria-label="Admin dashboard">
-
       <div class="dashboard-main">
-
         <!-- PENDING VERIFICATIONS -->
         <section class="dashboard-card pending-section">
-
           <div class="section-heading">
             <div>
               <span class="section-label">VERIFICATION</span>
@@ -690,7 +740,10 @@ onMounted(() => {
             Loading pending verifications...
           </div>
 
-          <div v-else-if="pendingVerifications.length === 0" class="empty-pending">
+          <div
+            v-else-if="pendingVerifications.length === 0"
+            class="empty-pending"
+          >
             No pending verifications. All caught up!
           </div>
 
@@ -725,12 +778,10 @@ onMounted(() => {
               </tbody>
             </table>
           </div>
-
         </section>
 
         <!-- WORKERS -->
         <section class="dashboard-card workers-section">
-
           <div class="section-heading">
             <div>
               <span class="section-label">MANAGEMENT</span>
@@ -738,21 +789,15 @@ onMounted(() => {
               <p>Manage and view your registered workers.</p>
             </div>
 
-            <span class="worker-count">
-              {{ workers.length }} workers
-            </span>
+            <span class="worker-count"> {{ workers.length }} workers </span>
           </div>
 
-          <p
-            v-if="message"
-            class="error-message"
-          >
+          <p v-if="message" class="error-message">
             {{ message }}
           </p>
 
           <div class="worker-table">
             <table>
-
               <thead>
                 <tr>
                   <th>Name</th>
@@ -764,25 +809,12 @@ onMounted(() => {
               </thead>
 
               <tbody>
-
                 <tr v-if="loading">
-                  <td
-                    colspan="5"
-                    class="loading-row"
-                  >
-                    Loading workers...
-                  </td>
+                  <td colspan="5" class="loading-row">Loading workers...</td>
                 </tr>
 
-                <tr
-                  v-else-if="paginatedWorkers.length === 0"
-                >
-                  <td
-                    colspan="5"
-                    class="loading-row"
-                  >
-                    No workers found.
-                  </td>
+                <tr v-else-if="paginatedWorkers.length === 0">
+                  <td colspan="5" class="loading-row">No workers found.</td>
                 </tr>
 
                 <tr
@@ -800,7 +832,7 @@ onMounted(() => {
                   </td>
 
                   <td>
-                    {{ worker.city || 'Not provided' }}
+                    {{ worker.city || "Not provided" }}
                   </td>
 
                   <td>
@@ -823,17 +855,12 @@ onMounted(() => {
                     </button>
                   </td>
                 </tr>
-
               </tbody>
             </table>
           </div>
 
           <!-- PAGINATION -->
-          <nav
-            v-if="pages > 1"
-            class="pagination"
-            aria-label="Worker pages"
-          >
+          <nav v-if="pages > 1" class="pagination" aria-label="Worker pages">
             <button
               type="button"
               class="page-arrow"
@@ -862,12 +889,10 @@ onMounted(() => {
               →
             </button>
           </nav>
-
         </section>
 
         <!-- ANALYTICS -->
         <section class="dashboard-card analytics-section">
-
           <div class="section-heading analytics-heading">
             <div>
               <span class="section-label">ANALYTICS</span>
@@ -877,22 +902,16 @@ onMounted(() => {
           </div>
 
           <div class="analytics">
-
             <!-- WORKER ACTIVITY -->
             <div class="chart-container">
-
               <h3>Worker Activity</h3>
 
-              <div class="chart-subtitle">
-                Booking activity
-              </div>
+              <div class="chart-subtitle">Booking activity</div>
 
               <div class="bar-chart">
-
                 <div class="chart-grid"></div>
 
                 <div class="chart-bars">
-
                   <div
                     v-for="(group, index) in chartGroups"
                     :key="index"
@@ -902,10 +921,10 @@ onMounted(() => {
                       :class="{
                         teal: index === 0,
                         blue: index === 1,
-                        navy: index === 2
+                        navy: index === 2,
                       }"
                       :style="{
-                        height: `${group.height}%`
+                        height: `${group.height}%`,
                       }"
                       :title="`${group.label}: ${group.value}`"
                     ></i>
@@ -914,7 +933,6 @@ onMounted(() => {
                       {{ group.value }}
                     </span>
                   </div>
-
                 </div>
               </div>
 
@@ -940,22 +958,15 @@ onMounted(() => {
                   Pending
                 </span>
               </div>
-
             </div>
 
             <!-- WORKER SERVICES -->
             <div class="donut-container">
-
               <h3>Workers by Service</h3>
 
-              <div class="chart-subtitle">
-                Current professionals
-              </div>
+              <div class="chart-subtitle">Current professionals</div>
 
-              <div
-                class="donut-chart"
-                :style="donutStyle"
-              >
+              <div class="donut-chart" :style="donutStyle">
                 <div class="donut-hole"></div>
 
                 <div class="donut-label">
@@ -964,11 +975,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div
-                v-if="serviceSegments.length"
-                class="service-legend"
-              >
-
+              <div v-if="serviceSegments.length" class="service-legend">
                 <div
                   v-for="service in serviceSegments"
                   :key="service.service_name"
@@ -977,7 +984,7 @@ onMounted(() => {
                   <span
                     class="legend-dot"
                     :style="{
-                      background: service.colour
+                      background: service.colour,
                     }"
                   ></span>
 
@@ -989,54 +996,37 @@ onMounted(() => {
                     {{ service.worker_count }}
                   </strong>
                 </div>
-
               </div>
 
-              <p
-                v-else
-                class="no-chart-data"
-              >
+              <p v-else class="no-chart-data">
                 No worker service data available.
               </p>
-
             </div>
-
           </div>
         </section>
 
         <!-- BOOKING STATUS -->
         <section class="dashboard-card booking-section">
-
           <div class="section-heading">
-
             <div>
               <span class="section-label">BOOKINGS</span>
               <h2>Booking Status</h2>
 
-              <p>
-                Current booking distribution.
-              </p>
+              <p>Current booking distribution.</p>
             </div>
 
             <span class="booking-total">
               {{ stats.total_bookings }} total
             </span>
-
           </div>
 
-          <div
-            v-if="bookingStatusChart.length"
-            class="booking-chart"
-          >
-
+          <div v-if="bookingStatusChart.length" class="booking-chart">
             <div
               v-for="booking in bookingStatusChart"
               :key="booking.status"
               class="booking-bar-group"
             >
-
               <div class="booking-bar-area">
-
                 <span class="booking-value">
                   {{ booking.value }}
                 </span>
@@ -1045,32 +1035,22 @@ onMounted(() => {
                   class="booking-bar"
                   :style="{
                     height: `${booking.height}%`,
-                    background: booking.colour
+                    background: booking.colour,
                   }"
                 ></div>
-
               </div>
 
               <span class="booking-status">
                 {{ booking.status }}
               </span>
-
             </div>
-
           </div>
 
-          <div
-            v-else
-            class="no-bookings"
-          >
-            No booking data available.
-          </div>
-
+          <div v-else class="no-bookings">No booking data available.</div>
         </section>
 
         <!-- SUBMITTED REPORTS -->
         <section class="dashboard-card reports-list-section">
-
           <div class="section-heading">
             <div>
               <span class="section-label">MODERATION</span>
@@ -1098,6 +1078,7 @@ onMounted(() => {
                   <th>Reporter</th>
                   <th>Reported</th>
                   <th>Reason</th>
+                  <th>Description</th>
                   <th>Date</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -1114,6 +1095,11 @@ onMounted(() => {
                   <td>
                     <span class="reason-badge">{{ r.reason }}</span>
                   </td>
+                  <td>
+                    <span class="description-text" :title="r.description">
+                      {{ r.description }}
+                    </span>
+                  </td>
                   <td>{{ formatReportDate(r.created_at) }}</td>
                   <td>
                     <span class="status-badge" :class="'status-' + r.status">
@@ -1121,36 +1107,39 @@ onMounted(() => {
                     </span>
                   </td>
                   <td>
-                    <select
-                      :value="r.status"
-                      @change="updateReportStatus(r.id, $event.target.value)"
-                      class="status-select"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="under_review">Under Review</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="dismissed">Dismissed</option>
-                    </select>
+                    <div class="action-cell">
+                      <button
+                        class="view-report-button"
+                        type="button"
+                        @click="openReportDetails(r)"
+                      >
+                        View
+                      </button>
+                      <select
+                        :value="r.status"
+                        @change="updateReportStatus(r.id, $event.target.value)"
+                        class="status-select"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="under_review">Under Review</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="dismissed">Dismissed</option>
+                      </select>
+                    </div>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-
         </section>
-
       </div>
 
       <!-- RIGHT PANEL -->
       <aside class="reports-panel">
-
         <!-- SUMMARY -->
         <div class="summary">
-
           <div class="summary-item">
-            <span class="summary-title">
-              Today
-            </span>
+            <span class="summary-title"> Today </span>
 
             <strong>
               {{ today }}
@@ -1160,48 +1149,33 @@ onMounted(() => {
           <div class="summary-divider"></div>
 
           <div class="summary-item">
-            <span class="summary-title">
-              Workers
-            </span>
+            <span class="summary-title"> Workers </span>
 
             <strong>
               {{ stats.total_workers }}
             </strong>
           </div>
-
         </div>
 
         <!-- DASHBOARD OVERVIEW -->
         <div class="reports-card">
-
           <div class="reports-header">
-
             <div>
-              <span class="section-label">
-                OVERVIEW
-              </span>
+              <span class="section-label"> OVERVIEW </span>
 
               <h1>Dashboard</h1>
 
-              <p>
-                Current platform information.
-              </p>
+              <p>Current platform information.</p>
             </div>
 
-            <span class="reports-icon">
-              ≡
-            </span>
-
+            <span class="reports-icon"> ≡ </span>
           </div>
 
           <div class="reports-rule"></div>
 
           <div class="overview-list">
-
             <div class="overview-item">
-              <span>
-                Active bookings
-              </span>
+              <span> Active bookings </span>
 
               <strong>
                 {{ activity.active }}
@@ -1209,9 +1183,7 @@ onMounted(() => {
             </div>
 
             <div class="overview-item">
-              <span>
-                Completed bookings
-              </span>
+              <span> Completed bookings </span>
 
               <strong>
                 {{ activity.completed }}
@@ -1219,9 +1191,7 @@ onMounted(() => {
             </div>
 
             <div class="overview-item">
-              <span>
-                Pending bookings
-              </span>
+              <span> Pending bookings </span>
 
               <strong>
                 {{ activity.pending }}
@@ -1229,9 +1199,7 @@ onMounted(() => {
             </div>
 
             <div class="overview-item">
-              <span>
-                Customers
-              </span>
+              <span> Customers </span>
 
               <strong>
                 {{ stats.total_customers }}
@@ -1239,100 +1207,143 @@ onMounted(() => {
             </div>
 
             <div class="overview-item">
-              <span>
-                Total Payments
-              </span>
+              <span> Total Payments </span>
 
               <strong>
                 {{ formattedRevenue }}
               </strong>
             </div>
-
           </div>
 
           <div class="system-status">
             <span class="status-dot"></span>
 
-            <span>
-              System data connected
-            </span>
+            <span> System data connected </span>
           </div>
-
         </div>
 
         <!-- REPORTS -->
         <div class="reports-card reports-section">
-
           <div class="reports-header">
-
             <div>
-              <span class="section-label">
-                REPORTS
-              </span>
+              <span class="section-label"> REPORTS </span>
 
               <h1>Reports</h1>
 
-              <p>
-                Platform performance summary.
-              </p>
+              <p>Platform performance summary.</p>
             </div>
 
-            <span class="reports-icon">
-              ▤
-            </span>
-
+            <span class="reports-icon"> ▤ </span>
           </div>
 
           <div class="reports-rule"></div>
 
           <div class="report-list">
+            <div class="report-item">
+              <div>
+                <span class="report-title">Total Submitted</span>
+                <small>All time</small>
+              </div>
+              <strong>{{ reportsSummary.total }}</strong>
+            </div>
 
+            <div class="report-item">
+              <div>
+                <span class="report-title">Pending</span>
+                <small>Awaiting review</small>
+              </div>
+              <strong>{{ reportsSummary.pending }}</strong>
+            </div>
+
+            <div class="report-item">
+              <div>
+                <span class="report-title">Under Review</span>
+                <small>Being investigated</small>
+              </div>
+              <strong>{{ reportsSummary.under_review }}</strong>
+            </div>
+
+            <div class="report-item">
+              <div>
+                <span class="report-title">Resolved</span>
+                <small>Action taken</small>
+              </div>
+              <strong>{{ reportsSummary.resolved }}</strong>
+            </div>
+
+            <div class="report-item">
+              <div>
+                <span class="report-title">Dismissed</span>
+                <small>No action needed</small>
+              </div>
+              <strong>{{ reportsSummary.dismissed }}</strong>
+            </div>
           </div>
 
           <div class="report-footer">
             <span class="status-dot"></span>
 
-            <span>
-              Report generated from live database data
-            </span>
+            <span> Report generated from live database data </span>
           </div>
-
         </div>
-
       </aside>
-
     </section>
 
     <!-- VERIFICATION MODAL -->
-    <div v-if="selectedWorker" class="verify-modal-overlay" @click.self="closeVerificationDetails">
+    <div
+      v-if="selectedWorker"
+      class="verify-modal-overlay"
+      @click.self="closeVerificationDetails"
+    >
       <div class="verify-modal">
+        <button class="verify-close" @click="closeVerificationDetails">
+          ×
+        </button>
 
-        <button class="verify-close" @click="closeVerificationDetails">×</button>
-
-        <div v-if="detailsLoading" class="loading-row">
-          Loading details...
-        </div>
+        <div v-if="detailsLoading" class="loading-row">Loading details...</div>
 
         <div v-else-if="selectedDetails">
-
-          <h2>{{ selectedDetails.profile.first_name }} {{ selectedDetails.profile.last_name }}</h2>
+          <h2>
+            {{ selectedDetails.profile.first_name }}
+            {{ selectedDetails.profile.last_name }}
+          </h2>
           <p class="verify-subtitle">
-            {{ selectedDetails.profile.email }} · {{ selectedDetails.profile.service_name }}
+            {{ selectedDetails.profile.email }} ·
+            {{ selectedDetails.profile.service_name }}
           </p>
 
           <div class="verify-section">
             <h3>Profile</h3>
             <div class="verify-info">
-              <div><strong>City:</strong> {{ selectedDetails.profile.city || 'Not provided' }}</div>
-              <div><strong>Phone:</strong> {{ selectedDetails.profile.phone || 'Not provided' }}</div>
-              <div><strong>Experience:</strong> {{ selectedDetails.profile.experience_years || 0 }} years</div>
-              <div><strong>Rate:</strong> {{ selectedDetails.profile.hourly_rate ? 'R' + selectedDetails.profile.hourly_rate : 'Not set' }}</div>
+              <div>
+                <strong>City:</strong>
+                {{ selectedDetails.profile.city || "Not provided" }}
+              </div>
+              <div>
+                <strong>Phone:</strong>
+                {{ selectedDetails.profile.phone || "Not provided" }}
+              </div>
+              <div>
+                <strong>Experience:</strong>
+                {{ selectedDetails.profile.experience_years || 0 }} years
+              </div>
+              <div>
+                <strong>Rate:</strong>
+                {{
+                  selectedDetails.profile.hourly_rate
+                    ? "R" + selectedDetails.profile.hourly_rate
+                    : "Not set"
+                }}
+              </div>
             </div>
           </div>
 
           <div class="verify-section">
             <h3>Documents ({{ selectedDetails.documents.length }})</h3>
-            <div v-if="selectedDetails.documents.length === 0" class="empty-docs">
+            <div
+              v-if="selectedDetails.documents.length === 0"
+              class="empty-docs"
+            >
               No documents uploaded.
             </div>
             <ul v-else class="doc-list">
@@ -1342,7 +1353,8 @@ onMounted(() => {
                   type="button"
                   @click="openDocument(doc.id)"
                 >
-                  {{ formatDocumentType(doc.document_type) }} — {{ doc.file_name }}
+                  {{ formatDocumentType(doc.document_type) }} —
+                  {{ doc.file_name }}
                 </button>
               </li>
             </ul>
@@ -1350,31 +1362,138 @@ onMounted(() => {
 
           <div class="verify-section">
             <h3>Experience</h3>
-            <div v-if="selectedDetails.experience.length === 0" class="empty-docs">
+            <div
+              v-if="selectedDetails.experience.length === 0"
+              class="empty-docs"
+            >
               No experience submitted.
             </div>
             <div v-else>
-              <div v-for="exp in selectedDetails.experience" :key="exp.id" class="exp-item">
+              <div
+                v-for="exp in selectedDetails.experience"
+                :key="exp.id"
+                class="exp-item"
+              >
                 <div><strong>Service:</strong> {{ exp.service }}</div>
                 <div><strong>Years:</strong> {{ exp.years_experience }}</div>
-                <div v-if="exp.experience_notes"><strong>Notes:</strong> {{ exp.experience_notes }}</div>
+                <div v-if="exp.experience_notes">
+                  <strong>Notes:</strong> {{ exp.experience_notes }}
+                </div>
               </div>
             </div>
           </div>
 
           <div class="verify-actions">
-            <button class="verify-approve" @click="approveWorker(selectedWorker)">
+            <button
+              class="verify-approve"
+              @click="approveWorker(selectedWorker)"
+            >
               Approve
             </button>
             <button class="verify-reject" @click="rejectWorker(selectedWorker)">
               Reject
             </button>
           </div>
-
         </div>
       </div>
     </div>
 
+    <!-- REPORT DETAILS MODAL -->
+    <div
+      v-if="selectedReport"
+      class="verify-modal-overlay"
+      @click.self="closeReportDetails"
+    >
+      <div class="verify-modal">
+        <button class="verify-close" @click="closeReportDetails">×</button>
+
+        <h2>Report #{{ selectedReport.id }}</h2>
+        <p class="verify-subtitle">
+          Filed {{ formatReportDate(selectedReport.created_at) }}
+        </p>
+
+        <div class="verify-section">
+          <h3>Reason</h3>
+          <p class="reason-detail">{{ selectedReport.reason }}</p>
+        </div>
+
+        <div class="verify-section">
+          <h3>Description</h3>
+          <p class="description-detail">{{ selectedReport.description }}</p>
+        </div>
+
+        <div class="verify-section">
+          <h3>Reporter</h3>
+          <div class="verify-info">
+            <div>
+              <strong>Name:</strong> {{ selectedReport.reporter_first_name }}
+              {{ selectedReport.reporter_last_name }}
+            </div>
+            <div>
+              <strong>Email:</strong> {{ selectedReport.reporter_email }}
+            </div>
+          </div>
+        </div>
+
+        <div class="verify-section">
+          <h3>Reported</h3>
+          <div class="verify-info">
+            <div>
+              <strong>Name:</strong> {{ selectedReport.reported_first_name }}
+              {{ selectedReport.reported_last_name }}
+            </div>
+            <div>
+              <strong>Email:</strong> {{ selectedReport.reported_email }}
+            </div>
+          </div>
+        </div>
+
+        <div class="verify-section">
+          <h3>Booking Information</h3>
+          <div class="verify-info">
+            <div>
+              <strong>Service:</strong>
+              {{ selectedReport.service_name || "Not provided" }}
+            </div>
+            <div>
+              <strong>Booking ID:</strong> #{{ selectedReport.booking_id }}
+            </div>
+            <div>
+              <strong>Date:</strong>
+              {{ formatReportDate(selectedReport.booking_date) }}
+            </div>
+            <div>
+              <strong>Time:</strong>
+              {{ selectedReport.booking_time || "Not set" }}
+            </div>
+            <div>
+              <strong>Address:</strong>
+              {{ selectedReport.service_address || "Not provided" }}
+            </div>
+            <div>
+              <strong>City:</strong> {{ selectedReport.city || "Not provided" }}
+            </div>
+          </div>
+          <div v-if="selectedReport.booking_notes" class="booking-notes-block">
+            <strong>Booking notes:</strong>
+            <p>{{ selectedReport.booking_notes }}</p>
+          </div>
+        </div>
+
+        <div class="verify-actions">
+          <select
+            :value="selectedReport.status"
+            @change="updateReportStatusFromModal($event.target.value)"
+            class="status-select-modal"
+          >
+            <option value="pending">Pending</option>
+            <option value="under_review">Under Review</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -1390,7 +1509,7 @@ onMounted(() => {
   padding: 20px 40px 35px;
   box-sizing: border-box;
   overflow-x: hidden;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: #222;
   background: #f5f8f8;
 }
@@ -1399,7 +1518,7 @@ onMounted(() => {
 .admin-page *::before,
 .admin-page *::after {
   box-sizing: border-box;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .admin-page .back-button {
@@ -2493,10 +2612,22 @@ onMounted(() => {
   text-transform: capitalize;
 }
 
-.status-pending { background: #fff3e0; color: #b26a00; }
-.status-under_review { background: #e3f2fd; color: #1565c0; }
-.status-resolved { background: #e8f5e9; color: #2e7d32; }
-.status-dismissed { background: #eeeeee; color: #616161; }
+.status-pending {
+  background: #fff3e0;
+  color: #b26a00;
+}
+.status-under_review {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.status-resolved {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.status-dismissed {
+  background: #eeeeee;
+  color: #616161;
+}
 
 .status-select {
   padding: 4px 8px;
@@ -2507,8 +2638,85 @@ onMounted(() => {
   cursor: pointer;
 }
 
-@media (min-width: 1400px) {
+.description-text {
+  display: block;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: #555;
+}
 
+/* =========================================================
+   REPORT DETAILS MODAL
+========================================================= */
+
+.action-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.view-report-button {
+  padding: 5px 10px;
+  border: 1px solid #136163;
+  border-radius: 6px;
+  background: transparent;
+  color: #136163;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.view-report-button:hover {
+  background: #136163;
+  color: white;
+}
+
+.reason-detail {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #183b56;
+  text-transform: capitalize;
+}
+
+.description-detail {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f9fbfb;
+  font-size: 12px;
+  color: #303738;
+  line-height: 1.6;
+}
+
+.booking-notes-block {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f9fbfb;
+  font-size: 11px;
+  color: #303738;
+}
+
+.booking-notes-block p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.status-select-modal {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #dfe5e5;
+  border-radius: 8px;
+  font-size: 12px;
+  background: white;
+  cursor: pointer;
+}
+
+@media (min-width: 1400px) {
   .admin-page {
     padding-left: 55px;
     padding-right: 55px;
@@ -2534,7 +2742,6 @@ onMounted(() => {
 }
 
 @media (max-width: 1200px) {
-
   .admin-page {
     padding-left: 25px;
     padding-right: 25px;
@@ -2568,7 +2775,6 @@ onMounted(() => {
 }
 
 @media (max-width: 900px) {
-
   .admin-page {
     min-height: 100vh;
     padding: 18px;
@@ -2604,7 +2810,6 @@ onMounted(() => {
 }
 
 @media (max-width: 600px) {
-
   .admin-page {
     padding: 15px;
   }

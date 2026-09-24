@@ -1,60 +1,62 @@
 <template>
-    <div class="n-reportOverlay" @click.self="$emit('close')">
-        <div class="n-reportCard">
+  <div class="n-reportOverlay" @click.self="$emit('close')">
+    <div class="n-reportCard">
+      <div class="n-header">
+        <h2>Report an issue with {{ personName }} ({{ personType }})</h2>
+      </div>
 
-            <div class="n-header">
-                <h2>Report an issue with {{ personName }} ({{ personType }})</h2>
-            </div>
+      <div class="form-group">
+        <label for="reasons">Reasons for reporting:</label>
+        <select name="reasons" id="reasons" v-model="selectedReason">
+          <option value="">Select a reason</option>
+          <option value="behavior">Inappropriate behavior / Harassment</option>
+          <option value="no-show">No-show</option>
+          <option value="communication">Poor Communication</option>
+          <option value="safety">Safety Concern</option>
+          <option value="scam">Scam or fraud attempt</option>
+          <option value="unprofessional">Unprofessional</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
 
-            <div class="form-group">
-                <label for="reasons">Reasons for reporting:</label>
-                <select name="reasons" id="reasons" v-model="selectedReason">
-                    <option value="">Select a reason</option>
-                    <option value="behavior">Inappropriate behavior / Harassment</option>
-                    <option value="no-show">No-show</option>
-                    <option value="communication">Poor Communication</option>
-                    <option value="safety">Safety Concern</option>
-                    <option value="scam">Scam or fraud attempt</option>
-                    <option value="unprofessional">Unprofessional</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
+      <div class="description-text">
+        <label for="message">Please describe what happened: </label>
+        <textarea
+          id="message"
+          name="message"
+          rows="4"
+          placeholder="Add details about the incident...?"
+          v-model="description"
+        ></textarea>
+      </div>
 
-            <div class="description-text">
-                <label for="message">Please describe what happened: </label>
-                <textarea
-                    id="message"
-                    name="message"
-                    rows="4"
-                    placeholder="Add details about the incident...?"
-                    v-model="description"
-                ></textarea>
-            </div>
+      <div class="booking-info" v-if="bookingId || date">
+        <p v-if="bookingId">
+          <span class="label">Booking:</span> #{{ bookingId }}
+        </p>
+        <p v-if="date"><span class="label">Date:</span> {{ date }}</p>
+      </div>
 
-            <div class="booking-info" v-if="bookingId || date">
-                <p v-if="bookingId"><span class="label">Booking:</span> #{{ bookingId }}</p>
-                <p v-if="date"><span class="label">Date:</span> {{ date }}</p>
-            </div>
+      <div class="warning">
+        <p>False reports may result in action against your account!!</p>
+      </div>
 
-            <div class="warning">
-                <p>False reports may result in action against your account!!</p>
-            </div>
-
-            <div class="n-buttons">
-                <button class="cancel-button" type="button" @click="$emit('close')">Cancel</button>
-                <button
-                    class="submit-button"
-                    type="button"
-                    @click="submitReport"
-                    :disabled="!selectedReason || !description.trim() || isSubmitting"
-                >
-                    {{ isSubmitting ? 'Submitting...' : 'Submit' }}
-                </button>
-            </div>
-        </div>
+      <div class="n-buttons">
+        <button class="cancel-button" type="button" @click="$emit('close')">
+          Cancel
+        </button>
+        <button
+          class="submit-button"
+          type="button"
+          @click="submitReport"
+          :disabled="!selectedReason || !description.trim() || isSubmitting"
+        >
+          {{ isSubmitting ? "Submitting..." : "Submit" }}
+        </button>
+      </div>
     </div>
+  </div>
 </template>
-
 
 <script>
 import { createReport } from '../api/reports'
@@ -97,8 +99,16 @@ export default {
             this.isSubmitting = true
 
             try {
+
+                // Get the logged-in user's ID from localStorage
+                const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+
+                if (!storedUser.user_id) {
+                     throw new Error('You must be logged in to submit a report.') 
+
+                     }
                 await createReport({
-                    reporterId: 1,
+                    reporterId: storedUser.user_id,
                     reportedUserId: this.reportedUserId,
                     bookingId: this.bookingId,
                     reason: this.selectedReason,
@@ -130,140 +140,137 @@ export default {
 };
 </script>
 
-
 <style scoped>
-
 * {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .n-reportCard {
-    background: var(--color-primary);
-    color: white;
-    padding: 32px;
-    border-radius: 12px;
-    max-width: 420px;
-    width: 100%;
-    font-family: var(--font-main);
+  background: var(--color-primary);
+  color: white;
+  padding: 32px;
+  border-radius: 12px;
+  max-width: 420px;
+  width: 100%;
+  font-family: var(--font-main);
 }
 
 .n-header {
-    margin-bottom: 28px;
+  margin-bottom: 28px;
 }
 
 .n-header h2 {
-    font-size: var(--font-lg);
-    text-align: center;
+  font-size: var(--font-lg);
+  text-align: center;
 }
 
 .form-group,
 .description-text,
 .booking-info {
-    margin-bottom: 24px;
+  margin-bottom: 24px;
 }
 
 .form-group label,
 .description-text label {
-    display: block;
-    font-size: var(--font-sm);
-    margin-bottom: 8px;
+  display: block;
+  font-size: var(--font-sm);
+  margin-bottom: 8px;
 }
 
 select,
 textarea {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: var(--font-sm);
-    background: white;
-    color: #333;
-    box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: var(--font-sm);
+  background: white;
+  color: #333;
+  box-sizing: border-box;
 }
 
 select:focus,
 textarea:focus {
-    outline: 2px solid rgba(255, 255, 255, 0.5);
-    outline-offset: 2px;
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
 }
 
 select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
 }
 
 .booking-info {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-size: var(--font-sm);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: var(--font-sm);
 }
 
 .warning p {
-    font-size: var(--font-xs);
-    margin-bottom: 20px;
+  font-size: var(--font-xs);
+  margin-bottom: 20px;
 }
 
 .n-buttons {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .cancel-button,
 .submit-button {
-    background: #e8e8e8;
-    color: #333;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    flex: 1;
+  background: #e8e8e8;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex: 1;
 }
 
 .cancel-button {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .cancel-button:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .submit-button {
-    background: white;
-    color: var(--color-primary);
+  background: white;
+  color: var(--color-primary);
 }
 
 .submit-button:hover {
-    background: #f0f0f0;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  background: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .submit-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .n-reportOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
 }
-
 </style>

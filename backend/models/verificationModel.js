@@ -20,6 +20,29 @@ export const saveWorkerExperience = async ({
   return result.insertId;
 };
 
+// Updates the professional's service_id based on the service name they chose
+export const updateProfessionalService = async (
+  professionalId,
+  serviceName,
+) => {
+  // Look up the service ID by name (case insensitive, partial match)
+  const [rows] = await db.query(
+    `SELECT id FROM services WHERE LOWER(name) LIKE ? LIMIT 1`,
+    [`%${serviceName.toLowerCase()}%`],
+  );
+
+  if (rows.length === 0) {
+    return 0; // No matching service
+  }
+
+  const [result] = await db.query(
+    `UPDATE professionals SET service_id = ? WHERE professional_id = ?`,
+    [rows[0].id, professionalId],
+  );
+
+  return result.affectedRows;
+};
+
 // function for the email verification --> saveOTP insert a new Otp row
 export const saveOtp = async ({ userId, email, otpCode, expiresAt }) => {
   const [result] = await db.query(
@@ -42,7 +65,7 @@ export const findLatestOtp = async (userId) => {
   return rows[0];
 };
 
-// Changes is veried to true after the user enters the right code
+// Changes is verified to true after the user enters the right code
 export const markOtpVerified = async (id) => {
   await db.query(
     `UPDATE phone_verifications SET is_verified = TRUE WHERE id = ?`,
