@@ -1,11 +1,28 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import router from '@/router'
 
 const email = ref('')
 const password = ref('')
 const message = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
+const shake = ref(false)
+
+const triggerError = () => {
+  shake.value = true
+  setTimeout(() => { shake.value = false }, 500)
+}
+
+watch(message, async (newValue) => {
+  if (!newValue) return
+  await nextTick()
+  const el = document.getElementById('message')
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  triggerError()
+})
 
 const workerLogin = async () => {
   message.value = ''
@@ -28,7 +45,6 @@ const workerLogin = async () => {
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
 
-    // Redirect based on verification status
     if (data.user.verification_status === 'verified') {
       router.push('/worker')
     } else if (data.user.verification_status === 'rejected') {
@@ -54,7 +70,7 @@ const workerLogin = async () => {
         <h2>Worker Login</h2>
       </div>
 
-      <form id="signupForm" @submit.prevent="workerLogin">
+      <form id="signupForm" :class="{ shake: shake }" @submit.prevent="workerLogin">
 
         <div class="signup-input-group">
           <label for="email">Email</label>
@@ -63,7 +79,23 @@ const workerLogin = async () => {
 
         <div class="signup-input-group">
           <label for="password">Password</label>
-          <input v-model="password" type="password" id="password" placeholder="*************" required>
+          <div class="password-wrapper">
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              id="password"
+              placeholder="*************"
+              required
+            >
+            <span
+              class="password-toggle"
+              :class="{ active: showPassword }"
+              @click="showPassword = !showPassword"
+              :aria-label="showPassword ? 'Hide password' : 'Show password'"
+            >
+              👁
+            </span>
+          </div>
         </div>
 
         <button type="submit" class="signup-button" :disabled="loading">
@@ -150,6 +182,33 @@ body {
   box-shadow: 0 0 12px rgba(19, 97, 99, 0.18);
 }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.35;
+  transition: 0.2s;
+}
+
+.password-toggle.active {
+  opacity: 1;
+  color: #136163;
+}
+
 .signup-button {
   font-family: 'Plus Jakarta Sans', sans-serif;
   margin-top: 20px;
@@ -186,7 +245,32 @@ body {
 }
 
 #message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b00020;
   text-align: center;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fff2f2;
+  border: 1px solid #fecaca;
+  min-height: 0;
+}
+
+#message:empty {
+  display: none;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
 }
 
 @media (max-width: 768px) {
@@ -200,4 +284,3 @@ body {
   }
 }
 </style>
-

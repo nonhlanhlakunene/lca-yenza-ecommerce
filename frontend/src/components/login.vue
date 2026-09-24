@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import plumberImage from '../assets/stickman plumber.png'
 
@@ -9,6 +9,23 @@ const email = ref('')
 const password = ref('')
 const message = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
+const shake = ref(false)
+
+const triggerError = () => {
+  shake.value = true
+  setTimeout(() => { shake.value = false }, 500)
+}
+
+watch(message, async (newValue) => {
+  if (!newValue) return
+  await nextTick()
+  const el = document.getElementById('message')
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  triggerError()
+})
 
 const login = async () => {
   loading.value = true
@@ -17,9 +34,7 @@ const login = async () => {
   try {
     const response = await fetch('http://localhost:3000/api/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email.value,
         password: password.value
@@ -58,7 +73,6 @@ const goToSignup = () => {
 }
 </script>
 
-```vue
 <template>
   <div class="login-container">
 
@@ -73,7 +87,7 @@ const goToSignup = () => {
           <h2>Login</h2>
         </div>
 
-        <form id="loginForm" @submit.prevent="login">
+        <form id="loginForm" :class="{ shake: shake }" @submit.prevent="login">
 
           <div class="input-group">
             <label for="username">Email</label>
@@ -91,14 +105,32 @@ const goToSignup = () => {
           <div class="input-group">
             <label for="password">Password</label>
 
-            <input type="password" id="password" v-model="password" placeholder="*************" autocomplete="current-password" required>
+            <div class="password-wrapper">
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                id="password"
+                v-model="password"
+                placeholder="*************"
+                autocomplete="current-password"
+                required
+              >
+              <span
+                class="password-toggle"
+                :class="{ active: showPassword }"
+                @click="showPassword = !showPassword"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              >
+                👁
+              </span>
+            </div>
           </div>
 
-          <button type="submit" class="login-button" :disabled="loading">{{ loading ? 'Logging in...' : 'Login' }}</button>
+          <button type="submit" class="login-button" :disabled="loading">
+            {{ loading ? 'Logging in...' : 'Login' }}
+          </button>
 
           <div class="bottom-section">
             <p>no account?</p>
-
             <button type="button" class="signup-button-link" @click="goToSignup">sign up</button>
           </div><br>
 
@@ -113,21 +145,9 @@ const goToSignup = () => {
 
   </div>
 </template>
-```
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-
-/* html,
-body,
-#app {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background: white;
-  color: black;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-} */
 
 .login-container {
   display: flex;
@@ -135,7 +155,6 @@ body,
   height: 100vh;
 }
 
-/* LEFT SIDE - PLUMBER */
 .login-left-side {
   width: 50%;
   height: 100vh;
@@ -152,7 +171,6 @@ body,
   object-fit: contain;
 }
 
-/* RIGHT SIDE - LOGIN */
 .right-side {
   width: 50%;
   width: 400px;
@@ -213,6 +231,33 @@ body,
   box-shadow: 0 0 12px rgba(13, 110, 253, 0.18);
 }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.35;
+  transition: 0.2s;
+}
+
+.password-toggle.active {
+  opacity: 1;
+  color: #136163;
+}
+
 .login-button {
   font-family: 'Plus Jakarta Sans', sans-serif;
   margin-top: 20px;
@@ -238,16 +283,6 @@ body,
     margin-top: 40px;
 }
 
-.signup-button{
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #136163;
-    cursor: pointer;
-    color: gray;
-    border: none;
-    color: white;
-    text-align: center;
-}
-
 .signup-button-link{
   font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
@@ -258,7 +293,41 @@ body,
   text-decoration: underline;
 }
 
-/* MOBILE */
+#message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b00020;
+  text-align: center;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fff2f2;
+  border: 1px solid #fecaca;
+  min-height: 0;
+}
+
+#message.success {
+  color: #2e7d32;
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+#message:empty {
+  display: none;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;
