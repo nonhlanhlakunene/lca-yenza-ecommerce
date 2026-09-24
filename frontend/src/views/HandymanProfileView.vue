@@ -3,7 +3,6 @@ import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/api.js'
 import Swal from 'sweetalert2'
-import ReportPopup from '../components/ReportPopup.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,7 +12,6 @@ const reviews = ref([])
 const reviewsLoading = ref(false)
 const loading = ref(true)
 const errorMessage = ref('')
-const showReport = ref(false)
 
 const fromAdmin = computed(() => route.query.fromAdmin === 'true')
 
@@ -95,28 +93,6 @@ function requestBooking() {
   })
 }
 
-
-async function openReport() {
-  if (!localStorage.getItem('token')) {
-    await Swal.fire({
-      icon: 'info',
-      title: 'Please log in',
-      text: 'You need to log in before you can report someone.',
-      confirmButtonColor: '#136163'
-    })
-
-    router.push({
-      path: '/login',
-      query: {
-        redirect: route.fullPath
-      }
-    })
-
-    return
-  }
-
-  showReport.value = true
-}
 
 </script>
 
@@ -248,12 +224,6 @@ async function openReport() {
               Request Booking
             </button>
 
-            <button
-              class="report-button"
-              @click="openReport"
-            >
-              Report
-            </button>
           </article>
         </aside>
       </div>
@@ -304,14 +274,6 @@ async function openReport() {
           </article>
         </div>
       </section>
-
-      <ReportPopup
-        v-if="showReport && pro"
-        :person-name="pro.name"
-        person-type="Professional"
-        :reported-user-id="pro.user_id"
-        @close="showReport = false"
-      />
     </section>
   </main>
 </template>
@@ -456,7 +418,7 @@ async function openReport() {
 }
 
 .profile-card {
-  padding: 20px;
+  padding: 40px;
   border: 1px solid #dfe7ed;
   border-radius: 11px;
   background: #fff;
@@ -506,8 +468,7 @@ async function openReport() {
   font-style: italic;
 }
 
-.request-button,
-.report-button {
+.request-button {
   display: flex;
   width: 100%;
   height: 34px;
@@ -525,14 +486,8 @@ async function openReport() {
   font-size: 14px;
 }
 
-.request-button:hover,
-.report-button:hover {
+.request-button:hover {
   background: #0c5052;
-}
-
-.report-button {
-  margin-top: 9px;
-  cursor: pointer;
 }
 
 .profile-state {

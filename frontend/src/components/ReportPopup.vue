@@ -108,11 +108,11 @@ export default {
 
                      }
                 await createReport({
-                    reporterId: storedUser.user_id,
-                    reportedUserId: this.reportedUserId,
-                    bookingId: this.bookingId,
-                    reason: this.selectedReason,
-                    description: this.description
+                  reporterId: storedUser.user_id,
+                  reportedUserId: this.reportedUserId,
+                  bookingId: this.bookingId || null,
+                  reason: this.selectedReason,
+                  description: this.description
                 })
 
                 Swal.fire({

@@ -39,7 +39,7 @@ const booking = ref({
     date: '',
     time: '',
     address: '',
-    city: '',
+    city: 'Cape Town',
     notes: ''
 })
 
@@ -208,13 +208,7 @@ const submitBooking = async () => {
                 <!-- CITY -->
                 <div class="form-group">
                     <label for="city">City *</label>
-
-                    <input
-                        id="city"
-                        v-model="booking.city"
-                        type="text"
-                        placeholder="Enter the city where the service is needed"
-                    >
+                    <input id="city" v-model="booking.city" type="text" readonly>
                 </div>
 
                 <!-- ADDITIONAL INFORMATION -->
