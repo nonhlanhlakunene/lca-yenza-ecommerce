@@ -16,6 +16,7 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 import api from '../api/api.js'
 
+
 delete L.Icon.Default.prototype._getIconUrl
 
 L.Icon.Default.mergeOptions({
@@ -24,28 +25,17 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow
 })
 
+
 const categories = ref([])
-
 const professionals = ref([])
-
 const activeCategory = ref('')
-
 const activeFilter = ref('All')
-
 const search = ref('')
-
 const currentPage = ref(1)
-
-const priceFilter =
-    ref('All prices')
-
-const priceMenuOpen =
-    ref(false)
-
+const priceFilter = ref('All prices')
+const priceMenuOpen = ref(false)
 const loading = ref(false)
-
-const errorMessage =
-    ref('')
+const errorMessage = ref('')
 
 const workersPerPage = 3
 
@@ -61,140 +51,91 @@ const priceOptions = [
     'R501+/hr'
 ]
 
-/*
-|--------------------------------------------------------------------------
-| MAP
-|--------------------------------------------------------------------------
-*/
 
-const mapElement =
-    ref(null)
+const mapElement = ref(null)
+const map = ref(null)
+const markersLayer = ref(null)
+const mapReady = ref(false)
+const mapFilterEnabled = ref(false)
+const workerLocations = ref([])
+const geocoding = ref(false)
+const mapMessage = ref('')
+const selectedProfessionalId = ref(null)
 
-const map =
-    ref(null)
 
-const markersLayer =
-    ref(null)
+const filteredProfessionals = computed(() => {
+    let result = [...professionals.value]
 
-const mapReady =
-    ref(false)
+    if (
+        mapFilterEnabled.value &&
+        mapReady.value &&
+        map.value
+    ) {
+        const bounds = map.value.getBounds()
 
-const mapFilterEnabled =
-    ref(false)
+        result = result.filter(pro => {
+            const location =
+                workerLocations.value.find(
+                    item =>
+                        String(item.id) ===
+                        String(pro.id)
+                )
 
-const workerLocations =
-    ref([])
+            if (!location) {
+                return false
+            }
 
-const geocoding =
-    ref(false)
+            return bounds.contains([
+                location.latitude,
+                location.longitude
+            ])
+        })
+    }
 
-const mapMessage =
-    ref('')
+    return result
+})
 
-const selectedProfessionalId =
-    ref(null)
 
-/*
-|--------------------------------------------------------------------------
-| PROFESSIONAL FILTERING
-|--------------------------------------------------------------------------
-*/
+const totalPages = computed(() =>
+    Math.ceil(
+        filteredProfessionals.value.length /
+        workersPerPage
+    )
+)
 
-const filteredProfessionals =
-    computed(() => {
-        let result = [
-            ...professionals.value
-        ]
 
-        if (
-            mapFilterEnabled.value &&
-            mapReady.value
-        ) {
-            const bounds =
-                map.value.getBounds()
+const visibleProfessionals = computed(() => {
+    const start =
+        (currentPage.value - 1) *
+        workersPerPage
 
-            result =
-                result.filter(pro => {
-                    const location =
-                        workerLocations.value.find(
-                            item =>
-                                String(
-                                    item.id
-                                ) ===
-                                String(
-                                    pro.id
-                                )
-                        )
+    const end =
+        start + workersPerPage
 
-                    if (
-                        !location ||
-                        location.latitude === null ||
-                        location.longitude === null
-                    ) {
-                        return false
-                    }
+    return filteredProfessionals.value.slice(
+        start,
+        end
+    )
+})
 
-                    return bounds.contains([
-                        location.latitude,
-                        location.longitude
-                    ])
-                })
-        }
 
-        return result
-    })
-
-/*
-|--------------------------------------------------------------------------
-| PAGINATION
-|--------------------------------------------------------------------------
-*/
-
-const totalPages =
-    computed(() => {
-        return Math.ceil(
-            filteredProfessionals.value
-                .length /
-            workersPerPage
-        )
-    })
-
-const visibleProfessionals =
-    computed(() => {
-        const start =
-            (currentPage.value - 1) *
-            workersPerPage
-
-        const end =
-            start + workersPerPage
-
-        return filteredProfessionals.value.slice(
-            start,
-            end
-        )
-    })
-
-/*
-|--------------------------------------------------------------------------
-| PRICE FILTER
-|--------------------------------------------------------------------------
-*/
-
-function addPriceParams(
-    params
-) {
+function addPriceParams(params) {
     if (
         priceFilter.value ===
         'Under R300/hr'
     ) {
         params.maxPrice = 299.99
-    } else if (
+    }
+
+    if (
         priceFilter.value ===
         'R300 – R500/hr'
     ) {
         params.minPrice = 300
         params.maxPrice = 500
-    } else if (
+    }
+
+    if (
         priceFilter.value ===
         'R501+/hr'
     ) {
@@ -202,30 +143,27 @@ function addPriceParams(
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| LOAD PROFESSIONALS
-|--------------------------------------------------------------------------
-*/
+
+function selectPrice(option) {
+    priceFilter.value = option
+    priceMenuOpen.value = false
+    currentPage.value = 1
+}
+
 
 async function loadProfessionals() {
     loading.value = true
-
     errorMessage.value = ''
 
     try {
         const params = {}
 
-        if (
-            activeCategory.value
-        ) {
+        if (activeCategory.value) {
             params.category =
                 activeCategory.value
         }
 
-        if (
-            search.value.trim()
-        ) {
+        if (search.value.trim()) {
             params.search =
                 search.value.trim()
         }
@@ -234,28 +172,22 @@ async function loadProfessionals() {
             activeFilter.value ===
             'Reviews'
         ) {
-            params.sort =
-                'reviews'
+            params.sort = 'reviews'
         } else if (
             activeFilter.value ===
             'Rating'
         ) {
-            params.sort =
-                'rating'
+            params.sort = 'rating'
         } else if (
             priceFilter.value !==
             'All prices'
         ) {
-            params.sort =
-                'price-asc'
+            params.sort = 'price-asc'
         } else {
-            params.sort =
-                'best-match'
+            params.sort = 'best-match'
         }
 
-        addPriceParams(
-            params
-        )
+        addPriceParams(params)
 
         const response =
             await api.get(
@@ -266,75 +198,73 @@ async function loadProfessionals() {
             )
 
         professionals.value =
-            response.data
-                .professionals || []
+            response.data.professionals || []
 
         currentPage.value = 1
+
 
     } catch (error) {
         console.error(
-            'Failed to load professionals:',
+            'Load professionals error:',
             error
         )
 
-        professionals.value = []
-
-        currentPage.value = 1
-
         errorMessage.value =
-            error.response?.data?.message ||
             'Unable to load professionals. Please try again.'
     } finally {
         loading.value = false
     }
 }
 
+
 async function searchForProfessional() {
     await loadProfessionals()
 
-    if (!search.value.trim() || !professionals.value.length) return
+    if (
+        !search.value.trim() ||
+        !professionals.value.length
+    ) {
+        return
+    }
 
     await geocodeProfessionals()
 
-    const searchTerm = search.value.trim().toLowerCase()
-    const professional = professionals.value.find(
-        item => item.name.toLowerCase() === searchTerm
-    ) || professionals.value[0]
+    const searchTerm =
+        search.value
+            .trim()
+            .toLowerCase()
 
-    focusProfessionalOnMap(professional.id)
+    const professional =
+        professionals.value.find(
+            item =>
+                item.name
+                    .toLowerCase() ===
+                searchTerm
+        ) ||
+        professionals.value[0]
+
+    focusProfessionalOnMap(
+        professional.id
+    )
 }
 
-/*
-|--------------------------------------------------------------------------
-| LOAD CATEGORIES
-|--------------------------------------------------------------------------
-*/
 
 async function loadCategories() {
     try {
         const response =
-            await api.get(
-                '/categories'
-            )
+            await api.get('/categories')
 
         categories.value =
-            response.data
-                .categories || []
+            response.data.categories || []
+
     } catch (error) {
         console.error(
-            'Failed to load categories:',
+            'Load categories error:',
             error
         )
-
-        categories.value = []
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| MAP INITIALISATION
-|--------------------------------------------------------------------------
-*/
 
 function initialiseMap() {
     if (
@@ -344,34 +274,25 @@ function initialiseMap() {
         return
     }
 
-    map.value =
-        L.map(
-            mapElement.value,
-            {
-                zoomControl: true
-            }
-        ).setView(
-            [
-                -33.9249,
-                18.4241
-            ],
-            11
-        )
+    map.value = L.map(
+        mapElement.value
+    ).setView(
+        [
+            -33.9249,
+            18.4241
+        ],
+        11
+    )
 
     L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
-            attribution:
-                '&copy; OpenStreetMap contributors',
-
-            // OpenStreetMap supplies tiles through zoom 19. Allowing Leaflet
-            // to scale those tiles prevents a blank map at our focus zoom of 20.
             maxNativeZoom: 19,
-            maxZoom: 20
+            maxZoom: 20,
+            attribution:
+                '&copy; OpenStreetMap contributors'
         }
-    ).addTo(
-        map.value
-    )
+    ).addTo(map.value)
 
     markersLayer.value =
         L.layerGroup().addTo(
@@ -403,38 +324,30 @@ function initialiseMap() {
     mapReady.value = true
 }
 
-/*
-|--------------------------------------------------------------------------
-| CREATE ADDRESS
-|--------------------------------------------------------------------------
-*/
 
-function getProfessionalAddress(
-    professional
-) {
+function getProfessionalAddress(pro) {
     return [
-        professional.address,
-        professional.city,
-        professional.province,
-        professional.postal_code,
+        pro.address,
+        pro.city,
+        pro.province,
+        pro.postal_code,
         'South Africa'
     ]
         .filter(Boolean)
         .join(', ')
 }
 
-/*
-|--------------------------------------------------------------------------
-| GEOCODING
-|--------------------------------------------------------------------------
-*/
 
-async function geocodeAddress(
-    address
-) {
+async function geocodeAddress(address) {
+    if (!address) {
+        return null
+    }
+
     try {
         const url =
-            'https://nominatim.openstreetmap.org/search?' +
+            'https://nominatim.openstreetmap.org/search'
+
+        const params =
             new URLSearchParams({
                 q: address,
                 format: 'json',
@@ -443,42 +356,37 @@ async function geocodeAddress(
             })
 
         const response =
-            await fetch(url, {
-                headers: {
-                    Accept:
-                        'application/json'
+            await fetch(
+                `${url}?${params.toString()}`,
+                {
+                    headers: {
+                        Accept:
+                            'application/json'
+                    }
                 }
-            })
+            )
 
-        if (
-            !response.ok
-        ) {
+        if (!response.ok) {
             return null
         }
 
         const data =
             await response.json()
 
-        if (
-            !data.length
-        ) {
+        if (!data.length) {
             return null
         }
 
         return {
             latitude:
-                Number(
-                    data[0].lat
-                ),
-
+                Number(data[0].lat),
             longitude:
-                Number(
-                    data[0].lon
-                )
+                Number(data[0].lon)
         }
+
     } catch (error) {
         console.error(
-            'Geocoding failed:',
+            'Geocoding error:',
             error
         )
 
@@ -486,25 +394,16 @@ async function geocodeAddress(
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| GEOCODE ALL PROFESSIONALS
-|--------------------------------------------------------------------------
-*/
 
 async function geocodeProfessionals() {
-    if (
-        !professionals.value.length
-    ) {
+    if (!professionals.value.length) {
         workerLocations.value = []
-
         return
     }
 
     geocoding.value = true
-
     mapMessage.value =
-        'Finding worker locations...'
+        'Loading worker locations...'
 
     const locations = []
 
@@ -512,34 +411,17 @@ async function geocodeProfessionals() {
         const professional
         of professionals.value
     ) {
-        const address =
-            getProfessionalAddress(
-                professional
-            )
-
         let coordinates = null
 
-        /*
-         * If the API ever gives us
-         * coordinates in the future,
-         * use them first.
-         */
         if (
-            professional.latitude !==
-                undefined &&
-            professional.longitude !==
-                undefined &&
-            professional.latitude !==
-                null &&
-            professional.longitude !==
-                null
+            professional.latitude &&
+            professional.longitude
         ) {
             coordinates = {
                 latitude:
                     Number(
                         professional.latitude
                     ),
-
                 longitude:
                     Number(
                         professional.longitude
@@ -547,23 +429,17 @@ async function geocodeProfessionals() {
             }
         }
 
-        /*
-         * Otherwise use the existing
-         * database address.
-         */
-        if (
-            !coordinates &&
-            address
-        ) {
+        if (!coordinates) {
+            const address =
+                getProfessionalAddress(
+                    professional
+                )
+
             coordinates =
                 await geocodeAddress(
                     address
                 )
 
-            /*
-             * Small delay between
-             * requests.
-             */
             await new Promise(
                 resolve =>
                     setTimeout(
@@ -573,21 +449,15 @@ async function geocodeProfessionals() {
             )
         }
 
-        locations.push({
-            id: professional.id,
-
-            latitude:
-                coordinates
-                    ? coordinates.latitude
-                    : null,
-
-            longitude:
-                coordinates
-                    ? coordinates.longitude
-                    : null,
-
-            address
-        })
+        if (coordinates) {
+            locations.push({
+                id: professional.id,
+                latitude:
+                    coordinates.latitude,
+                longitude:
+                    coordinates.longitude
+            })
+        }
     }
 
     workerLocations.value =
@@ -595,23 +465,20 @@ async function geocodeProfessionals() {
 
     geocoding.value = false
 
-    mapMessage.value = ''
+    mapMessage.value =
+        `${locations.length} worker location(s) found.`
 
-    updateMapMarkers()
+    await updateMapMarkers()
 }
 
-/*
-|--------------------------------------------------------------------------
-| UPDATE MAP MARKERS
-|--------------------------------------------------------------------------
-*/
 
-function updateMapMarkers() {
+async function updateMapMarkers() {
     if (!map.value) {
         return
     }
     if (
         !mapReady.value ||
+        !map.value ||
         !markersLayer.value
     ) {
         return
@@ -619,95 +486,78 @@ function updateMapMarkers() {
 
     markersLayer.value.clearLayers()
 
-    const markerBounds = []
-
-    professionals.value.forEach(
-        professional => {
-            const location =
-                workerLocations.value.find(
-                    item =>
-                        String(
-                            item.id
-                        ) ===
-                        String(
-                            professional.id
-                        )
-                )
-
-            if (
-                !location ||
-                location.latitude === null ||
-                location.longitude === null
-            ) {
-                return
-            }
-
-            const marker =
-                L.marker([
-                    location.latitude,
-                    location.longitude
-                ], {
-                    professionalId: professional.id
-                })
-
-            const popup = `
-                <div class="map-popup">
-                    <strong>
-                        ${escapeHtml(
-                            professional.name ||
-                            'Professional'
-                        )}
-                    </strong>
-
-                    <br>
-
-                    <span>
-                        ${escapeHtml(
-                            professional.job ||
-                            'Professional'
-                        )}
-                    </span>
-
-                    <br>
-
-                    <strong>
-                        R${Number(
-                            professional.price || 0
-                        ).toFixed(2)}/hr
-                    </strong>
-
-                    <br>
-
-                    <span>
-                        ${escapeHtml(
-                            professional.city ||
-                            ''
-                        )}
-                    </span>
-                </div>
-            `
-
-            marker.bindPopup(
-                popup
+    for (
+        const professional
+        of professionals.value
+    ) {
+        const location =
+            workerLocations.value.find(
+                item =>
+                    String(item.id) ===
+                    String(
+                        professional.id
+                    )
             )
 
-            marker.on(
-                'click',
-                () => {
-                    focusProfessionalOnMap(professional.id)
-                }
-            )
+        if (!location) {
+            continue
+        }
 
-            marker.addTo(
-                markersLayer.value
-            )
-
-            markerBounds.push([
+        const marker =
+            L.marker([
                 location.latitude,
                 location.longitude
             ])
-        }
-    )
+
+        const name =
+            escapeHtml(
+                professional.name ||
+                'Professional'
+            )
+
+        const job =
+            escapeHtml(
+                professional.job ||
+                ''
+            )
+
+        const city =
+            escapeHtml(
+                professional.city ||
+                ''
+            )
+
+        marker.bindPopup(`
+            <div>
+                <strong>${name}</strong>
+                <br>
+                ${job}
+                <br>
+                R${professional.price || 0}/hr
+                <br>
+                ${city}
+            </div>
+        `)
+
+        marker.on(
+            'click',
+            () => {
+                focusProfessionalOnMap(
+                    professional.id
+                )
+            }
+        )
+
+        marker.addTo(
+            markersLayer.value
+        )
+
+        markerBounds.push([
+            location.latitude,
+            location.longitude
+        ])
+    }
+
 
     /*
      * Only fit the map to workers
@@ -748,26 +598,72 @@ function focusProfessionalOnMap(professionalId) {
 
     if (!location || location.latitude === null || location.longitude === null) {
         mapMessage.value = 'This professional does not have a mapped location yet.'
+        marker.addTo(
+            markersLayer.value
+        )
+    }
+}
+
+
+function focusProfessionalOnMap(id) {
+    if (
+        !map.value ||
+        !mapReady.value
+    ) {
         return
     }
 
-    selectedProfessionalId.value = professionalId
+    const location =
+        workerLocations.value.find(
+            item =>
+                String(item.id) ===
+                String(id)
+        )
 
-    map.value.flyTo([location.latitude, location.longitude], 20, {
-        animate: true,
-        duration: 0.8
-    })
+    if (!location) {
+        return
+    }
 
-    const marker = markersLayer.value.getLayers().find(
-        layer => String(layer.options.professionalId) === String(professionalId)
+    selectedProfessionalId.value =
+        id
+
+    map.value.flyTo(
+        [
+            location.latitude,
+            location.longitude
+        ],
+        20,
+        {
+            animate: true,
+            duration: 0.8
+        }
     )
 
-    marker?.openPopup()
+    setTimeout(() => {
+        markersLayer.value.eachLayer(
+            marker => {
+                const latLng =
+                    marker.getLatLng()
+
+                if (
+                    Math.abs(
+                        latLng.lat -
+                        location.latitude
+                    ) < 0.000001 &&
+                    Math.abs(
+                        latLng.lng -
+                        location.longitude
+                    ) < 0.000001
+                ) {
+                    marker.openPopup()
+                }
+            }
+        )
+    }, 900)
 }
 
-function escapeHtml(
-    value
-) {
+
+function escapeHtml(value) {
     return String(value)
         .replace(
             /&/g,
@@ -791,11 +687,6 @@ function escapeHtml(
         )
 }
 
-/*
-|--------------------------------------------------------------------------
-| MAP FILTER
-|--------------------------------------------------------------------------
-*/
 
 function toggleMapFilter() {
     mapFilterEnabled.value =
@@ -804,67 +695,42 @@ function toggleMapFilter() {
     currentPage.value = 1
 }
 
-function clearMapFilter() {
-    mapFilterEnabled.value =
-        false
 
+function clearMapFilter() {
+    mapFilterEnabled.value = false
     currentPage.value = 1
 }
 
-/*
-|--------------------------------------------------------------------------
-| RESET MAP VIEW
-|--------------------------------------------------------------------------
-*/
 
 function showAllWorkersOnMap() {
     if (
-        !map.value
+        !map.value ||
+        !workerLocations.value.length
     ) {
         return
     }
 
-    const coordinates =
-        workerLocations.value
-            .filter(
-                location =>
-                    location.latitude !==
-                        null &&
-                    location.longitude !==
-                        null
-            )
-            .map(
+    const bounds =
+        L.latLngBounds(
+            workerLocations.value.map(
                 location => [
                     location.latitude,
                     location.longitude
                 ]
             )
-
-    if (
-        coordinates.length
-    ) {
-        map.value.fitBounds(
-            coordinates,
-            {
-                padding: [
-                    30,
-                    30
-                ]
-            }
         )
-    }
 
-    mapFilterEnabled.value =
-        false
+    map.value.fitBounds(
+        bounds,
+        {
+            padding: [30, 30]
+        }
+    )
 
+    mapFilterEnabled.value = false
     currentPage.value = 1
 }
 
-/*
-|--------------------------------------------------------------------------
-| PAGINATION
-|--------------------------------------------------------------------------
-*/
 
 function nextPage() {
     if (
@@ -875,6 +741,7 @@ function nextPage() {
     }
 }
 
+
 function previousPage() {
     if (
         currentPage.value > 1
@@ -883,33 +750,24 @@ function previousPage() {
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| INITIALS
-|--------------------------------------------------------------------------
-*/
 
-function initials(
-    name
-) {
+function initials(name) {
     if (!name) {
-        return ''
+        return '?'
     }
 
     return name
         .split(' ')
-        .map(
-            part => part[0]
-        )
+        .filter(Boolean)
         .slice(0, 2)
+        .map(
+            part =>
+                part.charAt(0)
+        )
         .join('')
+        .toUpperCase()
 }
 
-/*
-|--------------------------------------------------------------------------
-| WATCHERS
-|--------------------------------------------------------------------------
-*/
 
 watch(
     [
@@ -920,10 +778,10 @@ watch(
     ],
     () => {
         currentPage.value = 1
-
         loadProfessionals()
     }
 )
+
 
 watch(
     mapFilterEnabled,
@@ -932,485 +790,358 @@ watch(
     }
 )
 
-/*
-|--------------------------------------------------------------------------
-| MOUNT
-|--------------------------------------------------------------------------
-*/
 
-onMounted(
-    async () => {
-        initialiseMap()
+onMounted(async () => {
+    initialiseMap()
+    await loadCategories()
+    await loadProfessionals()
+    await geocodeProfessionals()
+})
 
-        await loadCategories()
 
-        await loadProfessionals()
-
-        await geocodeProfessionals()
+onBeforeUnmount(() => {
+    if (map.value) {
+        map.value.remove()
+        map.value = null
     }
-)
-
-/*
-|--------------------------------------------------------------------------
-| CLEANUP
-|--------------------------------------------------------------------------
-*/
-
-onBeforeUnmount(
-    () => {
-        if (map.value) {
-            map.value.remove()
-
-            map.value = null
-        }
-    }
-)
+})
 </script>
 
+
 <template>
-  <main class="directory-shell">
+    <main class="directory-shell">
 
-    <aside class="sidebar">
+        <aside class="sidebar">
 
-      <div class="brand">
-        YENZA!
-      </div>
+            <div class="brand">
+                YENZA!
+            </div>
 
-      <p class="section-label">
-        CATEGORY
-      </p>
-
-      <nav aria-label="Trade categories">
-
-        <button
-          type="button"
-          class="category"
-          :class="{
-            active:
-              activeCategory === ''
-          }"
-          @click="
-            activeCategory = ''
-          "
-        >
-          All
-
-          <span>
-            ›
-          </span>
-        </button>
-
-        <button
-          v-for="category in categories"
-          :key="category.id"
-          type="button"
-          class="category"
-          :class="{
-            active:
-              activeCategory ===
-              category.name
-          }"
-          @click="
-            activeCategory =
-              category.name
-          "
-        >
-          {{ category.name }}
-
-          <span>
-            ›
-          </span>
-        </button>
-
-      </nav>
-
-    </aside>
-
-    <section class="content">
-
-      <form
-        class="search-bar"
-        @submit.prevent="
-          searchForProfessional
-        "
-      >
-
-        <input
-          v-model="search"
-          type="search"
-          placeholder="Search services..."
-          aria-label="Search services"
-        />
-
-        <button type="submit">
-          Search
-        </button>
-
-      </form>
-
-      <p class="filter-label">
-        QUICK FILTERS
-      </p>
-
-      <div class="filters">
-
-        <button
-          type="button"
-          :class="{
-            selected:
-              activeFilter === 'All'
-          }"
-          @click="
-            activeFilter = 'All'
-          "
-        >
-          All
-        </button>
-
-        <div class="price-filter">
-
-          <button
-            type="button"
-            class="prices-button"
-            :class="{
-              selected:
-                priceFilter !==
-                'All prices'
-            }"
-            @click="
-              priceMenuOpen =
-                !priceMenuOpen
-            "
-          >
-            Prices ▼
-          </button>
-
-          <div
-            v-if="priceMenuOpen"
-            class="price-menu"
-          >
-
-            <button
-              v-for="option in priceOptions"
-              :key="option"
-              type="button"
-              :class="{
-                active:
-                  priceFilter ===
-                  option
-              }"
-              @click="
-                priceFilter = option;
-                priceMenuOpen = false
-              "
-            >
-              {{ option }}
-            </button>
-
-          </div>
-
-        </div>
-
-        <button
-          v-for="filter in filters"
-          :key="filter"
-          type="button"
-          :class="{
-            selected:
-              activeFilter === filter
-          }"
-          @click="
-            activeFilter = filter
-          "
-        >
-          {{ filter }}
-        </button>
-
-      </div>
-
-      <!-- MAP -->
-
-      <section class="map-section">
-
-        <div class="map-header">
-
-          <div>
-
-            <h2>
-              Find Handymen Near You
-            </h2>
-
-            <p>
-              Move or zoom the map to explore worker locations.
+            <p class="section-label">
+                CATEGORY
             </p>
 
-          </div>
+            <nav aria-label="Trade categories">
 
-          <div class="map-actions">
-
-            <button
-              type="button"
-              class="map-filter-button"
-              :class="{
-                enabled:
-                  mapFilterEnabled
-              }"
-              @click="
-                toggleMapFilter
-              "
-            >
-              {{
-                mapFilterEnabled
-                  ? 'Map Filter On'
-                  : 'Filter by Map Area'
-              }}
-            </button>
-
-            <button
-              type="button"
-              class="map-reset-button"
-              @click="
-                showAllWorkersOnMap
-              "
-            >
-              Show All
-            </button>
-
-          </div>
-
-        </div>
-
-        <div
-          ref="mapElement"
-          class="map"
-        ></div>
-
-        <div
-          v-if="geocoding"
-          class="map-status"
-        >
-          {{ mapMessage }}
-        </div>
-
-        <div
-          v-if="mapFilterEnabled"
-          class="map-filter-status"
-        >
-          Map filtering is active. Only workers inside the visible map area
-          are shown below.
-        </div>
-
-      </section>
-
-      <!-- RESULTS -->
-
-      <div class="results-heading">
-
-        <h1>
-          Available Handymen
-          ({{ filteredProfessionals.length }}
-          results)
-        </h1>
-
-        <span>
-          Sorted by:
-
-          <strong>
-            {{
-              activeFilter === 'All' &&
-              priceFilter ===
-                'All prices'
-                ? 'Best Match'
-                : activeFilter === 'All'
-                  ? 'Lowest Price'
-                  : activeFilter
-            }}
-          </strong>
-        </span>
-
-      </div>
-
-      <div class="results-area">
-
-        <p
-          v-if="loading"
-          class="state-message"
-        >
-          Loading professionals…
-        </p>
-
-        <p
-          v-else-if="errorMessage"
-          class="state-message error"
-        >
-          {{ errorMessage }}
-        </p>
-
-        <template v-else>
-
-          <div
-            v-if="
-              visibleProfessionals.length
-            "
-            class="cards"
-          >
-
-            <article
-              v-for="
-                pro in visibleProfessionals
-              "
-              :key="pro.id"
-              class="professional-card"
-              :class="{
-                selected:
-                  String(selectedProfessionalId) ===
-                  String(pro.id)
-              }"
-            >
-
-              <div class="pro-top">
-
-                <img
-                  v-if="pro.photo"
-                  :src="pro.photo"
-                  :alt="pro.name"
-                />
-
-                <div
-                  v-else
-                  class="avatar"
-                >
-                  {{ initials(pro.name) }}
-                </div>
-
-                <div class="pro-info">
-
-                  <h2>
-                    {{ pro.name }}
-                  </h2>
-
-                  <p>
-                    {{ pro.job }}
-                  </p>
-
-                  <small class="reviews">
-
-                    <b>
-                      ★
-                    </b>
-
-                    {{ pro.rating || 0 }}
+                <button type="button" class="category" :class="{
+                    active:
+                        activeCategory === ''
+                }" @click="
+            activeCategory = ''
+            ">
+                    All
 
                     <span>
-                      ({{ pro.reviews || 0 }}
-                      reviews)
+                        ›
                     </span>
+                </button>
 
-                  </small>
+                <button v-for="category in categories" :key="category.id" type="button" class="category" :class="{
+                    active:
+                        activeCategory ===
+                        category.name
+                }" @click="
+            activeCategory =
+            category.name
+            ">
+                    {{ category.name }}
 
-                  <small
-                    v-if="pro.city"
-                    class="location"
-                  >
-                    📍 {{ pro.city }}
-                  </small>
+                    <span>
+                        ›
+                    </span>
+                </button>
+
+            </nav>
+
+        </aside>
+
+        <section class="content">
+
+            <form class="search-bar" @submit.prevent="
+                searchForProfessional
+            ">
+
+                <input v-model="search" type="search" placeholder="Search services..." aria-label="Search services" />
+
+                <button type="submit">
+                    Search
+                </button>
+
+            </form>
+
+            <p class="filter-label">
+                QUICK FILTERS
+            </p>
+
+            <div class="filters">
+
+                <button type="button" :class="{
+                    selected:
+                        activeFilter === 'All'
+                }" @click="
+            activeFilter = 'All'
+            ">
+                    All
+                </button>
+
+                <div class="price-filter">
+
+                    <button type="button" class="prices-button" :class="{
+                        selected:
+                            priceFilter !==
+                            'All prices'
+                    }" @click="
+                priceMenuOpen =
+                !priceMenuOpen
+                ">
+                        Prices ▼
+                    </button>
+
+                    <div v-if="priceMenuOpen" class="price-menu">
+
+                        <button v-for="option in priceOptions" :key="option" type="button" :class="{
+                            active:
+                                priceFilter ===
+                                option
+                        }" @click="selectPrice(option)">
+                            {{ option }}
+                        </button>
+
+                    </div>
 
                 </div>
 
-                <strong class="price">
-                  R{{ pro.price }}/hr
-                </strong>
+                <button v-for="filter in filters" :key="filter" type="button" :class="{
+                    selected:
+                        activeFilter === filter
+                }" @click="
+            activeFilter = filter
+            ">
+                    {{ filter }}
+                </button>
 
-              </div>
+            </div>
 
-              <div class="card-footer">
 
-                <div class="tags">
+            <!-- MAP -->
 
-                  <span
-                    v-for="tag in pro.tags"
-                    :key="tag"
-                  >
-                    {{ tag }}
-                  </span>
+            <section class="map-section">
+
+                <div class="map-header">
+
+                    <div>
+
+                        <h2>
+                            Find Handymen Near You
+                        </h2>
+
+                        <p>
+                            Move or zoom the map to explore worker locations.
+                        </p>
+
+                    </div>
+
+                    <div class="map-actions">
+
+                        <button type="button" class="map-filter-button" :class="{
+                            enabled:
+                                mapFilterEnabled
+                        }" @click="
+                toggleMapFilter
+            ">
+                            {{
+                                mapFilterEnabled
+                                    ? 'Map Filter On'
+                                    : 'Filter by Map Area'
+                            }}
+                        </button>
+
+                        <button type="button" class="map-reset-button" @click="
+                            showAllWorkersOnMap
+                        ">
+                            Show All
+                        </button>
+
+                    </div>
 
                 </div>
 
-                <RouterLink
-                  class="profile-button"
-                  :to="{
-                    name: 'profile',
-                    params: {
-                      slug: pro.slug
-                    }
-                  }"
-                >
-                  View Profile →
-                </RouterLink>
+                <div ref="mapElement" class="map"></div>
 
-              </div>
+                <div v-if="geocoding" class="map-status">
+                    {{ mapMessage }}
+                </div>
 
-            </article>
+                <div v-if="mapFilterEnabled" class="map-filter-status">
+                    Map filtering is active. Only workers inside the visible map area
+                    are shown below.
+                </div>
 
-          </div>
+            </section>
 
-          <p
-            v-else
-            class="state-message"
-          >
-            No handymen match your search or current map area.
-          </p>
 
-        </template>
+            <!-- RESULTS -->
 
-      </div>
-      <div v-if="loading">
-    Loading professionals...
-</div>
+            <div class="results-heading">
 
-      <nav
-        v-if="totalPages > 1"
-        class="pagination"
-        aria-label="Results pages"
-      >
+                <h1>
+                    Available Handymen
+                    ({{ filteredProfessionals.length }}
+                    results)
+                </h1>
 
-        <button
-          type="button"
-          :disabled="
-            currentPage === 1
-          "
-          @click="
+                <span>
+                    Sorted by:
+
+                    <strong>
+                        {{
+                            activeFilter === 'All' &&
+                                priceFilter ===
+                                'All prices'
+                                ? 'Best Match'
+                                : activeFilter === 'All'
+                                    ? 'Lowest Price'
+                        : activeFilter
+                        }}
+                    </strong>
+                </span>
+
+            </div>
+
+
+            <div class="results-area">
+
+                <p v-if="loading" class="state-message">
+                    Loading professionals…
+                </p>
+
+                <p v-else-if="errorMessage" class="state-message error">
+                    {{ errorMessage }}
+                </p>
+
+                <template v-else>
+
+                    <div v-if="
+                        visibleProfessionals.length
+                    " class="cards">
+
+                        <article v-for="
+pro in visibleProfessionals
+              " :key="pro.id" class="professional-card" :class="{
+                selected:
+                    String(selectedProfessionalId) ===
+                    String(pro.id)
+            }">
+
+                            <div class="pro-top">
+
+                                <img v-if="pro.photo" :src="pro.photo" :alt="pro.name" />
+
+                                <div v-else class="avatar">
+                                    {{ initials(pro.name) }}
+                                </div>
+
+                                <div class="pro-info">
+
+                                    <h2>
+                                        {{ pro.name }}
+                                    </h2>
+
+                                    <p>
+                                        {{ pro.job }}
+                                    </p>
+
+                                    <small class="reviews">
+
+                                        <b>
+                                            ★
+                                        </b>
+
+                                        {{ pro.rating || 0 }}
+
+                                        <span>
+                                            ({{ pro.reviews || 0 }}
+                                            reviews)
+                                        </span>
+
+                                    </small>
+
+                                    <small v-if="pro.city" class="location">
+                                        📍 {{ pro.city }}
+                                    </small>
+
+                                </div>
+
+                                <strong class="price">
+                                    R{{ pro.price }}/hr
+                                </strong>
+
+                            </div>
+
+
+                            <div class="card-footer">
+
+                                <div class="tags">
+
+                                    <span v-for="tag in pro.tags" :key="tag">
+                                        {{ tag }}
+                                    </span>
+
+                                </div>
+
+                                <RouterLink class="profile-button" :to="{
+                                    name: 'profile',
+                                    params: {
+                                        slug: pro.slug
+                                    }
+                                }">
+                                    View Profile →
+                                </RouterLink>
+
+                            </div>
+
+                        </article>
+
+                    </div>
+
+                    <p v-else class="state-message">
+                        No handymen match your search or current map area.
+                    </p>
+
+                </template>
+
+            </div>
+
+
+            <nav v-if="totalPages > 1" class="pagination" aria-label="Results pages">
+
+                <button type="button" :disabled="currentPage === 1
+                    " @click="
             previousPage
-          "
-        >
-          ← Back
-        </button>
+        ">
+                    ← Back
+                </button>
 
-        <span>
-          Page
-          {{ currentPage }}
-          of
-          {{ totalPages }}
-        </span>
+                <span>
+                    Page
+                    {{ currentPage }}
+                    of
+                    {{ totalPages }}
+                </span>
 
-        <button
-          type="button"
-          :disabled="
-            currentPage ===
-            totalPages
-          "
-          @click="
+                <button type="button" :disabled="currentPage ===
+                    totalPages
+                    " @click="
             nextPage
-          "
-        >
-          View More →
-        </button>
+        ">
+                    View More →
+                </button>
 
-      </nav>
+            </nav>
 
-    </section>
+        </section>
 
-  </main>
+    </main>
 </template>
 
 <style scoped>
@@ -1534,7 +1265,7 @@ onBeforeUnmount(
     gap: 8px;
 }
 
-.filters > button,
+.filters>button,
 .prices-button {
     padding: 8px 13px;
     border: 0;

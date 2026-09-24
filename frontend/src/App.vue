@@ -1,9 +1,9 @@
-```vue
 <script setup>
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
+import GlobalLoader from './components/GlobalLoader.vue'
 
 const route = useRoute()
 
@@ -32,22 +32,6 @@ const route = useRoute()
   <Footer
     v-if="!['/login', '/signup', '/worker', '/workerlogin', '/admin', '/workersignup'].includes(route.path) && !(route.name === 'profile' && route.query.fromAdmin === 'true')" />
 
+
+  <GlobalLoader />
 </template>
-
-<style>
-html,
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100%;
-  height: auto !important;
-}
-
-#app {
-  width: 100%;
-  min-height: 100vh;
-  height: auto !important;
-}
-</style>
-```

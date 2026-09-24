@@ -213,8 +213,8 @@ const continueWithoutAccount = () => {
   </div>
 </template>
 
-
-<style>
+<<<<<<< HEAD
+<style scoped>
 @import url('https://googleapis.com');
 
 

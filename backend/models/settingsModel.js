@@ -9,12 +9,14 @@ async function ensureAddressTable() {
             if (!phoneColumn.length) await db.execute('ALTER TABLE users ADD COLUMN phone VARCHAR(30) NULL')
             await db.execute(`CREATE TABLE IF NOT EXISTS user_addresses (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL UNIQUE,
+            -- Do not add a foreign key here: existing projects can use a
+            -- signed, unsigned, or BIGINT users.user_id column. MySQL rejects
+            -- foreign keys when those definitions do not match exactly.
+            user_id BIGINT NOT NULL UNIQUE,
             address_line1 VARCHAR(180) NULL, address_line2 VARCHAR(180) NULL,
             city VARCHAR(100) NULL, province VARCHAR(100) NULL, postal_code VARCHAR(20) NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            CONSTRAINT fk_user_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )`)
         })()
     }

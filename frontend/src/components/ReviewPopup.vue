@@ -35,7 +35,7 @@
             </div>
 
             <div class="n-buttons">
-                <button class="skip-button" type="button" @click="$emit('close')">Skip</button>
+                <button class="skip-button" type="button" @click="$emit('close')">Cancel</button>
                 <button
                     class="submit-button"
                     type="button"

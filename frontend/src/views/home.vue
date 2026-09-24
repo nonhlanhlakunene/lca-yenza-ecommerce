@@ -67,24 +67,10 @@ onMounted(() => {
 
                     <br><br>
 
-                    Find Your Professional →
-
-                    <button
-                        class="service-link"
-                        @click="goToServices"
-                    >
-                        service
-                    </button>
                 </p>
 
                 <br>
 
-                <button
-                    class="worker-link"
-                    @click="goToWorkerSignup"
-                >
-                    Join as a worker
-                </button>
             </div>
 
             <div class="home-services">
@@ -369,7 +355,6 @@ onMounted(() => {
 
     </div>
 </template>
-
 
 <style scoped>
 

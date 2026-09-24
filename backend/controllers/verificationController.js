@@ -5,11 +5,19 @@ import {
   markOtpVerified,
   saveDocument,
 } from "../models/verificationModel.js";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 
+// Nodemailer transporter using Gmail SMTP
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -40,9 +48,7 @@ export const upload = multer({
   },
 });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// function for the skills and experience section
+// Function for the skills and experience section
 export const submitExperienceController = async (req, res) => {
   try {
     const { professionalId, service, yearsExperience, experienceNotes } =
@@ -94,15 +100,15 @@ export const sendOtpController = async (req, res) => {
 
     await saveOtp({ userId, email, otpCode, expiresAt });
 
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
+    await transporter.sendMail({
+      from: `"Yenza Verification" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "Your Yenza Verification Code",
       html: `
-                <p>Your verification code is:</p>
-                <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
-                <p>This code expires in 10 minutes.</p>
-            `,
+        <p>Your verification code is:</p>
+        <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
+        <p>This code expires in 10 minutes.</p>
+      `,
     });
 
     res.status(201).json({
@@ -168,50 +174,50 @@ export const verifyOtpController = async (req, res) => {
 };
 
 export const uploadDocumentController = async (req, res) => {
-    try {
-        const { userId, documentType } = req.body;
+  try {
+    const { userId, documentType } = req.body;
 
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: "No file was uploaded. Please select a file and try again."
-            });
-        }
-
-        if (!userId || !documentType) {
-            return res.status(400).json({
-                success: false,
-                message: "Missing required information. Please try again."
-            });
-        }
-
-        const allowedTypes = ["id", "address", "police_clearance", "affidavit"];
-        if (!allowedTypes.includes(documentType)) {
-            return res.status(400).json({
-                success: false,
-                message: `Invalid document type. Must be one of: ${allowedTypes.join(", ")}`
-            });
-        }
-
-        const documentId = await saveDocument({
-            userId,
-            documentType,
-            fileName: req.file.originalname,
-            filePath: req.file.path,
-            fileSize: req.file.size,
-            mimeType: req.file.mimetype
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "Document uploaded successfully",
-            documentId
-        });
-    } catch (error) {
-        console.error("Upload document error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Server error while uploading document. Please try again."
-        });
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file was uploaded. Please select a file and try again.",
+      });
     }
+
+    if (!userId || !documentType) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required information. Please try again.",
+      });
+    }
+
+    const allowedTypes = ["id", "address", "police_clearance", "affidavit"];
+    if (!allowedTypes.includes(documentType)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid document type. Must be one of: ${allowedTypes.join(", ")}`,
+      });
+    }
+
+    const documentId = await saveDocument({
+      userId,
+      documentType,
+      fileName: req.file.originalname,
+      filePath: req.file.path,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Document uploaded successfully",
+      documentId,
+    });
+  } catch (error) {
+    console.error("Upload document error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while uploading document. Please try again.",
+    });
+  }
 };
