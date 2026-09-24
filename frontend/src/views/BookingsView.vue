@@ -134,7 +134,8 @@ const fetchBookings = async () => {
                 id: booking.booking_id,
                 service: booking.service_name,
                 professional: booking.professional_name,
-                job: '',
+                job: booking.professional_job || '',
+                reportedUserId: booking.professional_user_id,
                 date: booking.booking_date,
                 time: booking.booking_time,
                 address: `${booking.service_address}, ${booking.city}`,
@@ -412,20 +413,20 @@ function closeReview() {
         <!-- Added: report popup that shows only when a booking is selected for reporting -->
          <ReportPopup
             v-if="activeReport"
-            :personName="activeReport.professional"
-            :personType="'Worker'"
-            :bookingId="activeReport.id"
-            :reportedUserId="activeReport.reportedUserId"
+            :person-name="activeReport.professional"
+            :person-type="'Worker'"
+            :booking-id="activeReport.id"
+            :reported-user-id="activeReport.reportedUserId"
             :date="formatDate(activeReport.date)"
             @close="closeReport"
          />
 
           <ReviewPopup
             v-if="activeReview"
-            :personName="activeReview.professional"
-            :personType="'Worker'"
-            :reviewedUserId="activeReview.reportedUserId"
-            :bookingId="activeReview.id"
+            :person-name="activeReview.professional"
+            :person-type="'Worker'"
+            :reviewed-user-id="activeReview.reportedUserId"
+            :booking-id="activeReview.id"
             :date="formatDate(activeReview.date)"
             @close="closeReview"
          />

@@ -113,6 +113,8 @@ export const getBookingsByCustomerId = async (customerId) => {
             b.created_at,
             b.updated_at,
 
+            p.user_id AS professional_user_id,
+
             CONCAT(u.first_name, ' ', u.last_name) AS professional_name,
 
             p.hourly_rate,
