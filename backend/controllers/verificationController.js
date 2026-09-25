@@ -5,14 +5,20 @@ import {
   markOtpVerified,
   saveDocument,
 } from "../models/verificationModel.js";
-
-import { Resend } from "resend";
-
+import nodemailer from "nodemailer";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Nodemailer transporter using Gmail SMTP
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+  tls:{rejectUnauthorized:false}
+});
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -95,8 +101,10 @@ export const sendOtpController = async (req, res) => {
 
     await saveOtp({ userId, email, otpCode, expiresAt });
 
-    const { data, error  } = await resend.emails.send({
-      from: "Yenza Verification <onboarding@resend.dev>",
+
+    await transporter.sendMail({
+      from: `"Yenza Verification" <${process.env.GMAIL_USER}>`,
+
       to: email,
       subject: "Your Yenza Verification Code",
       html: `
@@ -105,16 +113,6 @@ export const sendOtpController = async (req, res) => {
         <p>This code expires in 10 minutes.</p>
       `,
     });
-
-    if (error) {
-      console.error("Resend error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send OTP",
-      });
-    }
-
-    console.log("Resend email sent:", data);
 
     res.status(201).json({
       success: true,
