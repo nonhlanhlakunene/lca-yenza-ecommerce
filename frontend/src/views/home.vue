@@ -10,7 +10,7 @@ const reviewsLoading = ref(true)
 
 const getReviews = async () => {
     try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/reviews`)
         const data = await response.json()
 
         if (response.ok && data.success) {
