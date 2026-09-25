@@ -95,15 +95,15 @@ export const sendOtpController = async (req, res) => {
 
     await saveOtp({ userId, email, otpCode, expiresAt });
 
-    await resend.emails.send({
+    const { data, error  } = await resend.emails.send({
       from: "Yenza Verification <onboarding@resend.dev>",
       to: email,
       subject: "Your Yenza Verification Code",
       html: `
-    <p>Your verification code is:</p>
-    <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
-    <p>This code expires in 10 minutes.</p>
-  `,
+        <p>Your verification code is:</p>
+        <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
+        <p>This code expires in 10 minutes.</p>
+      `,
     });
 
     if (error) {
@@ -120,6 +120,7 @@ export const sendOtpController = async (req, res) => {
       success: true,
       message: "OTP sent to email",
     });
+    
   } catch (error) {
     console.error("Send OTP error:", error);
     res.status(500).json({
