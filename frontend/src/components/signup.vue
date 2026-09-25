@@ -60,7 +60,7 @@ const signup = async () => {
 
   try {
     const response = await fetch(
-      'http://localhost:3000/api/auth/signup',
+      `${import.meta.env.VITE_API_URL}/auth/signup`,
       {
         method: 'POST',
         headers: {
@@ -124,17 +124,17 @@ const continueWithoutAccount = () => {
 
           <div class="signup-input-group">
             <label for="firstName">First Name</label>
-            <input type="text" id="firstName" v-model="first_name" placeholder="First Name" autocomplete="given-name" required>
+              <input type="text" id="firstName" v-model="first_name" placeholder="First Name" autocomplete="given-name" required>
           </div>
 
           <div class="signup-input-group">
             <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" v-model="last_name" placeholder="Last Name" autocomplete="family-name" required>
+              <input type="text" id="lastName" v-model="last_name" placeholder="Last Name" autocomplete="family-name" required>
           </div>
 
           <div class="signup-input-group">
             <label for="email">Email</label>
-            <input type="email" id="email" v-model="email" placeholder="someone@gmail.com" autocomplete="email" required>
+              <input type="email" id="email" v-model="email" placeholder="someone@gmail.com" autocomplete="email" required>
           </div>
 
           <div class="signup-input-group">

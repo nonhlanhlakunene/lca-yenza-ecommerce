@@ -60,7 +60,7 @@ const workerSignup = async () => {
 
   try {
     const response = await fetch(
-      'http://localhost:3000/api/auth/worker-signup',
+      `${import.meta.env.VITE_API_URL}/auth/worker-signup`,
       {
         method: 'POST',
         headers: {

@@ -3,6 +3,8 @@ import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const router = useRouter();
 
 const getAuthHeaders = () => {
@@ -53,7 +55,7 @@ const loadPendingVerifications = async () => {
   pendingLoading.value = true;
   try {
     const response = await fetch(
-      "http://localhost:3000/api/admin/pending-verifications",
+      `${API_URL}/admin/pending-verifications`,
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -73,7 +75,7 @@ const openVerificationDetails = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/admin/verifications/${professionalId}`,
+      `${API_URL}/admin/verifications/${professionalId}`,
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -114,7 +116,7 @@ const approveWorker = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/admin/verifications/${professionalId}/approve`,
+      `${API_URL}/admin/verifications/${professionalId}/approve`,
       { method: "POST", headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -159,7 +161,7 @@ const rejectWorker = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/admin/verifications/${professionalId}/reject`,
+      `${API_URL}/admin/verifications/${professionalId}/reject`,
       { method: "POST", headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -189,7 +191,7 @@ const rejectWorker = async (professionalId) => {
 
 const openDocument = (documentId) => {
   const token = localStorage.getItem("token");
-  const url = `http://localhost:3000/api/admin/documents/${documentId}?token=${token}`;
+  const url = `${API_URL}/admin/documents/${documentId}?token=${token}`;
   window.open(url, "_blank");
 };
 
@@ -214,7 +216,7 @@ const selectedReport = ref(null);
 const loadReports = async () => {
   reportsLoading.value = true;
   try {
-    const response = await fetch("http://localhost:3000/api/admin/reports", {
+    const response = await fetch("${API_URL}/admin/reports", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -260,7 +262,7 @@ const updateReportStatus = async (reportId, newStatus) => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/admin/reports/${reportId}`,
+      `${API_URL}/admin/reports/${reportId}`,
       {
         method: "PATCH",
         headers: getAuthHeaders(),
@@ -321,7 +323,7 @@ const reportsSummary = computed(() => {
 
 const loadWorkers = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/admin/workers", {
+    const response = await fetch("${API_URL}/admin/workers", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -335,7 +337,7 @@ const loadWorkers = async () => {
 
 const loadStats = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/admin/stats", {
+    const response = await fetch("${API_URL}/api/admin/stats", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -356,7 +358,7 @@ const loadStats = async () => {
 const loadBookingsByService = async () => {
   try {
     const response = await fetch(
-      "http://localhost:3000/api/admin/bookings-by-service",
+      "${API_URL}/api/admin/bookings-by-service",
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -376,7 +378,7 @@ const loadBookingsByService = async () => {
 
 const loadActivity = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/admin/activity", {
+    const response = await fetch("${API_URL}/api/admin/activity", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -395,7 +397,7 @@ const loadActivity = async () => {
 
 const loadWorkerServices = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/admin/services", {
+    const response = await fetch("${API_URL}/api/admin/services", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -414,7 +416,7 @@ const loadWorkerServices = async () => {
 const loadBookingStatuses = async () => {
   try {
     const response = await fetch(
-      "http://localhost:3000/api/admin/booking-status",
+      "${API_URL}/api/admin/booking-status",
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -483,7 +485,7 @@ const removeWorker = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/admin/workers/${professionalId}`,
+      `${API_URL}/api/admin/workers/${professionalId}`,
       { method: "DELETE", headers: getAuthHeaders() },
     );
     const data = await response.json();
