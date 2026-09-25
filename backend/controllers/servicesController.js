@@ -14,59 +14,46 @@ import {
 
 function formatProfessional(row) {
     return {
-        id: row.id,
-        user_id: row.user_id,
-        service_id: row.service_id,
+      id: row.id,
+      user_id: row.user_id,
+      service_id: row.service_id,
 
-        name: row.full_name,
+      name: row.full_name,
 
-        job: row.service_name || 'Professional',
+      job: row.service_name || "Professional",
 
-        service: row.service_name || '',
+      service: row.service_name || "",
 
-        bio: row.bio || '',
+      bio: row.bio || "",
 
-        experience: Number(
-            row.experience_years || 0
-        ),
+      experience: Number(row.experience_years || 0),
 
-        price: Number(
-            row.hourly_rate || 0
-        ),
+      price: Number(row.hourly_rate || 0),
 
-        address: row.address || '',
+      address: row.address || "",
 
-        city: row.city || '',
+      city: row.city || "",
 
-        province: row.province || '',
+      province: row.province || "",
 
-        postal_code: row.postal_code || '',
+      postal_code: row.postal_code || "",
 
-        photo: row.profile_image || null,
+      photo: row.profile_image || null,
 
-        profile_image:
-            row.profile_image || null,
+      profile_image: row.profile_image || null,
 
-        rating: Number(
-            row.rating || 0
-        ),
+      rating: Number(row.rating || 0),
 
-        reviews: Number(
-            Number(row.rating || 0).toFixed(1)
-        ),
+      reviews: Number(row.review_count || 0),
 
-        tags: row.service_name
-            ? [row.service_name]
-            : [],
+      tags: row.service_name ? [row.service_name] : [],
 
-        verification_status:
-            row.verification_status,
+      verification_status: row.verification_status,
 
-        availability_status:
-            row.availability_status,
+      availability_status: row.availability_status,
 
-        slug: slugify(row.full_name)
-    }
+      slug: slugify(row.full_name),
+    };
 }
 
 function parseOptionalPrice(

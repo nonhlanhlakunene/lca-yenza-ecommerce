@@ -57,13 +57,112 @@ const map = ref(null)
 const markersLayer = ref(null)
 const mapReady = ref(false)
 const mapFilterEnabled = ref(false)
+const mapBoundsVersion = ref(0)
 const workerLocations = ref([])
 const geocoding = ref(false)
 const mapMessage = ref('')
 const selectedProfessionalId = ref(null)
 
+// GEOCODE CACHE
+const GEOCODE_CACHE_KEY = 'yenza_geocode_cache'
+const geocodeCache = new Map() 
+const geocodingQueue = new Map() 
+let lastGeocodeRequestTime = 0 
+const NOMINATIM_DELAY = 1000
 
+
+function loadGeocodeCache() { 
+    try { 
+        const saved = 
+            localStorage.getItem(
+                GEOCODE_CACHE_KEY
+            ) 
+        
+        if (!saved) { 
+            return 
+        } 
+        
+        const parsed = 
+            JSON.parse(saved) 
+            
+        if (!parsed || typeof parsed !== 'object') { 
+            return 
+        } 
+        
+        Object.entries(parsed).forEach(
+            ([address, coordinates]) => { 
+                if (
+                    coordinates && 
+                    Number.isFinite(
+                        Number(
+                            coordinates.latitude
+                        )
+                    ) && 
+                    Number.isFinite(
+                        Number(
+                            coordinates.longitude
+                        )
+                    )
+                ) { 
+                    geocodeCache.set(
+                        address, 
+                        { 
+                            latitude: 
+                                Number(
+                                    coordinates.latitude
+                                ), 
+                            longitude: 
+                                Number(
+                                    coordinates.longitude
+                                ) 
+                            }
+                        ) 
+                    } 
+                }
+            ) 
+        } catch (error) { 
+            console.warn(
+                'Could not load geocode cache:',
+                error
+            ) 
+        } 
+    }
+
+
+function saveGeocodeCache() { 
+    try { 
+        const object = {} 
+        
+        geocodeCache.forEach( 
+            (coordinates, address) => { 
+                object[address] = coordinates 
+            } 
+        ) 
+        
+        localStorage.setItem( 
+            GEOCODE_CACHE_KEY, 
+            JSON.stringify(object) 
+        ) 
+    } catch (error) { 
+        console.warn( 
+            'Could not save geocode cache:', 
+            error 
+        ) 
+    } 
+} 
+
+
+function normaliseAddress(address) { 
+    return String(address || '') 
+        .trim() 
+        .toLowerCase() 
+    }
+
+
+// filtered professionals
 const filteredProfessionals = computed(() => {
+
+    const _boundsVersion = mapBoundsVersion.value
     let result = [...professionals.value]
 
     if (
@@ -71,7 +170,8 @@ const filteredProfessionals = computed(() => {
         mapReady.value &&
         map.value
     ) {
-        const bounds = map.value.getBounds()
+        const bounds = 
+            map.value.getBounds()
 
         result = result.filter(pro => {
             const location =
@@ -118,7 +218,7 @@ const visibleProfessionals = computed(() => {
     )
 })
 
-
+// Price Filter
 function addPriceParams(params) {
     if (
         priceFilter.value ===
@@ -150,8 +250,14 @@ function selectPrice(option) {
     currentPage.value = 1
 }
 
+// Load professionals
+let loadRequestId = 0
+
 
 async function loadProfessionals() {
+    const requestId =
+        ++loadRequestId
+
     loading.value = true
     errorMessage.value = ''
 
@@ -196,15 +302,26 @@ async function loadProfessionals() {
                     params
                 }
             )
+        if (
+            requestId !== loadRequestId
+        ){
+            return
+        }
 
         professionals.value =
             response.data.professionals || []
 
         currentPage.value = 1
 
-        await updateMapMarkers()
+        syncWorkerLocations()
 
     } catch (error) {
+        if ( 
+            requestId !== loadRequestId 
+        ) { return 
+
+        }
+
         console.error(
             'Load professionals error:',
             error
@@ -213,42 +330,90 @@ async function loadProfessionals() {
         errorMessage.value =
             'Unable to load professionals. Please try again.'
     } finally {
-        loading.value = false
+        if (
+             requestId === loadRequestId 
+        ) {
+            loading.value = false
     }
 }
+}
 
+// SEARCH
 
 async function searchForProfessional() {
-    await loadProfessionals()
-
-    if (
-        !search.value.trim() ||
-        !professionals.value.length
-    ) {
-        return
-    }
-
-    await geocodeProfessionals()
-
     const searchTerm =
         search.value
             .trim()
             .toLowerCase()
 
+    if (!searchTerm){
+        await loadProfessionals()
+        return
+    }
+
+    await loadProfessionals()
+
+    if (!professionals.value.length) {
+        return
+    }
+    
+
     const professional =
         professionals.value.find(
             item =>
-                item.name
-                    .toLowerCase() ===
-                searchTerm
+            String(
+                item.name || ''
+            )
+                .toLowerCase()
+                .includes(searchTerm)     
         ) ||
         professionals.value[0]
 
-    focusProfessionalOnMap(
-        professional.id
-    )
+    const location =
+        await waitForWorkerLocation(
+            professional.id,
+            3500
+        )
+    if(location) {
+        focusProfessionalOnMap(
+            professional.id
+        )
+    }
 }
 
+async function waitForWorkerLocation(
+    professionalId,
+    timeout = 3500
+){
+    const start =
+        Date.now()
+
+    while(
+        Date.now() - start < timeout
+    ){
+        const location =
+            workerLocations.value.find(
+                item =>
+                    String(item.id) ===
+                    String(professionalId)
+        )
+
+        if (location) {
+            return location
+        }    
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    100
+                )
+        )
+    }
+    return null
+}
+
+//LOAD CATEGORIES
 
 async function loadCategories() {
     try {
@@ -265,6 +430,9 @@ async function loadCategories() {
         )
     }
 }
+
+
+//INITIALISE MAP
 
 
 function initialiseMap() {
@@ -299,31 +467,18 @@ function initialiseMap() {
         L.layerGroup().addTo(
             map.value
         )
-
-    map.value.on(
-        'moveend',
-        () => {
-            if (
-                mapFilterEnabled.value
-            ) {
-                currentPage.value = 1
-            }
-        }
-    )
-
-    map.value.on(
-        'zoomend',
-        () => {
-            if (
-                mapFilterEnabled.value
-            ) {
-                currentPage.value = 1
-            }
-        }
-    )
+    
+    map.value.on('moveend zoomend', () => {
+    mapBoundsVersion.value++
+    if (mapFilterEnabled.value) {
+        currentPage.value = 1
+    }
+})
 
     mapReady.value = true
 }
+
+//ADDRESS
 
 
 function getProfessionalAddress(pro) {
@@ -338,13 +493,58 @@ function getProfessionalAddress(pro) {
         .join(', ')
 }
 
+async function waitForNominatimRateLimit() {
+    const now =
+        Date.now()
 
-async function geocodeAddress(address) {
-    if (!address) {
-        return null
+    const elapsed =
+        now - lastGeocodeRequestTime
+
+    const remaining =
+    NOMINATIM_DELAY - elapsed
+
+    if(remaining > 0) {
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    remaining
+                )
+        )
     }
 
-    try {
+    lastGeocodeRequestTime =
+        Date.now()
+}
+
+//GEOCODE ONE ADDRESS
+
+
+async function geocodeAddress(address) {
+
+    const key =
+        normaliseAddress(address)
+
+    
+    if (!key) {
+        return null
+    }
+    if(
+        geocodeCache.has(key)
+    ){
+        return geocodeCache.get(key)
+    }
+    if(
+        geocodingQueue.has(key)
+    ){
+        return geocodingQueue.get(key)
+    }
+
+    const request =
+    (async () => {
+        try{
+            await waitForNominatimRateLimit()
+
         const url =
             'https://nominatim.openstreetmap.org/search'
 
@@ -370,30 +570,278 @@ async function geocodeAddress(address) {
         if (!response.ok) {
             return null
         }
-
         const data =
             await response.json()
 
-        if (!data.length) {
+        if (
+            !Array.isArray(data) ||
+            !data.length
+        ){
             return null
         }
 
-        return {
-            latitude:
-                Number(data[0].lat),
-            longitude:
-                Number(data[0].lon)
+        const latitude =
+            Number(data[0].lat)
+
+        const longitude =
+            Number(data[0].lon)
+
+        if(
+            !Number.isFinite(
+                latitude
+            ) ||
+            !Number.isFinite(
+                longitude
+            )
+
+        ){
+            return null
         }
 
-    } catch (error) {
-        console.error(
-            'Geocoding error:',
-            error
+        const coordinates = {
+            latitude,
+            longitude
+        }
+
+        geocodeCache.set(
+            key,
+            coordinates
         )
 
-        return null
-    }
+            saveGeocodeCache()
+
+            return coordinates
+
+        } catch (error) {
+            console.error(
+                'Geocoding error:',
+                error
+            )
+
+            return null
+        } finally {
+            geocodingQueue.delete(key)
+        }
+    })()
+geocodingQueue.set(
+    key,
+    request
+)
+
+return request  
 }
+ 
+
+//SYNC WORKER LOCATIONS
+
+let locationSyncId = 0
+async function syncWorkerLocations() { 
+    const syncId = 
+        ++locationSyncId 
+    
+    if (!professionals.value.length) { 
+        workerLocations.value = [] 
+        geocoding.value = false 
+        mapMessage.value = '' 
+        await updateMapMarkers() 
+        return 
+    } 
+    
+    const currentProfessionals = 
+        [...professionals.value] 
+        
+    const existingLocations = 
+        new Map( 
+            workerLocations.value.map( 
+                location => [ 
+                    String(location.id), 
+                    location 
+                ] 
+            ) 
+        ) 
+        
+    const immediateLocations = [] 
+    
+    const workersNeedingGeocode = [] 
+    
+    for ( 
+        const professional 
+        of currentProfessionals 
+    ) { 
+        
+        const existing = 
+        existingLocations.get( 
+            String(professional.id) 
+        ) 
+        
+    if (existing) { 
+        immediateLocations.push(existing) 
+        continue 
+    } 
+    
+    if ( 
+        professional.latitude !== 
+            undefined && 
+        professional.latitude !== null && 
+        professional.longitude !== 
+            undefined && 
+            professional.longitude !== null 
+    ) { 
+        const latitude = 
+            Number( 
+                professional.latitude 
+            ) 
+            
+        const longitude = 
+            Number( 
+                professional.longitude 
+            ) 
+            
+        if ( 
+            Number.isFinite( 
+                latitude 
+            ) && 
+            Number.isFinite( 
+                longitude 
+            ) 
+        ) { 
+            immediateLocations.push({ 
+                id: professional.id, 
+                latitude, 
+                longitude 
+            }) 
+            
+            continue 
+        } 
+    } 
+    
+    const address = 
+        getProfessionalAddress( 
+            professional 
+        ) 
+        
+    const key = 
+        normaliseAddress(address)
+    
+    if ( 
+        key && 
+        geocodeCache.has(key) 
+    ) { 
+        const coordinates = 
+            geocodeCache.get(key) 
+            
+        immediateLocations.push({ 
+            id: professional.id, 
+            latitude: 
+                coordinates.latitude, 
+            longitude: 
+                coordinates.longitude 
+            }) 
+            
+            continue 
+        } 
+        
+        workersNeedingGeocode.push({ 
+            professional, address 
+        }) 
+    } 
+    
+    workerLocations.value = 
+        immediateLocations 
+        
+    await updateMapMarkers() 
+    
+    if ( 
+        !workersNeedingGeocode.length 
+    ) { 
+        geocoding.value = false 
+        
+        mapMessage.value = 
+            immediateLocations.length 
+                ? `${immediateLocations.length} worker location(s) found.` 
+                : '' 
+                
+        return 
+    } 
+    
+    geocoding.value = true 
+    
+    mapMessage.value = 
+        immediateLocations.length 
+            ? `Showing ${immediateLocations.length} worker location(s). Finding new locations...` 
+            : 'Finding worker locations...'
+            
+    ;(async () => {
+        let foundCount =
+            immediateLocations.length 
+            
+        for ( 
+            const item 
+            of workersNeedingGeocode 
+        ) { 
+            if ( 
+                syncId !== locationSyncId 
+            ) { 
+                return 
+            } 
+            
+            const coordinates = 
+                await geocodeAddress( 
+                    item.address 
+                ) 
+                
+            if ( 
+                syncId !== locationSyncId 
+            ) { 
+                return 
+            } 
+            
+            if (coordinates) { 
+                foundCount++ 
+                
+                const newLocation = { 
+                    id: 
+                        item.professional.id,
+                    latitude: coordinates.latitude, 
+                    longitude: coordinates.longitude 
+                } 
+                
+                const alreadyExists = 
+                    workerLocations.value.some( 
+                        location => 
+                            String( 
+                                location.id 
+                            ) === 
+                            String( 
+                                newLocation.id 
+                            ) 
+                    ) 
+                if (!alreadyExists) {
+                    workerLocations.value.push( 
+                        newLocation 
+                    ) 
+                } 
+                
+                await updateMapMarkers() 
+                
+                mapMessage.value = 
+                    `Found ${foundCount} worker location(s).` 
+            } 
+        } 
+        
+        if ( 
+            syncId === locationSyncId 
+        ) { 
+            geocoding.value = false 
+            
+            mapMessage.value = 
+                workerLocations.value.length 
+                    ? `${workerLocations.value.length} worker location(s) found.` 
+                    : 'No worker locations could be found.' 
+        } 
+    })() 
+}
+
 
 
 async function geocodeProfessionals() {
@@ -471,6 +919,9 @@ async function geocodeProfessionals() {
 
     await updateMapMarkers()
 }
+
+
+//MAP MARKERS
 
 
 async function updateMapMarkers() {
@@ -584,15 +1035,15 @@ async function updateMapMarkers() {
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| HTML ESCAPE FOR POPUPS
-|--------------------------------------------------------------------------
-*/
+
+//FOCUS PROFESSIONAL
+
+
 function focusProfessionalOnMap(id) {
     if (
         !map.value ||
-        !mapReady.value
+        !mapReady.value ||
+        !markersLayer.value
     ) {
         return
     }
@@ -616,7 +1067,7 @@ function focusProfessionalOnMap(id) {
             location.latitude,
             location.longitude
         ],
-        20,
+        15,
         {
             animate: true,
             duration: 0.8
@@ -624,6 +1075,13 @@ function focusProfessionalOnMap(id) {
     )
 
     setTimeout(() => {
+
+        if (
+            !markersLayer.value
+        ){
+            return
+        }
+
         markersLayer.value.eachLayer(
             marker => {
                 const latLng =
@@ -645,6 +1103,8 @@ function focusProfessionalOnMap(id) {
         )
     }, 900)
 }
+
+//HTML ESCAPE
 
 
 function escapeHtml(value) {
@@ -670,6 +1130,9 @@ function escapeHtml(value) {
             '&#039;'
         )
 }
+
+
+//MAP FILTER
 
 
 function toggleMapFilter() {
@@ -716,6 +1179,9 @@ function showAllWorkersOnMap() {
 }
 
 
+//PAGINATION
+
+
 function nextPage() {
     if (
         currentPage.value <
@@ -735,6 +1201,9 @@ function previousPage() {
 }
 
 
+//INITIALS
+
+
 function initials(name) {
     if (!name) {
         return '?'
@@ -751,6 +1220,9 @@ function initials(name) {
         .join('')
         .toUpperCase()
 }
+
+
+//WATCHERS
 
 
 watch(
@@ -775,19 +1247,35 @@ watch(
 )
 
 
+//MOUNT
+
+
 onMounted(async () => {
+    loadGeocodeCache()
     initialiseMap()
+
     await loadCategories()
     await loadProfessionals()
-    await geocodeProfessionals()
 })
 
 
+//CLEANUP
+
+
 onBeforeUnmount(() => {
+
+    locationSyncId++
+
+    loadRequestId++
+
+    geocodingQueue.clear()
+
     if (map.value) {
         map.value.remove()
         map.value = null
     }
+
+    mapReady.value = false
 })
 </script>
 
@@ -956,6 +1444,11 @@ onBeforeUnmount(() => {
                     {{ mapMessage }}
                 </div>
 
+                <div
+                v-else-if="mapMessage" class="map-status">
+                    {{ mapMessage }}
+                </div>
+
                 <div v-if="mapFilterEnabled" class="map-filter-status">
                     Map filtering is active. Only workers inside the visible map area
                     are shown below.
@@ -1006,16 +1499,13 @@ onBeforeUnmount(() => {
                 <template v-else>
 
                     <div v-if="
-                        visibleProfessionals.length
-                    " class="cards">
+                        visibleProfessionals.length" class="cards">
 
-                        <article v-for="
-pro in visibleProfessionals
-              " :key="pro.id" class="professional-card" :class="{
-                selected:
-                    String(selectedProfessionalId) ===
-                    String(pro.id)
-            }">
+                    <article v-for="pro in visibleProfessionals" :key="pro.id" class="professional-card" :class="{
+                        selected:
+                            String(selectedProfessionalId) ===
+                            String(pro.id)
+                    }">
 
                             <div class="pro-top">
 
