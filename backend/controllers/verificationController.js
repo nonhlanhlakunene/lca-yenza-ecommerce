@@ -5,20 +5,14 @@ import {
   markOtpVerified,
   saveDocument,
 } from "../models/verificationModel.js";
-import nodemailer from "nodemailer";
+
+import { Resend } from "resend";
+
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 
-// Nodemailer transporter using Gmail SMTP
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-  tls:{rejectUnauthorized:false}
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -101,16 +95,16 @@ export const sendOtpController = async (req, res) => {
 
     await saveOtp({ userId, email, otpCode, expiresAt });
 
-    await transporter.sendMail({
-      from: `"Yenza Verification" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: "Your Yenza Verification Code",
-      html: `
-        <p>Your verification code is:</p>
-        <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
-        <p>This code expires in 10 minutes.</p>
-      `,
-    });
+    await resend.emails.send({
+  from: "Yenza Verification <onboarding@resend.dev>",
+  to: email,
+  subject: "Your Yenza Verification Code",
+  html: `
+    <p>Your verification code is:</p>
+    <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
+    <p>This code expires in 10 minutes.</p>
+  `,
+});
 
     res.status(201).json({
       success: true,
