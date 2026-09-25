@@ -55,7 +55,7 @@ const loadPendingVerifications = async () => {
   pendingLoading.value = true;
   try {
     const response = await fetch(
-      `${API_URL}/api/admin/pending-verifications`,
+      `${API_URL}/admin/pending-verifications`,
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -75,7 +75,7 @@ const openVerificationDetails = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `${API_URL}/api/admin/verifications/${professionalId}`,
+      `${API_URL}/admin/verifications/${professionalId}`,
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -116,7 +116,7 @@ const approveWorker = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `${API_URL}/api/admin/verifications/${professionalId}/approve`,
+      `${API_URL}/admin/verifications/${professionalId}/approve`,
       { method: "POST", headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -161,7 +161,7 @@ const rejectWorker = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `${API_URL}/api/admin/verifications/${professionalId}/reject`,
+      `${API_URL}/admin/verifications/${professionalId}/reject`,
       { method: "POST", headers: getAuthHeaders() },
     );
     const data = await response.json();
@@ -191,7 +191,7 @@ const rejectWorker = async (professionalId) => {
 
 const openDocument = (documentId) => {
   const token = localStorage.getItem("token");
-  const url = `${API_URL}/api/admin/documents/${documentId}?token=${token}`;
+  const url = `${API_URL}/admin/documents/${documentId}?token=${token}`;
   window.open(url, "_blank");
 };
 
@@ -216,7 +216,7 @@ const selectedReport = ref(null);
 const loadReports = async () => {
   reportsLoading.value = true;
   try {
-    const response = await fetch("${API_URL}/api/admin/reports", {
+    const response = await fetch("${API_URL}/admin/reports", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -262,7 +262,7 @@ const updateReportStatus = async (reportId, newStatus) => {
 
   try {
     const response = await fetch(
-      `${API_URL}/api/admin/reports/${reportId}`,
+      `${API_URL}/admin/reports/${reportId}`,
       {
         method: "PATCH",
         headers: getAuthHeaders(),
@@ -323,7 +323,7 @@ const reportsSummary = computed(() => {
 
 const loadWorkers = async () => {
   try {
-    const response = await fetch("${API_URL}/api/admin/workers", {
+    const response = await fetch("${API_URL}/admin/workers", {
       headers: getAuthHeaders(),
     });
     const data = await response.json();

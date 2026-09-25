@@ -22,7 +22,7 @@ const checkStatus = async () => {
     }
 
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/auth/verification-status`,
+      `${import.meta.env.VITE_API_URL}/auth/verification-status`,
       {
         headers: {
           Authorization: `Bearer ${token}`
