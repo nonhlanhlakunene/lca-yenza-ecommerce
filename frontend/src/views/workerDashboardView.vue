@@ -390,7 +390,7 @@ async function loadDashboard() {
 
 
     const response = await fetch(
-      'http://localhost:3000/api/professionals/dashboard',
+      `${import.meta.env.VITE_API_URL}/api/professionals/dashboard`,
       {
         method: 'GET',
 
@@ -478,7 +478,7 @@ async function acceptJob(job) {
 
 
     const response = await fetch(
-      `http://localhost:3000/api/professionals/bookings/${job.booking_id}/accept`,
+      `${import.meta.env.VITE_API_URL}/api/professionals/bookings/${job.booking_id}/accept`,
       {
         method: 'PATCH',
 
@@ -617,7 +617,7 @@ async function declineJob(job) {
 
 
     const response = await fetch(
-      `http://localhost:3000/api/professionals/bookings/${job.booking_id}/decline`,
+      `${import.meta.env.VITE_API_URL}/api/professionals/bookings/${job.booking_id}/decline`,
       {
         method: 'PATCH',
 
