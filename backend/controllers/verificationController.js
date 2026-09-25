@@ -96,15 +96,25 @@ export const sendOtpController = async (req, res) => {
     await saveOtp({ userId, email, otpCode, expiresAt });
 
     await resend.emails.send({
-  from: "Yenza Verification <onboarding@resend.dev>",
-  to: email,
-  subject: "Your Yenza Verification Code",
-  html: `
+      from: "Yenza Verification <onboarding@resend.dev>",
+      to: email,
+      subject: "Your Yenza Verification Code",
+      html: `
     <p>Your verification code is:</p>
     <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${otpCode}</p>
     <p>This code expires in 10 minutes.</p>
   `,
-});
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send OTP",
+      });
+    }
+
+    console.log("Resend email sent:", data);
 
     res.status(201).json({
       success: true,
