@@ -44,18 +44,7 @@
                             ></textarea>
                         </div>
 
-                        <!-- Honeypot: hidden from humans, bots fill it in -->
-                        <input
-                            type="checkbox"
-                            name="botcheck"
-                            v-model="form.botcheck"
-                            style="display:none"
-                            tabindex="-1"
-                            autocomplete="off"
-                        />
-
-                        
-
+            
                         <button class="send-button" type="submit" :disabled="isSubmitting">
                             {{ isSubmitting ? 'Sending...' : 'Send Message' }}
                         </button>
@@ -108,7 +97,7 @@ import { Phone, Mail, Clock } from "lucide-vue-next";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-const WEB3FORMS_ACCESS_KEY = "8cc4e22e-e848-4804-a0c5-14f378192a69";
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xkjgpbgd";
 
 export default {
     components: { Phone, Mail, Clock },
@@ -131,27 +120,25 @@ export default {
 
             try {
                 const response = await axios.post(
-                    'https://api.web3forms.com/submit',
+                    FORMSPREE_ENDPOINT,
                     {
-                        access_key: WEB3FORMS_ACCESS_KEY,
                         name: this.form.name,
                         email: this.form.email,
                         message: this.form.message,
                         subject: 'New message from Yenza contact form',
-                        from_name: 'Yenza Website',
                     },
                     {
                         headers: {
-                            "Content-Type": "application/json",
                             Accept: "application/json",
+                            "Content-Type": "application/json",
                         },
                     }
                 );
 
-                console.log("Web3Forms response:", response.data);
+                console.log("Formspree response:", response.data);
 
-                if (response.data.success) {
-                    Swal.fire({
+                if (response.data.ok) {
+                    await Swal.fire({
                         icon: 'success',
                         title: 'Message Sent!',
                         text: 'Thank you, the team will get back to you soon.',
@@ -167,15 +154,15 @@ export default {
                     Swal.fire({
                         icon: "error",
                         title: "Message not sent",
-                        text: response.data.message || "Web3Forms rejected the submission.",
+                        text: response.data.error || "Formspree could not process your message.",
                         confirmButtonColor: "#136163",
                     });
                 }
 
             } catch (err) {
-                console.error('Web3Forms submission failed:', err);
+                console.error('Formspree submission failed:', err);
 
-                console.error("Web3Forms error response:", err.response?.data);
+                console.error("Formspree error response:", err.response?.data);
 
                 Swal.fire({
                     icon: 'error',
