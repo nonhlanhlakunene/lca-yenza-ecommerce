@@ -28,7 +28,7 @@ A full-stack marketplace connecting customers with verified local handymen acros
 - **Nodemailer** (Gmail SMTP) for email OTP delivery
 
 ### Third-party Services
-- **Web3Forms** for the contact form
+- **Formspree** for the contact form
 - **Gmail SMTP** for transactional verification emails
 
 ---
@@ -40,63 +40,172 @@ A full-stack marketplace connecting customers with verified local handymen acros
 - MySQL (v8 or higher)
 - A Gmail account with an App Password generated
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/nonhlanhlakunene/lca-yenza-ecommerce
+git clone https://github.com/nonhlanhlakunene/lca-yenza-ecommerce.git
 cd lca-yenza-ecommerce
-2. Set up the database
+```
+
+---
+
+### 2. Set Up the Database
+
 Open MySQL:
 
-bash
+```bash
 mysql -u root -p
-Then, inside the MySQL shell:
+```
 
-sql
+Then, inside the MySQL shell, run:
+
+```sql
 SOURCE database/yenza_db.sql;
-This creates the yenza_db database with all tables, seed users, bookings, and reviews.
+```
 
-3. Backend setup
-bash
+This creates the `yenza_db` database with all required tables and seed data, including users, services, bookings, reviews, payments, and verification data.
+
+---
+
+### 3. Set Up the Backend
+
+Navigate to the backend folder:
+
+```bash
 cd backend
 npm install
-Create a .env file in the backend/ folder with the variables listed in the Environment Variables section below, then run:
+```
 
-bash
+Create a `.env` file inside the `backend/` folder.
+
+Add the environment variables listed in the **Environment Variables** section below.
+
+Start the backend server:
+
+```bash
 node index.js
-You should see: Server is running smoothly on port 3000
+```
 
-4. Frontend setup
-Open a new terminal and run:
+You should see:
 
-bash
+```text
+Server is running smoothly on port 3000
+```
+
+---
+
+### 4. Set Up the Frontend
+
+Open a **new terminal** and navigate to the frontend folder:
+
+```bash
 cd frontend
 npm install
 npm run dev
-Open the browser at http://localhost:5173.
+```
 
-Environment Variables
-Create a file at backend/.env with these values:
+The frontend will be available at:
 
-text
+```text
+http://localhost:5173
+```
+
+Open this address in your browser.
+
+---
+
+## Environment Variables
+
+Create the following file:
+
+```text
+backend/.env
+```
+
+Add:
+
+```env
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=your_mysql_port_number
 DB_USER=your_mysql_user
 DB_PASSWORD=your_mysql_password
 DB_NAME=yenza_db
 
 PORT=3000
+
 JWT_SECRET=your_long_random_secret
 
 GMAIL_USER=your_gmail_address
 GMAIL_APP_PASSWORD=your_16_char_gmail_app_password
-Notes:
+```
 
-JWT_SECRET can be any long random string. It signs login tokens.
+### Environment Variable Notes
 
-GMAIL_APP_PASSWORD is generated at https://myaccount.google.com/apppasswords after enabling 2-Step Verification. Remove spaces when pasting.
+| Variable | Description |
+|---|---|
+| `DB_HOST` | MySQL server host |
+| `DB_PORT` | MySQL server port, normally `3306` |
+| `DB_USER` | Your MySQL username |
+| `DB_PASSWORD` | Your MySQL password |
+| `DB_NAME` | YENZA database name |
+| `PORT` | Backend server port |
+| `JWT_SECRET` | Long random string used to sign authentication tokens |
+| `GMAIL_USER` | Gmail address used to send verification emails |
+| `GMAIL_APP_PASSWORD` | Gmail App Password used by Nodemailer |
 
-.env is gitignored. Each developer needs their own.
+### Gmail App Password
+
+A Gmail App Password can be generated from:
+
+https://myaccount.google.com/apppasswords
+
+You must have **2-Step Verification** enabled on the Google account first.
+
+When adding the App Password to `.env`, remove the spaces between the characters.
+
+> **Important:** Never commit your `.env` file to GitHub. It is included in `.gitignore`, and each developer should create their own local `.env` file.
+
+
+# Test User Credentials
+
+The following accounts can be used to test the YENZA! application.
+
+> **Note:** These should only be demo/test credentials. Never add real passwords or sensitive production credentials to a public repository.
+
+## Customer Accounts
+
+| Name | Email | Password | Role |
+|---|---|---|---|
+| Aphiwe | `aphiwe@yenza.co.za` | `aphiwe123` | Customer |
+
+## Worker Accounts
+
+| Name | Email | Password | Role |
+|---|---|---|---|
+| Sarah | `sarah@yenza.co.za` | `sarah123` | Worker |
+
+## Admin Account
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@yenza.co.za` | `yenzaadmin123$` | Administrator |
+
+### Testing Notes
+
+Use the demo accounts to test:
+
+- User registration and login
+- Browsing services
+- Worker profiles
+- Bookings
+- Payments
+- Reviews
+- Reports
+- Administrative functionality
+
+These credentials are intended for **development and demonstration purposes only**.
+
+Production credentials must be stored securely using environment variables or a secrets manager.
 
 ## Database Schema
 Table	Purpose
@@ -154,13 +263,13 @@ handymen	      Legacy seed table for the initial profile data
 
 - SweetAlert2 confirmation on submission
 
-## Project Structure
-text
-lca-yenza-ecommerce/
+### Project Structure
+```lca-yenza-ecommerce/
+│
 ├── backend/
 │   ├── config/          # Database connection
 │   ├── controllers/     # Request handlers
-│   ├── middleware/      # JWT auth and admin checks
+│   ├── middleware/      # JWT authentication and admin checks
 │   ├── models/          # Database queries
 │   ├── routes/          # API route definitions
 │   ├── uploads/         # Uploaded verification documents (gitignored)
@@ -168,19 +277,20 @@ lca-yenza-ecommerce/
 │
 ├── frontend/
 │   ├── public/
+│   │
 │   └── src/
-│       ├── api/         # Axios wrappers per feature
+│       ├── api/         # Axios API wrappers
 │       ├── assets/      # Images and fonts
 │       ├── components/  # Reusable Vue components
-│       ├── router/      # Vue Router config
+│       ├── router/      # Vue Router configuration
 │       ├── views/       # Page-level components
-│       └── main.js
+│       └── main.js      # Vue application entry point
 │
 ├── database/
-│   └── yenza_db.sql     # Full schema and seed data
+│   └── yenza_db.sql     # Full database schema and seed data
 │
-└── README.md
-
+└── README.md            # Project documentation
+```
 ## Challenges We Faced
 1. Email OTP delivery
 Free-tier providers such as Resend restrict delivery to the account owner's email address, which made testing with teammates difficult. We pivoted to Nodemailer with Gmail SMTP to allow sending to any recipient. This required generating a Gmail App Password, which is blocked when an account is under Google Family Link supervision — an unexpected constraint we had to work around.
