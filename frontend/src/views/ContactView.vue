@@ -121,7 +121,6 @@ export default {
                 name: '',
                 email: '',
                 message: '',
-                botcheck: false,
             },
         };
     },
@@ -138,11 +137,18 @@ export default {
                         name: this.form.name,
                         email: this.form.email,
                         message: this.form.message,
-                        botcheck: this.form.botcheck,
                         subject: 'New message from Yenza contact form',
                         from_name: 'Yenza Website',
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
                     }
                 );
+
+                console.log("Web3Forms response:", response.data);
 
                 if (response.data.success) {
                     Swal.fire({
@@ -152,17 +158,34 @@ export default {
                         confirmButtonColor: '#136163',
                     });
 
-                    this.form = { name: '', email: '', message: '', botcheck: false };
+                    this.form = { 
+                        name: '', 
+                        email: '', 
+                        message: '',
+                    };
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Message not sent",
+                        text: response.data.message || "Web3Forms rejected the submission.",
+                        confirmButtonColor: "#136163",
+                    });
                 }
+
             } catch (err) {
                 console.error('Web3Forms submission failed:', err);
+
+                console.error("Web3Forms error response:", err.response?.data);
 
                 Swal.fire({
                     icon: 'error',
                     title: 'Oops...',
-                    text: err.response?.data?.message || 'Something went wrong. Please try again.',
+                    text: 
+                        err.response?.data?.message || 
+                        'Something went wrong. Please try again.',
                     confirmButtonColor: '#136163',
                 });
+                
             } finally {
                 this.isSubmitting = false;
             }

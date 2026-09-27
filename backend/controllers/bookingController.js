@@ -1,7 +1,8 @@
 import {
     createBooking,
     getBookingById,
-    getBookingsByCustomerId
+    getBookingsByCustomerId,
+    cancelBooking
 } from '../models/bookingModel.js'
 
 export const createBookingController = async (req, res) => {
@@ -119,6 +120,35 @@ export const getCustomerBookingsController = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to retrieve customer bookings'
+        })
+    }
+}
+
+
+export const cancelBookingController = async (req, res) => {
+    try {
+        const bookingId = req.params.id
+        const customerId = req.user.user_id
+
+        const result = await cancelBooking(bookingId, customerId)
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Booking not found or cannot be cancelled'
+            })
+        }
+
+        res.json({
+            success: true,
+            message: 'Booking cancelled successfully'
+        })
+    } catch (error) {
+        console.error('Cancel booking error:', error)
+
+        res.status(500).json({
+            success: false,
+            message: 'Failed to cancel booking'
         })
     }
 }

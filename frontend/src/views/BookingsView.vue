@@ -1,124 +1,19 @@
 <script setup>
-// import { ref, computed } from 'vue'
-
 // Added : Imports for the popups
 import ReportPopup from '../components/ReportPopup.vue'
 import ReviewPopup from '../components/ReviewPopup.vue'
 
-
-/* Temporary booking data. Later, this information will come from the backend/database. */
-// const bookings = ref([
-//   {
-//     id: 1,
-//     service: 'Plumbing',
-//     professional: 'Arthur Pendleton',
-//     job: 'Master Plumber & Pipe Specialist',
-//     date: '2026-09-15',
-//     time: '10:00',
-//     address: '123 Main Street, Cape Town',
-//     notes: 'Kitchen sink needs to be repaired.',
-//     status: 'Confirmed',
-    reportedUserId: 3
-//   },
-//   {
-//     id: 2,
-//     service: 'Electrician',
-//     professional: 'Sarah Jenkins',
-//     job: 'Licensed Residential Electrician',
-//     date: '2026-09-02',
-//     time: '14:00',
-//     address: '45 Long Street, Cape Town',
-//     notes: 'Install two new lights.',
-//     status: 'Completed',
-    reportedUserId: 4
-//   },
-//   {
-//     id: 3,
-//     service: 'Painter',
-//     professional: 'Elena Rodriguez',
-//     job: 'Interior & Exterior Painting Specialist',
-//     date: '2026-08-25',
-//     time: '09:00',
-//     address: '18 Main Road, Cape Town',
-//     notes: 'Paint the living room and hallway.',
-//     status: 'Completed',
-    reportedUserId: 5
-//   },
-//   {
-//     id: 4,
-//     service: 'Locksmith',
-//     professional: 'Daniel Okafor',
-//     job: '24/7 Residential & Auto Locksmith',
-//     date: '2026-08-18',
-//     time: '11:00',
-//     address: '7 Oak Avenue, Cape Town',
-//     notes: 'Replace the front door lock.',
-//     status: 'Cancelled',
-    reportedUserId: 6
-//   },
-// ])
-
-/* Finds the customer's current/upcoming booking. */
-// const currentBooking = computed(() => {
-//     return bookings.value.find(
-//         booking => booking.status === 'Confirmed'
-//     )
-// }) 
-
-/* Gets all bookings that are not the current booking. */
-// const bookingHistory = computed(() => {
-//     return bookings.value.filter(
-//         booking => booking.status !== 'Confirmed'
-//     )
-// }) 
-
-/* Converts the date into a more readable format. */
-// const formatDate = (date) => {
-//     return new Date(date + 'T00:00:00').toLocaleDateString('en-ZA', {
-//         day: 'numeric',
-//         month: 'long',
-//         year: 'numeric'
-//     })
-// }
-
-/* Converts 24-hour time into a 12-hour format. */
-// const formatTime = (time) => {
-//     const [hours, minutes] = time.split(':')
-//     const date = new Date()
-
-//     date.setHours(hours, minutes)
-//     return date.toLocaleTimeString('en-ZA', {
-//         hour: 'numeric',
-//         minute: '2-digit'
-//     })
-// } 
-
-/* Temporary cancel function. Later, this will send a request to the backend. */
-// const cancelBooking = (bookingId) => {
-//     const booking = bookings.value.find(
-//         booking => booking.id === bookingId
-//     )
-
-//     if (booking) {
-//         booking.status = 'Cancelled'
-//     }
-// }
-
-
 import { ref, computed, onMounted } from 'vue'
 import api from '../api/api.js'
+import Swal from 'sweetalert2'
 
 const bookings = ref([])
 
 const loading = ref(true)
 const error = ref(false)
 
-/*
- * Gets the customer's bookings from the backend.
- *
- * 1 = temporary test customer from our database.
- * Later this will come from the logged-in user's authentication.
- */
+
+/*Gets the customer's bookings*/
 const fetchBookings = async () => {
 
     try {
@@ -167,7 +62,6 @@ const fetchBookings = async () => {
  * confirmed -> Confirmed
  * completed -> Completed
  * cancelled -> Cancelled
- * pending -> Pending
  */
 const formatStatus = (status) => {
 
@@ -253,33 +147,48 @@ const formatTime = (time) => {
 }
 
 
-/*
- * Temporary cancel function.
- *
- * This still only changes the frontend for now.
- * We will connect cancellation to the backend separately.
- */
-const cancelBooking = (bookingId) => {
 
-    const booking = bookings.value.find(
-        booking => booking.id === bookingId
-    )
+//  Cancel booking function
 
-    if (booking) {
-        booking.status = 'Cancelled'
+const cancelBooking = async (bookingId) => {
+    try {
+        const response = await api.patch(`/bookings/${bookingId}/cancel`)
+
+        if (!response.data.success) {
+            throw new Error(
+                response.data.message || 'Failed to cancel booking'
+            )
+        }
+
+        await fetchBookings()
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Booking Cancelled',
+            text: 'Your booking has been cancelled successfully.'
+        })
+    } catch (err) {
+        console.error('Failed to cancel booking:', err)
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Cancellation Failed',
+            text:
+                err.response?.data?.message ||
+                'We could not cancel your booking.'
+        })
     }
-
 }
 
 
 /*
- * Load bookings when the page opens.
+ * Load bookings
  */
 onMounted(() => {
     fetchBookings()
 })
 
-// Added: Variables to remember which booking is being reported/reviewed
+// Variables to remember which booking is being reported/reviewed
 const activeReport = ref(null)
 const activeReview = ref(null)
 
@@ -315,7 +224,6 @@ function closeReview() {
         </section> 
         
         <!-- CURRENT BOOKING -->
-<!-- CURRENT BOOKINGS -->
 <section class="bookings-section">
     <div class="section-heading">
         <h2>Current Bookings</h2>
@@ -450,7 +358,8 @@ function closeReview() {
                         <div> <span class="detail-label">ADDRESS</span> <span> {{ booking.address }} </span> </div>
                     </div>
                     <div class="history-actions">
-                        <!-- Changed: Report button now only shows on completed and opens the popup -->
+
+                        <!-- Report/ Review button only shows on completed bookings and opens the popup -->
                         <button
                             v-if="booking.status === 'Completed'"
                             class="booking-action-button"
@@ -477,7 +386,7 @@ function closeReview() {
             </div>
         </section>
 
-        <!-- Added: report popup that shows only when a booking is selected for reporting -->
+
          <ReportPopup
             v-if="activeReport"
             :person-name="activeReport.professional"

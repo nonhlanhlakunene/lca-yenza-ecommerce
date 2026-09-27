@@ -139,3 +139,19 @@ export const getBookingsByCustomerId = async (customerId) => {
     )
     return rows
 }
+
+
+export const cancelBooking = async (bookingId, customerId) => {
+    const [result] = await db.execute(
+        `
+        UPDATE bookings
+        SET status = 'cancelled'
+        WHERE booking_id = ?
+        AND customer_id = ?
+        AND status IN ('confirmed')
+        `,
+        [bookingId, customerId]
+    )
+
+    return result
+}
