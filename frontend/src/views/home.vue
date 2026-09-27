@@ -145,7 +145,7 @@ onMounted(() => {
 
                 <div class="box">
                     <h2>
-                        500+
+                        30+
                         <br>
                         Professionals
                     </h2>
@@ -157,7 +157,7 @@ onMounted(() => {
 
                 <div class="box">
                     <h2>
-                        1,200+
+                        100+
                         <br>
                         Jobs completed
                     </h2>

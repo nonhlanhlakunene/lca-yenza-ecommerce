@@ -215,12 +215,18 @@ const selectedReport = ref(null);
 
 const loadReports = async () => {
   reportsLoading.value = true;
+
   try {
-    const response = await fetch("${API_URL}/admin/reports", {
+    const response = await fetch(`${API_URL}/admin/reports`, {
       headers: getAuthHeaders(),
     });
+
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Failed to load reports");
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to load reports");
+    }
+
     reports.value = data.reports || [];
   } catch (error) {
     console.error("Reports error:", error);
@@ -323,7 +329,7 @@ const reportsSummary = computed(() => {
 
 const loadWorkers = async () => {
   try {
-    const response = await fetch("${API_URL}/admin/workers", {
+    const response = await fetch(`${API_URL}/admin/workers`, {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
@@ -337,12 +343,13 @@ const loadWorkers = async () => {
 
 const loadStats = async () => {
   try {
-    const response = await fetch("${API_URL}/api/admin/stats", {
+    const response = await fetch(`${API_URL}/admin/stats`, {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
-    if (!response.ok)
+    if (!response.ok) {
       throw new Error(data.message || "Failed to load statistics");
+    }
 
     stats.value = {
       total_workers: Number(data.total_workers) || 0,
@@ -358,14 +365,15 @@ const loadStats = async () => {
 const loadBookingsByService = async () => {
   try {
     const response = await fetch(
-      "${API_URL}/api/admin/bookings-by-service",
+      `${API_URL}/admin/bookings-by-service`,
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
-    if (!response.ok)
+    if (!response.ok) {
       throw new Error(
         data.message || "Failed to load booking service statistics",
       );
+    }
 
     bookingsByService.value = data.map((service) => ({
       service_name: service.service_name,
@@ -378,12 +386,15 @@ const loadBookingsByService = async () => {
 
 const loadActivity = async () => {
   try {
-    const response = await fetch("${API_URL}/api/admin/activity", {
+    const response = await fetch(`${API_URL}/admin/activity`, {
       headers: getAuthHeaders(),
     });
+
     const data = await response.json();
-    if (!response.ok)
+
+    if (!response.ok) {
       throw new Error(data.message || "Failed to load activity");
+    }
 
     activity.value = {
       active: Number(data.active) || 0,
@@ -397,12 +408,14 @@ const loadActivity = async () => {
 
 const loadWorkerServices = async () => {
   try {
-    const response = await fetch("${API_URL}/api/admin/services", {
+    const response = await fetch(`${API_URL}/admin/services`, {
       headers: getAuthHeaders(),
     });
     const data = await response.json();
-    if (!response.ok)
+
+    if (!response.ok) {
       throw new Error(data.message || "Failed to load worker services");
+    }
 
     workerServices.value = data.map((service) => ({
       service_name: service.service_name,
@@ -416,12 +429,14 @@ const loadWorkerServices = async () => {
 const loadBookingStatuses = async () => {
   try {
     const response = await fetch(
-      "${API_URL}/api/admin/booking-status",
+      `${API_URL}/admin/booking-status`,
       { headers: getAuthHeaders() },
     );
     const data = await response.json();
-    if (!response.ok)
+
+    if (!response.ok) {
       throw new Error(data.message || "Failed to load booking statuses");
+    }
 
     bookingStatuses.value = data.map((status) => ({
       status: status.status,
@@ -485,7 +500,7 @@ const removeWorker = async (professionalId) => {
 
   try {
     const response = await fetch(
-      `${API_URL}/api/admin/workers/${professionalId}`,
+      `${API_URL}/admin/workers/${professionalId}`,
       { method: "DELETE", headers: getAuthHeaders() },
     );
     const data = await response.json();
