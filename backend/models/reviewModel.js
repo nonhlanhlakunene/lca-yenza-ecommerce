@@ -10,7 +10,7 @@ export const createReview = async ({
   const [result] = await db.query(
     `INSERT INTO reviews
         (reviewer_id, reviewed_user_id, booking_id, rating, comment, status)
-        VALUES (?, ?, ?, ?, ?, 'published)`,
+        VALUES (?, ?, ?, ?, ?, 'published')`,
     [reviewerId, reviewedUserId, bookingId, rating, comment || null],
   );
 
